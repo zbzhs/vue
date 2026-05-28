@@ -16,9 +16,11 @@
             <span class="dropdown-arrow">⌄</span>
           </button>
           <div class="dropdown-menu" role="menu">
-            <RouterLink to="/about" role="menuitem">品牌介绍</RouterLink>
-            <RouterLink to="/craft" role="menuitem">珠宝工艺</RouterLink>
-            <RouterLink to="/contact" role="menuitem">联系我们</RouterLink>
+            <RouterLink to="/process" role="menuitem">生产工艺</RouterLink>
+            <RouterLink to="/4c" role="menuitem">4C标准</RouterLink>
+            <RouterLink to="/advantages" role="menuitem">核心优势</RouterLink>
+            <RouterLink to="/buying-guide" role="menuitem">选购指南</RouterLink>
+            <RouterLink to="/faq" role="menuitem">常见问题</RouterLink>
           </div>
         </div>
       </nav>

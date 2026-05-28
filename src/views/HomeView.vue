@@ -40,7 +40,7 @@
             <p class="hero-copy">
               从主石甄选、设计草图到镶嵌抛光，让纪念日、婚礼与传承有更贴切的表达。
             </p>
-            <RouterLink class="secondary-link" to="/craft">了解工艺</RouterLink>
+            <RouterLink class="secondary-link" to="/process">了解工艺</RouterLink>
           </div>
         </section>
       </div>
