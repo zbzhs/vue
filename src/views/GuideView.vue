@@ -148,6 +148,17 @@
       </div>
     </article>
   </section>
+
+  <footer class="home-footer guide-footer" aria-label="五维度页面跳转">
+    <div class="home-footer-brand">DERING</div>
+    <nav class="home-footer-links" aria-label="珠宝知识">
+      <RouterLink to="/process">生产工艺</RouterLink>
+      <RouterLink to="/4c">4C标准</RouterLink>
+      <RouterLink to="/advantages">核心优势</RouterLink>
+      <RouterLink to="/buying-guide">选购指南</RouterLink>
+      <RouterLink to="/faq">常见问题</RouterLink>
+    </nav>
+  </footer>
 </template>
 
 <script setup>

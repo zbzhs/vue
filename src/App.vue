@@ -3,26 +3,15 @@
     <header class="nav-bar">
       <RouterLink class="brand" to="/" aria-label="戴莉首页">
         <img class="brand-logo" src="/logo/name.jpg" alt="戴莉 logo" />
-        <span>戴莉</span>
       </RouterLink>
 
       <nav class="nav-links" aria-label="主导航">
+        <RouterLink class="brand-word" to="/">
+          <span>戴莉</span>
+          <strong>DERING</strong>
+        </RouterLink>
         <RouterLink to="/">主页</RouterLink>
         <RouterLink to="/products">产品展示</RouterLink>
-
-        <div class="nav-dropdown">
-          <button type="button" class="dropdown-trigger" aria-haspopup="true">
-            其他
-            <span class="dropdown-arrow">⌄</span>
-          </button>
-          <div class="dropdown-menu" role="menu">
-            <RouterLink to="/process" role="menuitem">生产工艺</RouterLink>
-            <RouterLink to="/4c" role="menuitem">4C标准</RouterLink>
-            <RouterLink to="/advantages" role="menuitem">核心优势</RouterLink>
-            <RouterLink to="/buying-guide" role="menuitem">选购指南</RouterLink>
-            <RouterLink to="/faq" role="menuitem">常见问题</RouterLink>
-          </div>
-        </div>
       </nav>
     </header>
 
