@@ -4,6 +4,7 @@ import App from './App.vue'
 import HomeView from './views/HomeView.vue'
 import ProductsView from './views/ProductsView.vue'
 import GuideView from './views/GuideView.vue'
+import ContactView from './views/ContactView.vue'
 import './styles/main.css'
 
 const router = createRouter({
@@ -19,6 +20,7 @@ const router = createRouter({
     { path: '/advantages', name: 'advantages', component: GuideView },
     { path: '/buying-guide', name: 'buyingGuide', component: GuideView },
     { path: '/faq', name: 'faq', component: GuideView },
+    { path: '/contact', name: 'contact', component: ContactView },
   ],
 })
 

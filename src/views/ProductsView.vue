@@ -196,9 +196,11 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 const allLabel = '全部'
+const route = useRoute()
 
 const priceRanges = [
   { label: allLabel },
@@ -312,6 +314,26 @@ async function loadProducts() {
   }
 }
 
+function syncSeriesFromRoute() {
+  const routeSeries = Array.isArray(route.query.series) ? route.query.series[0] : route.query.series
+
+  if (!routeSeries) {
+    return
+  }
+
+  const matchedSeries = products.value.find((product) => product.series === routeSeries)?.series
+  if (!matchedSeries) {
+    return
+  }
+
+  selectedSeries.value = matchedSeries
+  draftSeries.value = matchedSeries
+  selectedType.value = allLabel
+  draftType.value = allLabel
+  selectedPrice.value = allLabel
+  draftPrice.value = allLabel
+}
+
 function toggleFilterPanel() {
   draftType.value = selectedType.value
   draftPrice.value = selectedPrice.value
@@ -376,4 +398,12 @@ function closeProduct() {
 onMounted(() => {
   loadProducts()
 })
+
+watch(
+  () => [route.query.series, products.value.length],
+  () => {
+    syncSeriesFromRoute()
+  },
+  { immediate: true },
+)
 </script>

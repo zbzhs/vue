@@ -12,6 +12,7 @@
         </RouterLink>
         <RouterLink to="/">主页</RouterLink>
         <RouterLink to="/products">产品展示</RouterLink>
+        <RouterLink to="/contact">联系我们</RouterLink>
       </nav>
     </header>
 

@@ -82,16 +82,23 @@
   </section>
 
   <section v-else-if="page.type === 'advantages'" class="content-section advantages-content">
-    <div class="advantages-showcase">
-      <div class="advantages-statement">
+    <div class="advantages-flow">
+      <div class="advantages-intro advantages-reveal" style="--reveal-delay: 0ms">
         <p class="eyebrow dark">Service System</p>
         <h2>把体验拆成清晰、稳定、可追踪的服务环节。</h2>
         <p>从选材、设计沟通、制作标准到长期维护，每一步都服务于长期佩戴与收藏价值。</p>
       </div>
-      <article v-for="item in page.items" :key="item.title" :data-index="item.index">
+      <article
+        v-for="(item, index) in page.items"
+        :key="item.title"
+        class="advantages-line advantages-reveal"
+        :style="{ '--reveal-delay': `${index * 140 + 120}ms` }"
+      >
         <span>{{ item.index }}</span>
-        <h2>{{ item.title }}</h2>
-        <p>{{ item.text }}</p>
+        <div>
+          <h2>{{ item.title }}</h2>
+          <p>{{ item.text }}</p>
+        </div>
       </article>
     </div>
   </section>
@@ -101,7 +108,10 @@
       <aside class="buying-note">
         <p class="eyebrow dark">How to choose</p>
         <h2>先判断佩戴场景<br />再决定预算与细节</h2>
-        <p>选购珠宝不必一开始纠结所有参数，把需求拆成三个问题会更清楚。</p>
+        <p>
+          选购珠宝不必一开始就纠结所有参数。先把需求拆成几个关键问题，再去比较材质、款式、尺寸和预算，
+          往往会更容易找到真正适合自己的作品。
+        </p>
       </aside>
 
       <div class="buying-steps">
@@ -116,9 +126,20 @@
       </div>
     </div>
 
-    <figure class="buying-visual">
-      <img src="/images/buying-guide-model.png" alt="模特佩戴珠宝手链" />
-    </figure>
+    <div class="buying-gallery" aria-label="选购指南系列拼图">
+      <RouterLink
+        v-for="card in page.gallery"
+        :key="card.series"
+        :to="{ name: 'products', query: { series: card.series } }"
+        :class="['buying-tile', card.layoutClass]"
+      >
+        <img :src="card.image" :alt="card.alt" />
+        <span class="buying-tile-overlay">
+          <span class="buying-tile-series">{{ card.series }}</span>
+          <span class="buying-tile-link">查看该系列</span>
+        </span>
+      </RouterLink>
+    </div>
   </section>
 
   <section v-else-if="page.type === 'faq'" class="content-section faq-content">
@@ -249,11 +270,54 @@ const pages = {
     heroClass: 'buying-hero',
     kicker: 'Guide',
     title: '选购指南',
-    summary: '根据预算、场景和佩戴习惯选择更合适的珠宝。',
+    summary: '从佩戴场景、风格取向到尺寸细节，建立更清晰的选购判断顺序。',
+    gallery: [
+      {
+        series: '小清新吊坠',
+        image: '/images/guide/1.png',
+        alt: '小清新吊坠系列佩戴展示图',
+        layoutClass: 'buying-tile-primary',
+      },
+      {
+        series: 'THE ONE系列',
+        image: '/images/guide/2.png',
+        alt: 'THE ONE系列婚礼佩戴展示图',
+        layoutClass: 'buying-tile-top',
+      },
+      {
+        series: '粉钻系列',
+        image: '/images/guide/3.png',
+        alt: '粉钻系列日常佩戴展示图',
+        layoutClass: 'buying-tile-middle',
+      },
+      {
+        series: '时尚小清新系列',
+        image: '/images/guide/4.png',
+        alt: '时尚小清新系列晚宴佩戴展示图',
+        layoutClass: 'buying-tile-bottom',
+      },
+    ],
     items: [
-      { index: '01', title: '确定场景', text: '日常佩戴、婚礼纪念和收藏礼赠对应不同设计重点。' },
-      { index: '02', title: '确认预算', text: '先明确预算范围，再比较材质、主石和工艺配置。' },
-      { index: '03', title: '试戴比较', text: '结合肤色、手型、脸型和穿搭风格判断最终效果。' },
+      {
+        index: '01',
+        title: '确定场景',
+        text: '这件作品是用于日常通勤、约会聚会、婚礼纪念，还是礼赠收藏？不同场景对应的设计重点不同，先明确用途，后面的选择会更清楚。',
+      },
+      {
+        index: '02',
+        title: '判断风格',
+        text: '偏简洁利落、柔和日常、复古精致，还是更强调存在感？款式风格会直接影响佩戴频率，适合自己的气质比单纯追求流行更重要。',
+      },
+      {
+        index: '03',
+        title: '留意尺寸',
+        text: '戒指圈号、手链长度、项链垂坠位置和耳饰比例，都会影响佩戴舒适度与视觉效果。若用于礼赠，建议优先选择更容易调整的尺寸范围。',
+      },
+      {
+        index: '04',
+        title: '试戴比较',
+        text: '把颜色、比例、肤色、手型、脸型和日常穿搭一起考虑，不要只看单独一张产品图。真正适合的作品，通常在上身后会更自然、更耐看。',
+      },
     ],
   },
   faq: {
