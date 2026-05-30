@@ -3,7 +3,7 @@
     <section class="page-hero text-hero contact-showcase">
       <div class="contact-hero-inner">
         <p class="contact-brand">DERING</p>
-        <h1>联系我们</h1>
+        <h1>{{ copy.title }}</h1>
         <div class="contact-divider" aria-hidden="true">
           <span></span>
           <i></i>
@@ -16,58 +16,115 @@
       <div class="contact-action-grid">
         <article class="contact-action-card hotline-card">
           <div class="contact-action-head">
-            <h2>联系电话</h2>
+            <h2>{{ copy.phone.title }}</h2>
           </div>
           <div class="contact-action-body">
             <strong class="contact-action-detail">13715011967</strong>
-            <p>欢迎通过该联系方式咨询选购、定制与供货服务。</p>
+            <p>{{ copy.phone.body }}</p>
           </div>
         </article>
 
         <article class="contact-action-card consult-card">
           <div class="contact-action-head">
-            <h2>在线咨询</h2>
+            <h2>{{ copy.consult.title }}</h2>
           </div>
           <div class="contact-action-body">
             <div class="contact-chat-mark" aria-hidden="true">
               <span></span>
               <span></span>
             </div>
-            <p>通过官方微信与官方邮箱快速联系顾问，我们将在工作时段尽快回复。</p>
+            <p>{{ copy.consult.body }}</p>
           </div>
         </article>
       </div>
 
       <div class="contact-channel-grid">
         <article class="contact-channel-card">
-          <h3>官方微信</h3>
-          <img class="contact-channel-image" src="/images/contact/wechat.jpg" alt="官方微信二维码" />
-          <p>扫码添加官方微信，获取一对一咨询服务。</p>
+          <h3>{{ copy.wechat.title }}</h3>
+          <img
+            class="contact-channel-image"
+            src="/images/contact/wechat.jpg"
+            :alt="copy.wechat.alt"
+          />
+          <p>{{ copy.wechat.body }}</p>
         </article>
 
         <article class="contact-channel-card">
-          <h3>官方邮箱</h3>
-          <img class="contact-channel-image" src="/images/contact/qq.jpg" alt="官方邮箱二维码" />
+          <h3>{{ copy.email.title }}</h3>
+          <img class="contact-channel-image" src="/images/contact/qq.jpg" :alt="copy.email.alt" />
           <p>37261784qq.com</p>
         </article>
 
         <article class="contact-channel-card">
-          <h3>到店咨询</h3>
+          <h3>{{ copy.store.title }}</h3>
           <div class="contact-channel-code">STORE</div>
-          <p>上海市静安区南京西路 888 号，欢迎预约到店体验。</p>
+          <p>{{ copy.store.body }}</p>
         </article>
       </div>
     </section>
 
-    <footer class="home-footer product-page-footer contact-page-footer" aria-label="联系页底部导航">
-      <div class="home-footer-brand">DERING</div>
-      <nav class="home-footer-links" aria-label="珠宝知识">
-        <RouterLink to="/process">生产工艺</RouterLink>
-        <RouterLink to="/4c">4C标准</RouterLink>
-        <RouterLink to="/advantages">核心优势</RouterLink>
-        <RouterLink to="/buying-guide">选购指南</RouterLink>
-        <RouterLink to="/faq">常见问题</RouterLink>
-      </nav>
-    </footer>
+    <KnowledgeFooter footer-class="home-footer product-page-footer contact-page-footer" />
   </div>
 </template>
+
+<script setup>
+import { computed } from 'vue'
+
+import KnowledgeFooter from '../components/KnowledgeFooter.vue'
+import { useLocale } from '../composables/useLocale'
+
+const { locale } = useLocale()
+
+const contactCopy = {
+  zh: {
+    title: '联系我们',
+    phone: {
+      title: '联系电话',
+      body: '欢迎通过该联系方式咨询选购、定制与供货服务。',
+    },
+    consult: {
+      title: '在线咨询',
+      body: '通过官方微信与官方邮箱快速联系顾问，我们将在工作时段尽快回复。',
+    },
+    wechat: {
+      title: '官方微信',
+      alt: '官方微信二维码',
+      body: '扫码添加官方微信，获取一对一咨询服务。',
+    },
+    email: {
+      title: '官方邮箱',
+      alt: '官方邮箱二维码',
+    },
+    store: {
+      title: '到店咨询',
+      body: '上海市静安区南京西路 888 号，欢迎预约到店体验。',
+    },
+  },
+  en: {
+    title: 'Contact Us',
+    phone: {
+      title: 'Phone',
+      body: 'Use this number for product inquiries, customization requests, and supply cooperation.',
+    },
+    consult: {
+      title: 'Online Consultation',
+      body: 'Reach our consultants quickly through the official WeChat account or email, and we will respond during business hours.',
+    },
+    wechat: {
+      title: 'Official WeChat',
+      alt: 'Official WeChat QR code',
+      body: 'Scan the code to connect with our team for one-on-one consultation.',
+    },
+    email: {
+      title: 'Official Email',
+      alt: 'Official email QR code',
+    },
+    store: {
+      title: 'Visit the Store',
+      body: '888 West Nanjing Road, Jing an District, Shanghai. Book an appointment before visiting.',
+    },
+  },
+}
+
+const copy = computed(() => contactCopy[locale.value])
+</script>

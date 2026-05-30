@@ -106,7 +106,8 @@ img {
 }
 
 .brand,
-.nav-links {
+.nav-links,
+.nav-actions {
   display: flex;
   align-items: center;
 }
@@ -128,6 +129,11 @@ img {
   grid-column: 2;
   justify-content: center;
   gap: clamp(34px, 4vw, 54px);
+}
+
+.nav-actions {
+  justify-self: end;
+  justify-content: flex-end;
 }
 
 .nav-links > a {
@@ -170,6 +176,69 @@ img {
 
 .nav-links > a.router-link-active {
   border-color: #ffffff;
+}
+
+.locale-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 88px;
+  min-height: 44px;
+  padding: 0 16px 0 14px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
+  backdrop-filter: blur(16px);
+}
+
+.locale-toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.locale-toggle-icon {
+  position: relative;
+  width: 28px;
+  height: 20px;
+}
+
+.locale-toggle-icon i {
+  position: absolute;
+  inset: auto;
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 1.4px solid currentColor;
+  border-radius: 999px;
+}
+
+.locale-toggle-icon i:first-child {
+  top: 1px;
+  left: 0;
+}
+
+.locale-toggle-icon i:last-child {
+  right: 0;
+  bottom: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.locale-toggle-text {
+  min-width: 24px;
+  text-align: center;
 }
 
 .hero {
@@ -973,30 +1042,33 @@ p {
 }
 
 .advantages-hero {
-  min-height: 40vh;
+  min-height: 36vh;
   align-items: center;
   justify-content: center;
-  padding: 116px clamp(24px, 7vw, 96px) 52px;
+  padding: 104px clamp(24px, 7vw, 96px) 44px;
   text-align: center;
   background:
-    linear-gradient(135deg, rgba(255, 250, 241, 0.96), rgba(247, 241, 230, 0.88)),
-    repeating-linear-gradient(90deg, rgba(36, 33, 29, 0.06) 0 1px, transparent 1px 96px);
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.84), transparent 34%),
+    linear-gradient(135deg, rgba(255, 250, 241, 0.98), rgba(241, 235, 226, 0.9)),
+    repeating-linear-gradient(90deg, rgba(36, 33, 29, 0.05) 0 1px, transparent 1px 112px);
 }
 
 .advantages-hero > div {
   display: block;
-  max-width: 680px;
+  max-width: 620px;
 }
 
 .advantages-hero h1 {
-  font-size: clamp(34px, 4.4vw, 54px);
+  font-size: clamp(30px, 3.8vw, 46px);
 }
 
 .advantages-hero p:last-child {
-  margin: 18px auto 0;
-  max-width: 520px;
+  margin: 14px auto 0;
+  max-width: 460px;
   padding-top: 0;
   border-top: 0;
+  font-size: 16px;
+  line-height: 1.75;
 }
 
 .guide-content {
@@ -1033,82 +1105,214 @@ p {
 }
 
 .fourc-content {
+  position: relative;
+  z-index: 0;
   display: grid;
-  gap: 30px;
-}
-
-.fourc-lede {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 24px;
-  align-items: center;
-  max-width: 980px;
+  gap: 34px;
+  max-width: 1580px;
   margin: 0 auto;
-  padding: 28px 30px;
-  background: var(--surface);
-  border: 1px solid rgba(36, 33, 29, 0.1);
-  border-radius: 8px;
-  box-shadow: 0 16px 38px rgba(72, 61, 48, 0.1);
+  padding-top: 108px;
+  padding-bottom: 86px;
+  background: transparent;
 }
 
-.fourc-lede span {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 54px;
-  line-height: 1;
-  color: rgba(42, 42, 42, 0.88);
+.fourc-content::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  z-index: -1;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, #fbf7f1 0%, #f6f1ea 100%);
 }
 
-.fourc-lede p {
+.fourc-heading,
+.fourc-section-title {
+  text-align: center;
+}
+
+.fourc-heading-en {
   margin: 0;
-  color: var(--muted);
-  line-height: 1.9;
+  color: #bf8a95;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(20px, 2.5vw, 30px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fourc-heading h1,
+.fourc-section-title h2 {
+  margin: 10px 0 0;
+  color: #24211d;
+  font-family:
+    "Microsoft YaHei",
+    "PingFang SC",
+    "Noto Sans CJK SC",
+    Arial,
+    sans-serif;
+  font-size: clamp(16px, 1.5vw, 22px);
+  font-weight: 500;
+  line-height: 1.24;
+}
+
+.fourc-feature {
+  display: grid;
+  grid-template-columns: minmax(360px, 450px) minmax(0, 1fr);
+  min-height: 392px;
+  overflow: hidden;
+  background: #fffbf6;
+  border: 1px solid rgba(36, 33, 29, 0.08);
+  border-radius: 0;
+  box-shadow: 0 20px 48px rgba(72, 61, 48, 0.08);
+}
+
+.fourc-feature-copy {
+  display: grid;
+  align-content: center;
+  gap: 16px;
+  padding: clamp(30px, 3.2vw, 42px);
+  color: #ffffff;
+  background:
+    linear-gradient(180deg, rgba(191, 128, 143, 0.96), rgba(174, 110, 126, 0.96)),
+    #bb7887;
+}
+
+.fourc-feature-kicker {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.fourc-feature-copy h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(24px, 2.5vw, 34px);
+  font-weight: 500;
+  line-height: 1.18;
+}
+
+.fourc-feature-copy > p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.fourc-feature-points {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.fourc-feature-points span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.fourc-feature-image {
+  width: 100%;
+  height: 100%;
+  min-height: 392px;
+  object-fit: cover;
+}
+
+.fourc-section-title {
+  padding-top: 18px;
 }
 
 .fourc-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 22px;
 }
 
 .fourc-grid article {
   position: relative;
   overflow: hidden;
-  min-height: 310px;
-  padding: 26px;
-  background: var(--surface);
-  border: 1px solid rgba(36, 33, 29, 0.1);
-  border-radius: 8px;
-  box-shadow: 0 16px 38px rgba(72, 61, 48, 0.1);
+  display: grid;
+  grid-template-columns: minmax(320px, 1.22fr) minmax(0, 1.18fr);
+  min-height: 248px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(36, 33, 29, 0.08);
+  box-shadow: 0 18px 38px rgba(72, 61, 48, 0.07);
 }
 
-.fourc-grid article > span {
+.fourc-grid article > img {
+  width: 100%;
+  height: 100%;
+  min-height: 248px;
+  object-fit: cover;
+  background: #f5ede4;
+}
+
+.fourc-card-copy {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 20px 22px 18px;
+}
+
+.fourc-card-copy > span {
   color: var(--deep-blue);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
   font-weight: 900;
 }
 
 .fourc-letter {
   position: absolute;
   right: 18px;
-  top: 8px;
+  top: 6px;
   margin: 0;
-  color: rgba(36, 33, 29, 0.06);
+  color: rgba(185, 132, 144, 0.11);
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 148px;
+  font-size: 114px;
   line-height: 1;
   pointer-events: none;
 }
 
-.fourc-grid h2 {
-  position: relative;
-  margin: 62px 0 16px;
-  font-size: 24px;
+.fourc-card-kicker {
+  margin: 2px 0 0;
+  color: #b27d89;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
-.fourc-grid article > p:last-child {
+.fourc-grid h2 {
   position: relative;
   margin: 0;
-  color: var(--muted);
-  line-height: 1.8;
+  color: #2a2521;
+  font-size: 30px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  line-height: 1.14;
+}
+
+.fourc-card-copy > p:last-child {
+  position: relative;
+  margin: 0;
+  color: #675f57;
+  font-size: 15px;
+  line-height: 1.85;
 }
 
 .advantages-content {
@@ -2398,17 +2602,45 @@ form button:hover {
 }
 
 .advantages-content {
-  max-width: 1240px;
+  max-width: 1220px;
   margin: 0 auto;
-  padding-top: 104px;
-  padding-bottom: 112px;
+  padding-top: 78px;
+  padding-bottom: 96px;
 }
 
-.advantages-flow {
+.advantages-intro {
+  position: relative;
   display: grid;
-  gap: 34px;
-  max-width: 980px;
-  margin: 0 auto;
+  grid-template-columns: minmax(0, 1.2fr) auto;
+  gap: clamp(24px, 4vw, 56px);
+  align-items: end;
+  padding: clamp(28px, 4vw, 44px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255, 255, 255, 0.9), transparent 28%),
+    linear-gradient(135deg, rgba(255, 252, 246, 0.98), rgba(239, 233, 223, 0.94));
+  border: 1px solid rgba(79, 70, 61, 0.1);
+  border-radius: 28px;
+  box-shadow:
+    0 24px 54px rgba(61, 52, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.advantages-intro::after {
+  position: absolute;
+  right: -36px;
+  bottom: -44px;
+  width: 220px;
+  height: 220px;
+  content: "";
+  background: radial-gradient(circle, rgba(164, 144, 120, 0.12), transparent 66%);
+  pointer-events: none;
+}
+
+.advantages-intro-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
 }
 
 .advantages-reveal {
@@ -2418,66 +2650,120 @@ form button:hover {
   animation-delay: var(--reveal-delay, 0ms);
 }
 
-.advantages-intro {
-  max-width: 760px;
-  padding-bottom: 18px;
-}
-
 .advantages-intro .eyebrow {
-  margin-bottom: 18px;
-  color: rgba(94, 90, 82, 0.72);
+  margin-bottom: 14px;
+  color: rgba(94, 90, 82, 0.68);
 }
 
 .advantages-intro h2 {
-  margin: 0 0 22px;
+  margin: 0 0 16px;
   color: #26231f;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(34px, 4vw, 58px);
+  font-size: clamp(28px, 3.3vw, 42px);
   font-weight: 500;
-  line-height: 1.14;
+  line-height: 1.2;
 }
 
 .advantages-intro p:last-child {
   margin: 0;
   color: #6a6259;
-  font-size: 16px;
-  line-height: 1.95;
+  font-size: 15px;
+  line-height: 1.85;
 }
 
-.advantages-line {
+.advantages-intro-mark {
+  position: relative;
+  z-index: 0;
+  align-self: center;
+  color: rgba(71, 61, 50, 0.12);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(56px, 9vw, 118px);
+  letter-spacing: 0.12em;
+  line-height: 0.9;
+  text-align: right;
+}
+
+.advantages-grid {
   display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 26px;
-  align-items: start;
-  padding-top: 22px;
-  border-top: 1px solid rgba(36, 33, 29, 0.12);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  margin-top: 28px;
 }
 
-.advantages-line span,
+.advantages-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 22px;
+  align-items: start;
+  min-height: 276px;
+  padding: 26px 24px 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(252, 248, 241, 0.98)),
+    #fffaf1;
+  border: 1px solid rgba(36, 33, 29, 0.1);
+  border-radius: 22px;
+  box-shadow: 0 18px 40px rgba(72, 61, 48, 0.08);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.advantages-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(36, 33, 29, 0.16);
+  box-shadow: 0 28px 56px rgba(72, 61, 48, 0.12);
+}
+
+.advantages-card-index,
 .buying-steps span,
 .faq-list span {
   color: var(--deep-blue);
   font-weight: 900;
 }
 
-.advantages-line span {
-  padding-top: 6px;
+.advantages-card-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #6f675e, #958c80);
+  border-radius: 14px;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 500;
   letter-spacing: 0.06em;
+  box-shadow: 0 12px 24px rgba(72, 61, 48, 0.16);
 }
 
-.advantages-line h2 {
-  margin: 0 0 12px;
+.advantages-card-copy {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.advantages-card-kicker {
+  margin: 0;
+  color: rgba(106, 98, 89, 0.74);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.advantages-card h2 {
+  margin: 0;
   color: #24211d;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(26px, 2.8vw, 38px);
+  font-size: clamp(22px, 2.2vw, 28px);
   font-weight: 500;
-  line-height: 1.16;
+  line-height: 1.2;
 }
 
-.advantages-line p,
+.advantages-card p,
 .buying-note p,
 .buying-steps p,
 .faq-heading p,
@@ -2487,10 +2773,10 @@ form button:hover {
   line-height: 1.8;
 }
 
-.advantages-line p {
-  max-width: 620px;
-  font-size: 16px;
-  line-height: 1.9;
+.advantages-card-copy > p:last-child {
+  max-width: 32ch;
+  font-size: 14px;
+  line-height: 1.85;
 }
 
 .buying-content {
@@ -2902,8 +3188,28 @@ form button:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .fourc-content {
+    gap: 24px;
+    padding-top: 84px;
+    padding-bottom: 68px;
+  }
+
+  .fourc-feature {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .fourc-feature-image {
+    min-height: 340px;
+  }
+
   .fourc-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .fourc-grid article {
+    grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1fr);
   }
 
   .advantages-hero > div,
@@ -2914,17 +3220,28 @@ form button:hover {
   }
 
   .advantages-content {
-    padding-top: 86px;
-    padding-bottom: 92px;
+    padding-top: 72px;
+    padding-bottom: 84px;
   }
 
-  .advantages-flow {
-    gap: 28px;
+  .advantages-intro {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 28px;
   }
 
-  .advantages-line {
-    grid-template-columns: 60px minmax(0, 1fr);
-    gap: 20px;
+  .advantages-intro-mark {
+    font-size: clamp(44px, 12vw, 82px);
+    text-align: left;
+  }
+
+  .advantages-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .advantages-card {
+    min-height: 0;
   }
 
   .advantages-showcase {
@@ -3076,6 +3393,10 @@ form button:hover {
     gap: 24px;
   }
 
+  .nav-actions {
+    justify-self: center;
+  }
+
   .nav-links > a {
     font-size: 16px;
   }
@@ -3086,6 +3407,12 @@ form button:hover {
 
   .brand-word strong {
     font-size: 24px;
+  }
+
+  .locale-toggle {
+    min-width: 82px;
+    min-height: 40px;
+    padding-inline: 12px 14px;
   }
 
   .hero,
@@ -3121,13 +3448,62 @@ form button:hover {
   .process-methods,
   .process-grid,
   .process-section.split,
-  .fourc-grid,
-  .fourc-lede {
+  .fourc-grid {
     grid-template-columns: 1fr;
   }
 
-  .fourc-lede span {
-    font-size: 42px;
+  .fourc-content {
+    gap: 18px;
+    padding-top: 156px;
+    padding-bottom: 54px;
+  }
+
+  .fourc-heading-en {
+    font-size: clamp(16px, 6vw, 22px);
+  }
+
+  .fourc-heading h1,
+  .fourc-section-title h2 {
+    font-size: clamp(20px, 7vw, 28px);
+  }
+
+  .fourc-feature-copy {
+    gap: 14px;
+    padding: 24px 20px;
+  }
+
+  .fourc-feature-copy h2 {
+    font-size: clamp(24px, 8vw, 32px);
+  }
+
+  .fourc-feature-copy > p {
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  .fourc-feature-image {
+    min-height: 250px;
+  }
+
+  .fourc-grid article {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .fourc-grid article > img {
+    min-height: 220px;
+  }
+
+  .fourc-card-copy {
+    padding: 18px 18px 16px;
+  }
+
+  .fourc-grid h2 {
+    font-size: 26px;
+  }
+
+  .fourc-card-copy > p:last-child {
+    font-size: 14px;
   }
 
   .advantages-showcase,
@@ -3137,28 +3513,47 @@ form button:hover {
   }
 
   .advantages-content {
-    padding-top: 72px;
-    padding-bottom: 80px;
+    padding-top: 60px;
+    padding-bottom: 72px;
   }
 
   .advantages-intro h2 {
-    font-size: clamp(30px, 9vw, 42px);
+    font-size: clamp(26px, 8.6vw, 38px);
   }
 
-  .advantages-line {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding-top: 20px;
+  .advantages-intro {
+    padding: 24px 22px;
+    border-radius: 22px;
   }
 
-  .advantages-line span {
-    padding-top: 0;
-    font-size: 16px;
+  .advantages-intro-mark {
+    font-size: clamp(38px, 16vw, 64px);
   }
 
-  .advantages-line p {
-    max-width: none;
+  .advantages-grid {
+    margin-top: 18px;
+  }
+
+  .advantages-card {
+    gap: 16px;
+    padding: 22px 20px 20px;
+    border-radius: 18px;
+  }
+
+  .advantages-card-index {
+    width: 40px;
+    height: 40px;
     font-size: 15px;
+    border-radius: 12px;
+  }
+
+  .advantages-card h2 {
+    font-size: 24px;
+  }
+
+  .advantages-card-copy > p:last-child {
+    max-width: none;
+    font-size: 14px;
   }
 
   .company-block {

@@ -1,5 +1,5 @@
 <template>
-  <section v-if="!page.hideHero" :class="['page-hero', page.textHero ? `text-hero ${page.heroClass}` : 'guide-hero']">
+  <section class="page-hero guide-hero">
     <div>
       <p class="eyebrow">{{ page.kicker }}</p>
       <h1>{{ page.title }}</h1>
@@ -7,13 +7,9 @@
     </div>
   </section>
 
-  <section v-if="page.type === 'process'" class="content-section process-page">
+  <section class="content-section process-page">
     <div class="process-intro">
-      <p>
-        培育钻石是通过人工模拟天然钻石的形成环境，在实验室中合成的纯碳晶体。
-        其物理、化学和光学性质与天然钻石基本一致，核心区别在于形成过程。
-        目前主流生产工艺分为高温高压法（HPHT）和化学气相沉积法（CVD）两大类。
-      </p>
+      <p>{{ page.intro }}</p>
     </div>
 
     <div class="process-methods">
@@ -21,19 +17,19 @@
         <p class="process-label">{{ method.label }}</p>
         <h2>{{ method.title }}</h2>
         <p>{{ method.principle }}</p>
-        <h3>流程</h3>
+        <h3>{{ copy.processFlow }}</h3>
         <ol>
           <li v-for="step in method.steps" :key="step">{{ step }}</li>
         </ol>
-        <h3>特点</h3>
+        <h3>{{ copy.processFeatures }}</h3>
         <p>{{ method.features }}</p>
       </article>
     </div>
 
     <div class="process-section">
       <div class="section-heading compact">
-        <p class="eyebrow dark">Comparison</p>
-        <h2>工艺对比与发展趋势</h2>
+        <p class="eyebrow dark">{{ copy.comparisonKicker }}</p>
+        <h2>{{ page.comparisonTitle }}</h2>
       </div>
       <div class="process-grid">
         <article v-for="item in page.comparison" :key="item.title">
@@ -46,159 +42,48 @@
 
     <div class="process-section split">
       <article>
-        <h2>应用与市场</h2>
-        <p>
-          培育钻石不仅用于珠宝首饰，也可用于半导体、光学窗口等工业领域。
-          中国在 HPHT 和 CVD 技术上均具备较强产业基础，河南等地已形成重要的培育钻石生产集群。
-        </p>
+        <h2>{{ page.market.title }}</h2>
+        <p>{{ page.market.text }}</p>
       </article>
       <article>
-        <h2>总结</h2>
-        <p>
-          培育钻石生产的核心，是模拟或替代天然钻石形成所需的条件。
-          HPHT 与 CVD 各有侧重，未来会继续向更大尺寸、更高品质和更低成本方向发展。
-        </p>
+        <h2>{{ page.conclusion.title }}</h2>
+        <p>{{ page.conclusion.text }}</p>
       </article>
     </div>
   </section>
 
-  <section v-else-if="page.type === 'fourC'" class="content-section fourc-content">
-    <div class="fourc-lede">
-      <span>4C</span>
-      <p>
-        4C 是判断钻石品质的基础框架，但最终选择不只看单项参数。
-        更理想的方式，是把切工、颜色、净度和克拉重量放在同一个预算与佩戴场景中综合比较。
-      </p>
-    </div>
-
-    <div class="fourc-grid">
-      <article v-for="item in page.items" :key="item.title" :data-index="item.index">
-        <span>{{ item.index }}</span>
-        <p class="fourc-letter">{{ item.letter }}</p>
-        <h2>{{ item.title }}</h2>
-        <p>{{ item.text }}</p>
-      </article>
-    </div>
-  </section>
-
-  <section v-else-if="page.type === 'advantages'" class="content-section advantages-content">
-    <div class="advantages-flow">
-      <div class="advantages-intro advantages-reveal" style="--reveal-delay: 0ms">
-        <p class="eyebrow dark">Service System</p>
-        <h2>把体验拆成清晰、稳定、可追踪的服务环节。</h2>
-        <p>从选材、设计沟通、制作标准到长期维护，每一步都服务于长期佩戴与收藏价值。</p>
-      </div>
-      <article
-        v-for="(item, index) in page.items"
-        :key="item.title"
-        class="advantages-line advantages-reveal"
-        :style="{ '--reveal-delay': `${index * 140 + 120}ms` }"
-      >
-        <span>{{ item.index }}</span>
-        <div>
-          <h2>{{ item.title }}</h2>
-          <p>{{ item.text }}</p>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <section v-else-if="page.type === 'buyingGuide'" class="content-section buying-content">
-    <div class="buying-copy">
-      <aside class="buying-note">
-        <p class="eyebrow dark">How to choose</p>
-        <h2>先判断佩戴场景<br />再决定预算与细节</h2>
-        <p>
-          选购珠宝不必一开始就纠结所有参数。先把需求拆成几个关键问题，再去比较材质、款式、尺寸和预算，
-          往往会更容易找到真正适合自己的作品。
-        </p>
-      </aside>
-
-      <div class="buying-steps">
-        <article v-for="item in page.items" :key="item.title">
-          <span>{{ item.index }}</span>
-          <div>
-            <h2>{{ item.title }}</h2>
-            <p>{{ item.text }}</p>
-          </div>
-          <span class="buying-arrow">›</span>
-        </article>
-      </div>
-    </div>
-
-    <div class="buying-gallery" aria-label="选购指南系列拼图">
-      <RouterLink
-        v-for="card in page.gallery"
-        :key="card.series"
-        :to="{ name: 'products', query: { series: card.series } }"
-        :class="['buying-tile', card.layoutClass]"
-      >
-        <img :src="card.image" :alt="card.alt" />
-        <span class="buying-tile-overlay">
-          <span class="buying-tile-series">{{ card.series }}</span>
-          <span class="buying-tile-link">查看该系列</span>
-        </span>
-      </RouterLink>
-    </div>
-  </section>
-
-  <section v-else-if="page.type === 'faq'" class="content-section faq-content">
-    <div class="faq-title">
-      <h1>{{ page.title }}</h1>
-    </div>
-
-    <div class="faq-accordion">
-      <article v-for="item in page.items" :key="item.title" class="faq-item">
-        <button type="button" class="faq-question" @click="toggleFaq(item.index)">
-          <span>{{ item.title }}</span>
-          <span class="faq-icon" :class="{ open: activeFaq === item.index }">+</span>
-        </button>
-        <div v-if="activeFaq === item.index" class="faq-answer">
-          <p>{{ item.text }}</p>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <section v-else class="content-section guide-content">
-    <article v-for="item in page.items" :key="item.title">
-      <span>{{ item.index }}</span>
-      <div>
-        <h2>{{ item.title }}</h2>
-        <p>{{ item.text }}</p>
-      </div>
-    </article>
-  </section>
-
-  <footer class="home-footer guide-footer" aria-label="五维度页面跳转">
-    <div class="home-footer-brand">DERING</div>
-    <nav class="home-footer-links" aria-label="珠宝知识">
-      <RouterLink to="/process">生产工艺</RouterLink>
-      <RouterLink to="/4c">4C标准</RouterLink>
-      <RouterLink to="/advantages">核心优势</RouterLink>
-      <RouterLink to="/buying-guide">选购指南</RouterLink>
-      <RouterLink to="/faq">常见问题</RouterLink>
-    </nav>
-  </footer>
+  <KnowledgeFooter footer-class="home-footer guide-footer" />
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed } from 'vue'
 
-const route = useRoute()
-const activeFaq = ref(null)
+import KnowledgeFooter from '../components/KnowledgeFooter.vue'
+import { useLocale } from '../composables/useLocale'
 
-const toggleFaq = (index) => {
-  activeFaq.value = activeFaq.value === index ? null : index
-}
+const { locale } = useLocale()
 
-const pages = {
-  process: {
-    type: 'process',
+const copy = computed(() =>
+  locale.value === 'en'
+    ? {
+        processFlow: 'Process',
+        processFeatures: 'Features',
+        comparisonKicker: 'Comparison',
+      }
+    : {
+        processFlow: '流程',
+        processFeatures: '特点',
+        comparisonKicker: 'Comparison',
+      },
+)
+
+const pagesByLocale = {
+  zh: {
     kicker: 'Process',
     title: '生产工艺',
     summary: '了解培育钻石从晶种生长到切割抛光的主要工艺路径。',
+    intro:
+      '培育钻石是通过人工模拟天然钻石的形成环境，在实验室中合成的纯碳晶体。其物理、化学和光学性质与天然钻石基本一致，核心区别在于形成过程。目前主流生产工艺分为高温高压法（HPHT）和化学气相沉积法（CVD）两大类。',
     methods: [
       {
         label: 'HPHT',
@@ -229,115 +114,75 @@ const pages = {
           'CVD 无需金属触媒，晶体纯净度较高，常见 Type IIa 型品质，可用于大克拉培育钻石，颜色可控性强，适合高端珠宝与部分工业应用。',
       },
     ],
+    comparisonTitle: '工艺对比与发展趋势',
     comparison: [
       { index: '01', title: 'HPHT优势', text: '成本相对低、生长速度快，适合小克拉批量生产，颜色等级表现较稳定。' },
       { index: '02', title: 'CVD优势', text: '纯净度高，可合成较大克拉钻石，颜色控制灵活，且没有金属触媒残留。' },
       { index: '03', title: '复合工艺', text: '部分企业会采用 CVD 生长结合 HPHT 后处理，以改善颜色等级和整体视觉表现。' },
       { index: '04', title: '发展方向', text: '行业持续向大尺寸化、高品质化和低成本化发展，设备大型化与自动化会进一步推动产能提升。' },
     ],
+    market: {
+      title: '应用与市场',
+      text: '培育钻石不仅用于珠宝首饰，也可用于半导体、光学窗口等工业领域。中国在 HPHT 和 CVD 技术上均具备较强产业基础，河南等地已形成重要的培育钻石生产集群。',
+    },
+    conclusion: {
+      title: '总结',
+      text: '培育钻石生产的核心，是模拟或替代天然钻石形成所需的条件。HPHT 与 CVD 各有侧重，未来会继续向更大尺寸、更高品质和更低成本方向发展。',
+    },
   },
-  '4c': {
-    type: 'fourC',
-    textHero: true,
-    heroClass: 'fourc-hero',
-    kicker: 'Diamond 4C',
-    title: '4C标准',
-    summary: '用切工、颜色、净度和克拉重量理解钻石价值。',
-    items: [
-      { index: '01', letter: 'C', title: 'Cut 切工', text: '切工决定钻石如何反射光线，直接影响火彩、亮度和整体视觉表现。优先关注比例、对称性和抛光质量。' },
-      { index: '02', letter: 'C', title: 'Color 颜色', text: '颜色等级越接近无色，视觉通透感通常越强。日常佩戴可结合预算和镶嵌材质选择合适等级。' },
-      { index: '03', letter: 'C', title: 'Clarity 净度', text: '净度用于描述天然内含物与表面特征。选购时更应关注肉眼是否明显，而非只追求高等级。' },
-      { index: '04', letter: 'C', title: 'Carat 克拉', text: '克拉代表重量，也影响视觉大小。它需要结合切工比例、台面直径和佩戴效果一起判断。' },
-    ],
-  },
-  advantages: {
-    type: 'advantages',
-    textHero: true,
-    heroClass: 'advantages-hero',
-    kicker: 'Advantages',
-    title: '核心优势',
-    summary: '以设计、供应链与服务体验构成品牌长期价值。',
-    items: [
-      { index: '01', title: '精选材质', text: '严选贵金属、钻石和彩色宝石，兼顾品质与审美表达。' },
-      { index: '02', title: '定制服务', text: '支持婚戒、纪念款和专属设计需求。' },
-      { index: '03', title: '售后保障', text: '提供清洁保养、尺寸调整和佩戴建议。' },
-    ],
-  },
-  buyingGuide: {
-    type: 'buyingGuide',
-    hideHero: true,
-    textHero: true,
-    heroClass: 'buying-hero',
-    kicker: 'Guide',
-    title: '选购指南',
-    summary: '从佩戴场景、风格取向到尺寸细节，建立更清晰的选购判断顺序。',
-    gallery: [
+  en: {
+    kicker: 'Process',
+    title: 'Production Process',
+    summary: 'See how lab-grown diamonds move from seed growth to cutting and polishing.',
+    intro:
+      'Lab-grown diamonds are pure carbon crystals created in laboratories by recreating the conditions in which natural diamonds form. Their physical, chemical, and optical properties closely match natural diamonds. The main difference lies in the growth process. Today, the two dominant production routes are HPHT and CVD.',
+    methods: [
       {
-        series: '小清新吊坠',
-        image: '/images/guide/1.png',
-        alt: '小清新吊坠系列佩戴展示图',
-        layoutClass: 'buying-tile-primary',
+        label: 'HPHT',
+        title: 'High Pressure High Temperature',
+        principle:
+          'HPHT recreates the high-temperature and high-pressure conditions of the earth s mantle inside a cubic press, typically around 1300-1600°C and 5-6 GPa. High-purity graphite acts as the carbon source, while metal catalysts such as iron, nickel, and cobalt help carbon atoms crystallize on a diamond seed.',
+        steps: [
+          'Material preparation: combine graphite powder, metal catalyst, and diamond seed in a growth-ready structure.',
+          'High-pressure growth: apply extreme pressure and temperature to drive carbon atoms toward the seed and crystallize them.',
+          'Extraction and purification: slowly cool and depressurize, then remove residual catalyst through electrolysis or chemical treatment.',
+          'Cutting and polishing: finish the rough crystal into a jewelry-ready diamond.',
+        ],
+        features:
+          'HPHT grows relatively fast and suits batch production in the 1 to 5 carat range. It often performs well for near-colorless D to F grades, but chamber size limits larger stones and metallic inclusions may affect clarity.',
       },
       {
-        series: 'THE ONE系列',
-        image: '/images/guide/2.png',
-        alt: 'THE ONE系列婚礼佩戴展示图',
-        layoutClass: 'buying-tile-top',
-      },
-      {
-        series: '粉钻系列',
-        image: '/images/guide/3.png',
-        alt: '粉钻系列日常佩戴展示图',
-        layoutClass: 'buying-tile-middle',
-      },
-      {
-        series: '时尚小清新系列',
-        image: '/images/guide/4.png',
-        alt: '时尚小清新系列晚宴佩戴展示图',
-        layoutClass: 'buying-tile-bottom',
+        label: 'CVD',
+        title: 'Chemical Vapor Deposition',
+        principle:
+          'CVD grows diamond in a vacuum chamber where microwave plasma energizes a methane-hydrogen gas mixture. Carbon atoms then deposit layer by layer on the diamond seed until a crystal is formed.',
+        steps: [
+          'Seed preparation: select high-purity diamond plates and polish away surface impurities.',
+          'Vapor growth: under low-pressure vacuum and roughly 800-1000°C, carbon atoms deposit on the seed surface.',
+          'Post treatment: stop the energy and gas flow, cool the crystal, and remove non-diamond carbon from the surface.',
+          'Cutting and polishing: process the rough into a clean, jewelry-grade stone.',
+        ],
+        features:
+          'CVD does not rely on metal catalysts, so crystal purity is typically high. It often reaches Type IIa quality, works well for larger stones, offers strong color control, and suits both high-end jewelry and selected industrial uses.',
       },
     ],
-    items: [
-      {
-        index: '01',
-        title: '确定场景',
-        text: '这件作品是用于日常通勤、约会聚会、婚礼纪念，还是礼赠收藏？不同场景对应的设计重点不同，先明确用途，后面的选择会更清楚。',
-      },
-      {
-        index: '02',
-        title: '判断风格',
-        text: '偏简洁利落、柔和日常、复古精致，还是更强调存在感？款式风格会直接影响佩戴频率，适合自己的气质比单纯追求流行更重要。',
-      },
-      {
-        index: '03',
-        title: '留意尺寸',
-        text: '戒指圈号、手链长度、项链垂坠位置和耳饰比例，都会影响佩戴舒适度与视觉效果。若用于礼赠，建议优先选择更容易调整的尺寸范围。',
-      },
-      {
-        index: '04',
-        title: '试戴比较',
-        text: '把颜色、比例、肤色、手型、脸型和日常穿搭一起考虑，不要只看单独一张产品图。真正适合的作品，通常在上身后会更自然、更耐看。',
-      },
+    comparisonTitle: 'Process Comparison and Industry Direction',
+    comparison: [
+      { index: '01', title: 'HPHT Strengths', text: 'Lower relative cost and faster growth make it suitable for small-carat batch production with stable color performance.' },
+      { index: '02', title: 'CVD Strengths', text: 'Higher purity, better scalability for larger stones, flexible color control, and no residual metal catalyst.' },
+      { index: '03', title: 'Hybrid Routes', text: 'Some producers combine CVD growth with HPHT post-treatment to improve color and overall visual performance.' },
+      { index: '04', title: 'Future Direction', text: 'The industry continues toward larger sizes, higher quality, and lower cost, supported by bigger equipment and more automation.' },
     ],
-  },
-  faq: {
-    type: 'faq',
-    hideHero: true,
-    textHero: true,
-    heroClass: 'faq-hero',
-    kicker: 'FAQ',
-    title: '常见问题',
-    summary: '整理购买、定制和售后中常见的关注点。',
-    items: [
-      { index: '01', title: '我该如何选择尺寸？', text: '建议先根据日常佩戴习惯确认松紧偏好，再测量手寸、腕围或项链长度。若用于礼赠，可以先选择常规尺寸，后续根据实际佩戴效果进行调整。' },
-      { index: '02', title: '我的作品可以刻字吗？', text: '部分戒指、吊坠和纪念款支持刻字。可刻内容会受作品结构、材质厚度和可刻区域影响，确认订单前会由顾问协助核对。' },
-      { index: '03', title: '我的作品可以调整尺寸吗？', text: '多数戒指和部分手链可提供尺寸调整服务，但密镶、特殊结构或异形设计可能不适合大幅调整。建议将作品带到门店或联系客服先做评估。' },
-      { index: '04', title: '调整一件作品尺寸的费用是多少？', text: '费用会根据材质、调整幅度、工艺复杂度和是否需要补料而变化。常规保养范围内的服务可先咨询售后，定制或复杂调整会单独报价。' },
-      { index: '05', title: '完成调整服务需要多长时间？', text: '常规尺寸调整通常需要根据门店排期与工坊工作量确认。若涉及补石、重新抛光或复杂结构修整，时间会相应延长。' },
-      { index: '06', title: '如何查找我的产品说明书？', text: '可通过购买凭证、订单信息或作品编号联系客服查询。若作品附带证书或保养卡，请妥善保存，便于后续保养、调整和售后登记。' },
-    ],
+    market: {
+      title: 'Applications and Market',
+      text: 'Lab-grown diamonds are used not only in jewelry but also in semiconductors, optical windows, and other industrial fields. China has built strong HPHT and CVD capabilities, with places such as Henan forming major production clusters.',
+    },
+    conclusion: {
+      title: 'Conclusion',
+      text: 'The essence of lab-grown diamond production is to recreate or replace the conditions needed for natural diamond formation. HPHT and CVD each have their own strengths, and both will continue moving toward larger size, better quality, and lower production cost.',
+    },
   },
 }
 
-const page = computed(() => pages[route.name] || pages.process)
+const page = computed(() => pagesByLocale[locale.value])
 </script>
