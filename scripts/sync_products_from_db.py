@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -23,8 +22,7 @@ DB_CONFIG = {
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_DIR = ROOT / "public"
 DATA_DIR = PUBLIC_DIR / "data"
-SOURCE_IMAGE_DIR = PUBLIC_DIR / "images" / "products one"
-TARGET_IMAGE_DIR = PUBLIC_DIR / "images" / "products"
+PRODUCT_IMAGE_DIR = PUBLIC_DIR / "images" / "products"
 OUTPUT_JSON = DATA_DIR / "products.json"
 
 
@@ -53,11 +51,11 @@ def split_lines(value: str | None) -> list[str]:
 
 
 def resolve_image(style_no: str) -> ProductImage:
-    exact_match = SOURCE_IMAGE_DIR / f"{style_no}.png"
+    exact_match = PRODUCT_IMAGE_DIR / f"{style_no}.png"
     if exact_match.exists():
         return ProductImage(public_path=f"/images/products/{style_no}.png", source_path=exact_match)
 
-    fallback_matches = sorted(SOURCE_IMAGE_DIR.glob(f"{style_no}-*.png"))
+    fallback_matches = sorted(PRODUCT_IMAGE_DIR.glob(f"{style_no}-*.png"))
     if fallback_matches:
         return ProductImage(public_path=f"/images/products/{style_no}.png", source_path=fallback_matches[0])
 
@@ -160,20 +158,13 @@ def fetch_products() -> list[dict[str, object]]:
 
 
 def ensure_product_images(products: list[dict[str, object]]) -> dict[str, str]:
-    TARGET_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
+    PRODUCT_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     image_map: dict[str, str] = {}
 
     for product in products:
         style_no = str(product["style_no"])
         image = resolve_image(style_no)
         image_map[style_no] = image.public_path
-
-        if image.source_path is None:
-            continue
-
-        target_path = TARGET_IMAGE_DIR / f"{style_no}.png"
-        if not target_path.exists() or target_path.read_bytes() != image.source_path.read_bytes():
-            shutil.copy2(image.source_path, target_path)
 
     return image_map
 

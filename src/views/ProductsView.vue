@@ -110,9 +110,10 @@
             v-for="product in recommendedProducts"
             :key="product.code"
             type="button"
+            @mouseenter="triggerImageSwap(product.code)"
             @click="chooseRecommendation(product)"
           >
-            <img :src="product.image" :alt="product.name" />
+            <img :src="resolveProductImage(product.image, product.code)" :alt="product.name" />
             <span>
               <strong>{{ product.name }}</strong>
               <small>{{ product.type }} / {{ product.series }} / {{ formatPrice(product.price) }}</small>
@@ -141,9 +142,10 @@
         :key="product.code"
         class="product-card"
         type="button"
+        @mouseenter="triggerImageSwap(product.code)"
         @click="openProduct(product)"
       >
-        <img :src="product.image" :alt="product.name" />
+        <img :src="resolveProductImage(product.image, product.code)" :alt="product.name" />
         <div class="product-info">
           <p>{{ product.type }}</p>
           <h2>{{ product.name }}</h2>
@@ -170,9 +172,9 @@
   </footer>
 
   <div v-if="activeProduct" class="product-detail-backdrop" @click.self="closeProduct">
-    <article class="product-detail" aria-modal="true" role="dialog">
+    <article class="product-detail" aria-modal="true" role="dialog" @mouseenter="triggerImageSwap(activeProduct.code)">
       <button class="detail-close" type="button" aria-label="关闭详情" @click="closeProduct">&times;</button>
-      <img :src="activeProduct.image" :alt="activeProduct.name" />
+      <img :src="resolveProductImage(activeProduct.image, activeProduct.code)" :alt="activeProduct.name" />
 
       <div class="detail-copy">
         <p class="detail-series">{{ activeProduct.series }}</p>
@@ -196,10 +198,13 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 const allLabel = '全部'
+const primaryImagePrefix = '/images/products/'
+const alternateImagePrefix = '/images/products%201/'
+const imageSwapIntervalMs = 2000
 const route = useRoute()
 
 const priceRanges = [
@@ -224,6 +229,9 @@ const showFilterPanel = ref(false)
 const showDrawerSearch = ref(false)
 const activeProduct = ref(null)
 const productSection = ref(null)
+const imageSwapTick = ref(0)
+const imageSwapOverrides = ref({})
+let imageSwapTimerId = null
 
 const filterTypes = computed(() => {
   return [allLabel, ...new Set(products.value.map((product) => product.type).filter(Boolean))]
@@ -290,6 +298,46 @@ function formatPrice(price) {
     currency: 'CNY',
     maximumFractionDigits: 0,
   }).format(numericPrice)
+}
+
+function resolveProductImage(image, code) {
+  if (!image || typeof image !== 'string') {
+    return image
+  }
+
+  if (!image.startsWith(primaryImagePrefix)) {
+    return image
+  }
+
+  const overrideTick = code ? (imageSwapOverrides.value[code] ?? 0) : 0
+  const shouldUseAlternate = (imageSwapTick.value + overrideTick) % 2 === 1
+
+  if (!shouldUseAlternate) {
+    return image
+  }
+
+  return image.replace(primaryImagePrefix, alternateImagePrefix)
+}
+
+function restartImageSwapTimer() {
+  if (imageSwapTimerId !== null) {
+    window.clearInterval(imageSwapTimerId)
+  }
+
+  imageSwapTimerId = window.setInterval(() => {
+    imageSwapTick.value += 1
+  }, imageSwapIntervalMs)
+}
+
+function triggerImageSwap(code) {
+  if (!code) {
+    return
+  }
+
+  imageSwapOverrides.value = {
+    ...imageSwapOverrides.value,
+    [code]: (imageSwapOverrides.value[code] ?? 0) + 1,
+  }
 }
 
 async function loadProducts() {
@@ -397,6 +445,13 @@ function closeProduct() {
 
 onMounted(() => {
   loadProducts()
+  restartImageSwapTimer()
+})
+
+onBeforeUnmount(() => {
+  if (imageSwapTimerId !== null) {
+    window.clearInterval(imageSwapTimerId)
+  }
 })
 
 watch(
