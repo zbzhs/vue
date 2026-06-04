@@ -203,6 +203,12 @@ function mapRow(row, detailImagesMap) {
   const remark = normalizeText(row.remark);
   const sellingPoint = normalizeText(row.selling_point);
   const styleNo = String(row.style_no);
+  const displayPrice =
+    row.max_label_price === null || row.max_label_price === undefined
+      ? row.live_price === null || row.live_price === undefined
+        ? null
+        : Number(row.live_price)
+      : Number(row.max_label_price);
 
   return {
     code: styleNo,
@@ -211,7 +217,7 @@ function mapRow(row, detailImagesMap) {
     name: normalizeText(row.product_name) || styleNo,
     type: normalizeText(row.category) || "未分类",
     material: normalizeText(row.metal_material),
-    price: row.live_price === null || row.live_price === undefined ? null : Number(row.live_price),
+    price: displayPrice,
     labelPrice:
       row.max_label_price === null || row.max_label_price === undefined ? null : Number(row.max_label_price),
     inventory: row.real_total_stock,
