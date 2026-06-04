@@ -7,7 +7,6 @@
 
       <nav class="nav-links" :aria-label="t('主导航', 'Main navigation')">
         <RouterLink class="brand-word" to="/">
-          <span>{{ t('戴莉', 'FINE JEWELRY') }}</span>
           <strong>DERING</strong>
         </RouterLink>
         <RouterLink v-for="link in mainNavLinks" :key="link.to" :to="link.to">

@@ -44,6 +44,52 @@ function splitLines(value) {
     .filter(Boolean);
 }
 
+function isJpgImageUrl(value) {
+  const text = normalizeText(value);
+  if (!text) {
+    return false;
+  }
+
+  const normalized = text.split("?")[0].split("#")[0].toLowerCase();
+  return normalized.endsWith(".jpg") || normalized.endsWith(".jpeg");
+}
+
+async function fetchProductDetailImagesMap(connection) {
+  try {
+    const [rows] = await connection.execute(`
+      SELECT product_style_no, image_url, sort_no, id
+      FROM product_image
+      WHERE image_url IS NOT NULL
+      ORDER BY product_style_no, sort_no, id
+    `);
+
+    const imageMap = new Map();
+
+    for (const row of rows) {
+      const styleNo = normalizeText(row.product_style_no);
+      const imageUrl = normalizeText(row.image_url);
+
+      if (!styleNo || !isJpgImageUrl(imageUrl)) {
+        continue;
+      }
+
+      if (!imageMap.has(styleNo)) {
+        imageMap.set(styleNo, []);
+      }
+
+      const images = imageMap.get(styleNo);
+      if (!images.includes(imageUrl)) {
+        images.push(imageUrl);
+      }
+    }
+
+    return imageMap;
+  } catch (error) {
+    console.warn("Failed to load product detail images:", error);
+    return new Map();
+  }
+}
+
 function resolveImage(styleNo) {
   const exactName = `${styleNo}.png`;
   const exactPath = path.join(productImageDir, exactName);
@@ -152,7 +198,7 @@ function buildSpecs(row) {
   return specs;
 }
 
-function mapRow(row) {
+function mapRow(row, detailImagesMap) {
   const guaranteeInfo = normalizeText(row.guarantee_info);
   const remark = normalizeText(row.remark);
   const sellingPoint = normalizeText(row.selling_point);
@@ -173,6 +219,7 @@ function mapRow(row) {
     commission: row.commission === null || row.commission === undefined ? null : Number(row.commission),
     note: buildNote(row),
     image: resolveImage(styleNo),
+    detailImages: detailImagesMap.get(styleNo) || [],
     brand: "DERING",
     sellingPoint,
     guaranteeInfo,
@@ -211,7 +258,8 @@ export async function getProductsPayload() {
       ORDER BY style_no
     `);
 
-    const products = rows.map(mapRow);
+    const detailImagesMap = await fetchProductDetailImagesMap(connection);
+    const products = rows.map((row) => mapRow(row, detailImagesMap));
     return {
       count: products.length,
       products,

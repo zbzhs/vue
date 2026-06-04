@@ -4,7 +4,7 @@
       ref="heroStage"
       class="hero-stage"
       :class="{ 'is-switching': isSwitching }"
-      @wheel.prevent="handleHeroWheel"
+      @wheel="handleHeroWheel"
     >
       <div
         class="hero-track"
@@ -51,6 +51,27 @@
       </div>
     </section>
 
+    <section class="home-section home-film-section">
+      <div class="home-film-shell">
+        <div class="section-heading home-film-heading">
+          <p class="eyebrow dark">{{ locale === 'en' ? 'Brand Film' : '品牌概念宣传片' }}</p>
+          <h2>{{ locale === 'en' ? 'DERING Brand Concept Film' : 'DERING 品牌概念宣传片' }}</h2>
+        </div>
+
+        <div class="home-film-frame">
+          <video
+            class="home-film-video"
+            src="/video/dering-brand-film.mp4"
+            :aria-label="locale === 'en' ? 'DERING brand concept film' : 'DERING 品牌概念宣传片'"
+            controls
+            muted
+            playsinline
+            preload="metadata"
+          ></video>
+        </div>
+      </div>
+    </section>
+
     <section class="home-section">
       <div class="section-heading">
         <p class="eyebrow dark">{{ copy.company.kicker }}</p>
@@ -71,7 +92,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 
 import KnowledgeFooter from '../components/KnowledgeFooter.vue'
 import { useLocale } from '../composables/useLocale'
@@ -181,6 +202,8 @@ const copy = computed(() => homeCopy[locale.value])
 const heroStage = ref(null)
 const currentPage = ref(1)
 const isSwitching = ref(false)
+const heroSwitchDurationMs = 820
+const wheelIntentThreshold = 30
 let switchTimer
 
 function goToPage(page) {
@@ -194,31 +217,47 @@ function goToPage(page) {
   window.clearTimeout(switchTimer)
   switchTimer = window.setTimeout(() => {
     isSwitching.value = false
-  }, 1000)
+  }, heroSwitchDurationMs)
+}
+
+function scrollPastHero() {
+  const nextSection = heroStage.value?.nextElementSibling
+  if (!nextSection) {
+    return
+  }
+
+  nextSection.scrollIntoView({
+    behavior: 'smooth',
+    block: 'start',
+  })
 }
 
 function handleHeroWheel(event) {
-  if (!heroStage.value || Math.abs(event.deltaY) < 8) {
+  if (!heroStage.value || Math.abs(event.deltaY) < wheelIntentThreshold) {
     return
   }
 
   const direction = event.deltaY > 0 ? 1 : -1
 
   if (currentPage.value === 1 && direction > 0) {
+    event.preventDefault()
     goToPage(2)
     return
   }
 
   if (currentPage.value === 2 && direction > 0 && !isSwitching.value) {
-    window.scrollTo({
-      top: heroStage.value.offsetHeight,
-      behavior: 'smooth',
-    })
+    event.preventDefault()
+    scrollPastHero()
     return
   }
 
   if (currentPage.value === 2 && direction < 0 && window.scrollY <= 2) {
+    event.preventDefault()
     goToPage(1)
   }
 }
+
+onBeforeUnmount(() => {
+  window.clearTimeout(switchTimer)
+})
 </script>

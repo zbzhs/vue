@@ -179,10 +179,24 @@
       <button class="detail-close" type="button" :aria-label="ui.closeDetail" @click="closeProduct">
         &times;
       </button>
-      <img :src="resolveProductImage(activeProduct.image, activeProduct.code)" :alt="activeProduct.displayName" />
+      <div class="detail-media">
+        <img class="detail-main-image" :src="activeDetailImage" :alt="activeProduct.displayName" />
+
+        <div v-if="activeProductGalleryImages.length > 1" class="detail-thumbs">
+          <button
+            v-for="(image, index) in activeProductGalleryImages"
+            :key="`${activeProduct.code}-thumb-${index}`"
+            type="button"
+            class="detail-thumb"
+            :class="{ active: activeDetailImage === image }"
+            @click="activeDetailImage = image"
+          >
+            <img :src="image" :alt="`${activeProduct.displayName} ${index + 1}`" />
+          </button>
+        </div>
+      </div>
 
       <div class="detail-copy">
-        <p class="detail-series">{{ activeProduct.displaySeries }}</p>
         <h2>{{ activeProduct.displayName }}</h2>
         <strong>{{ formatPrice(activeProduct.price) }}</strong>
         <p>{{ ui.styleNo }}: {{ activeProduct.code }} | {{ activeProduct.brand }}</p>
@@ -198,9 +212,6 @@
         </dl>
 
         <p v-if="activeProduct.displaySellingPoint">{{ activeProduct.displaySellingPoint }}</p>
-        <p v-if="activeProduct.displayGuaranteeLines.length">
-          {{ activeProduct.displayGuaranteeLines.join(' / ') }}
-        </p>
         <p v-if="activeProduct.displayRemark">{{ activeProduct.displayRemark }}</p>
       </div>
     </article>
@@ -227,6 +238,8 @@ const allFilterKey = '__all__'
 const primaryImagePrefix = '/images/products/'
 const alternateImagePrefix = '/images/products%201/'
 const imageSwapIntervalMs = 2000
+const hiddenDetailSpecLabels = new Set(['系列', '石颜色', '实时库存', '达播价', '佣金', '未出货数'])
+const hiddenDetailTexts = new Set(['送胶耳堵', 'Complimentary silicone backs'])
 const route = useRoute()
 const { locale } = useLocale()
 
@@ -312,6 +325,7 @@ const draftSeries = ref(allFilterKey)
 const showFilterPanel = ref(false)
 const showDrawerSearch = ref(false)
 const activeProductCode = ref('')
+const activeDetailImage = ref('')
 const productSection = ref(null)
 const imageSwapTick = ref(0)
 const imageSwapOverrides = ref({})
@@ -338,12 +352,15 @@ const localizedProducts = computed(() => {
     const displayGuaranteeLines = (product.guaranteeLines ?? []).map((line) =>
       localizeFreeText(line, locale.value),
     )
-    const displayRemark = localizeFreeText(product.remark, locale.value)
-    const displaySpecs = (product.specs ?? []).map((item) => ({
-      rawLabel: item.label,
-      label: localizeSpecLabel(item.label, locale.value),
-      value: localizeSpecValue(item.label, item.value, locale.value),
-    }))
+    const localizedRemark = localizeFreeText(product.remark, locale.value)
+    const displayRemark = hiddenDetailTexts.has(localizedRemark) ? '' : localizedRemark
+    const displaySpecs = (product.specs ?? [])
+      .filter((item) => item?.label && !hiddenDetailSpecLabels.has(item.label))
+      .map((item) => ({
+        rawLabel: item.label,
+        label: localizeSpecLabel(item.label, locale.value),
+        value: localizeSpecValue(item.label, item.value, locale.value),
+      }))
 
     return {
       ...product,
@@ -392,6 +409,15 @@ const activeFilterCount = computed(() => {
 
 const activeProduct = computed(() => {
   return localizedProducts.value.find((product) => product.code === activeProductCode.value) ?? null
+})
+
+const activeProductGalleryImages = computed(() => {
+  if (!activeProduct.value) {
+    return []
+  }
+
+  const images = [activeProduct.value.image, ...(activeProduct.value.detailImages ?? [])].filter(Boolean)
+  return images.filter((image, index) => images.indexOf(image) === index)
 })
 
 function searchText(product) {
@@ -589,10 +615,12 @@ async function scrollToProducts() {
 
 function openProduct(product) {
   activeProductCode.value = product.code
+  activeDetailImage.value = product.image
 }
 
 function closeProduct() {
   activeProductCode.value = ''
+  activeDetailImage.value = ''
 }
 
 onMounted(() => {
@@ -610,6 +638,21 @@ watch(
   () => [route.query.series, products.value.length],
   () => {
     syncSeriesFromRoute()
+  },
+  { immediate: true },
+)
+
+watch(
+  activeProductGalleryImages,
+  (images) => {
+    if (!images.length) {
+      activeDetailImage.value = ''
+      return
+    }
+
+    if (!images.includes(activeDetailImage.value)) {
+      activeDetailImage.value = images[0]
+    }
   },
   { immediate: true },
 )

@@ -1,36 +1,35 @@
 <template>
-  <section class="content-section buying-content">
-    <div class="buying-copy">
-      <aside class="buying-note">
-        <p class="eyebrow dark">{{ page.kicker }}</p>
-        <h2 v-html="page.noteTitle"></h2>
-        <p>{{ page.noteText }}</p>
-      </aside>
+  <section class="buying-editorial-page">
+    <div class="buying-editorial-copy">
+      <div class="buying-editorial-steps">
+        <article
+          v-for="item in page.items"
+          :key="item.title"
+          class="buying-editorial-step"
+        >
+          <div class="buying-editorial-step-index">
+            <span>{{ item.index }}</span>
+          </div>
 
-      <div class="buying-steps">
-        <article v-for="item in page.items" :key="item.title">
-          <span>{{ item.index }}</span>
-          <div>
+          <div class="buying-editorial-step-copy">
             <h2>{{ item.title }}</h2>
             <p>{{ item.text }}</p>
           </div>
-          <span class="buying-arrow">›</span>
+
+          <span class="buying-editorial-step-arrow" aria-hidden="true">›</span>
         </article>
       </div>
     </div>
 
-    <div class="buying-gallery" :aria-label="page.galleryAriaLabel">
+    <div class="buying-editorial-gallery" :aria-label="page.galleryAriaLabel">
       <RouterLink
         v-for="card in page.gallery"
-        :key="card.seriesKey"
+        :key="card.key"
         :to="{ name: 'products', query: { series: card.seriesKey } }"
-        :class="['buying-tile', card.layoutClass]"
+        :class="['buying-editorial-tile', card.layoutClass]"
+        :aria-label="card.linkLabel"
       >
         <img :src="card.image" :alt="card.alt" />
-        <span class="buying-tile-overlay">
-          <span class="buying-tile-series">{{ card.series }}</span>
-          <span class="buying-tile-link">{{ page.galleryLink }}</span>
-        </span>
       </RouterLink>
     </div>
   </section>
@@ -48,40 +47,55 @@ const { locale } = useLocale()
 
 const pagesByLocale = {
   zh: {
-    kicker: 'How to choose',
-    noteTitle: '先判断佩戴场景<br />再决定预算与细节',
-    noteText:
-      '选购珠宝不必一开始就纠结所有参数。先把需求拆成几个关键问题，再去比较材质、款式、尺寸和预算。',
-    galleryAriaLabel: '选购指南系列拼图',
-    galleryLink: '查看该系列',
+    galleryAriaLabel: '选购指南图片拼图',
     gallery: [
       {
+        key: 'occasion-black',
         seriesKey: '小清新吊坠',
-        series: '小清新吊坠',
         image: '/images/guide/1.png',
-        alt: '小清新吊坠系列佩戴展示图',
-        layoutClass: 'buying-tile-primary',
+        alt: '黑色礼服珠宝搭配近景',
+        linkLabel: '查看小清新吊坠系列',
+        layoutClass: 'buying-editorial-tile-primary',
       },
       {
+        key: 'occasion-bridal',
         seriesKey: 'THE ONE系列',
-        series: 'THE ONE系列',
         image: '/images/guide/2.png',
-        alt: 'THE ONE系列婚礼佩戴展示图',
-        layoutClass: 'buying-tile-top',
+        alt: '婚礼场景项链佩戴图',
+        linkLabel: '查看 THE ONE 系列',
+        layoutClass: 'buying-editorial-tile-top',
       },
       {
-        seriesKey: '粉钻系列',
-        series: '粉钻系列',
-        image: '/images/guide/3.png',
-        alt: '粉钻系列日常佩戴展示图',
-        layoutClass: 'buying-tile-middle',
-      },
-      {
+        key: 'style-tailored',
         seriesKey: '时尚小清新系列',
-        series: '时尚小清新系列',
+        image: '/images/guide/3.png',
+        alt: '白色西装造型与珠宝搭配图',
+        linkLabel: '查看时尚小清新系列',
+        layoutClass: 'buying-editorial-tile-middle',
+      },
+      {
+        key: 'style-dinner',
+        seriesKey: '粉钻系列',
         image: '/images/guide/4.png',
-        alt: '时尚小清新系列晚宴佩戴展示图',
-        layoutClass: 'buying-tile-bottom',
+        alt: '晚宴场景项链佩戴图',
+        linkLabel: '查看粉钻系列',
+        layoutClass: 'buying-editorial-tile-bottom',
+      },
+      {
+        key: 'size-tailored',
+        seriesKey: '时尚小清新系列',
+        image: '/images/guide/5.png',
+        alt: '蓝色礼服珠宝佩戴图',
+        linkLabel: '查看时尚小清新系列更多款式',
+        layoutClass: 'buying-editorial-tile-fifth',
+      },
+      {
+        key: 'compare-black',
+        seriesKey: '小清新吊坠',
+        image: '/images/guide/6.png',
+        alt: '深色礼服耳饰佩戴图',
+        linkLabel: '查看小清新吊坠系列更多款式',
+        layoutClass: 'buying-editorial-tile-sixth',
       },
     ],
     items: [
@@ -108,40 +122,55 @@ const pagesByLocale = {
     ],
   },
   en: {
-    kicker: 'How to choose',
-    noteTitle: 'Start with the wearing scene<br />then settle the budget and details',
-    noteText:
-      'You do not need to solve every parameter at the beginning. Break the decision into a few key questions first, then compare material, style, size, and budget.',
-    galleryAriaLabel: 'Buying guide collection gallery',
-    galleryLink: 'View collection',
+    galleryAriaLabel: 'Buying guide image collage',
     gallery: [
       {
+        key: 'occasion-black',
         seriesKey: '小清新吊坠',
-        series: 'Fresh Pendant',
         image: '/images/guide/1.png',
-        alt: 'Fresh Pendant collection look',
-        layoutClass: 'buying-tile-primary',
+        alt: 'Black dress jewelry close-up',
+        linkLabel: 'View Fresh Pendant collection',
+        layoutClass: 'buying-editorial-tile-primary',
       },
       {
+        key: 'occasion-bridal',
         seriesKey: 'THE ONE系列',
-        series: 'THE ONE Collection',
         image: '/images/guide/2.png',
-        alt: 'THE ONE collection wedding look',
-        layoutClass: 'buying-tile-top',
+        alt: 'Bridal necklace look',
+        linkLabel: 'View THE ONE collection',
+        layoutClass: 'buying-editorial-tile-top',
       },
       {
-        seriesKey: '粉钻系列',
-        series: 'Pink Diamond Collection',
-        image: '/images/guide/3.png',
-        alt: 'Pink Diamond collection everyday look',
-        layoutClass: 'buying-tile-middle',
-      },
-      {
+        key: 'style-tailored',
         seriesKey: '时尚小清新系列',
-        series: 'Modern Fresh Collection',
+        image: '/images/guide/3.png',
+        alt: 'Tailored styling with jewelry',
+        linkLabel: 'View Modern Fresh collection',
+        layoutClass: 'buying-editorial-tile-middle',
+      },
+      {
+        key: 'style-dinner',
+        seriesKey: '粉钻系列',
         image: '/images/guide/4.png',
-        alt: 'Modern Fresh collection evening look',
-        layoutClass: 'buying-tile-bottom',
+        alt: 'Dinner scene necklace styling',
+        linkLabel: 'View Pink Diamond collection',
+        layoutClass: 'buying-editorial-tile-bottom',
+      },
+      {
+        key: 'size-tailored',
+        seriesKey: '时尚小清新系列',
+        image: '/images/guide/5.png',
+        alt: 'Blue dress jewelry styling',
+        linkLabel: 'View more Modern Fresh pieces',
+        layoutClass: 'buying-editorial-tile-fifth',
+      },
+      {
+        key: 'compare-black',
+        seriesKey: '小清新吊坠',
+        image: '/images/guide/6.png',
+        alt: 'Dark dress earring styling',
+        linkLabel: 'View more Fresh Pendant pieces',
+        layoutClass: 'buying-editorial-tile-sixth',
       },
     ],
     items: [
@@ -153,21 +182,21 @@ const pagesByLocale = {
       {
         index: '02',
         title: 'Read the Style',
-        text: 'Do you prefer clean lines, softer daily wear, vintage refinement, or a stronger visual presence? Style directly affects wearing frequency, and what suits your personality matters more than short-lived trends.',
+        text: 'Do you prefer clean lines, softer daily wear, vintage refinement, or a stronger visual presence? The right style affects wearing frequency, and what suits your temperament matters more than chasing trends.',
       },
       {
         index: '03',
         title: 'Check the Size',
-        text: 'Ring size, bracelet length, necklace drop, and earring proportion all affect comfort and appearance. For gifts, choose a size range that is easier to adjust later.',
+        text: 'Ring size, bracelet length, necklace drop, and earring proportion all affect comfort and appearance. For gifts, it is safer to start with a size range that is easier to adjust later.',
       },
       {
         index: '04',
         title: 'Compare on the Body',
-        text: 'Think about color, proportion, skin tone, hand shape, face shape, and daily styling together. Do not judge only from a single product image. The right piece usually feels natural and enduring when worn.',
+        text: 'Consider color, proportion, skin tone, hand shape, face shape, and daily styling together. The right piece usually feels more natural and more enduring once it is actually worn.',
       },
     ],
   },
 }
 
-const page = computed(() => pagesByLocale[locale.value])
+const page = computed(() => pagesByLocale[locale.value] || pagesByLocale.zh)
 </script>
