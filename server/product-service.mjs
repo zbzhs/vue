@@ -14,7 +14,7 @@ const dbConfig = {
   host: process.env.DB_HOST || "localhost",
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "123456",
+  password: process.env.DB_PASSWORD || "dering123654",
   database: process.env.DB_NAME || "jewelry_product_db",
   charset: "utf8mb4",
   decimalNumbers: true,

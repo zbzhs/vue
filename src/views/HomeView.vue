@@ -1,90 +1,74 @@
 <template>
   <div class="home-page">
-    <section
-      ref="heroStage"
-      class="hero-stage"
-      :class="{ 'is-switching': isSwitching }"
-      @wheel="handleHeroWheel"
-    >
-      <div
-        class="hero-track"
-        :style="{ transform: `translateY(-${(currentPage - 1) * 100}%)` }"
+    <section class="home-hero-banner">
+      <div class="home-hero-slides" aria-hidden="true">
+        <div
+          v-for="(slide, index) in heroSlides"
+          :key="slide"
+          class="home-hero-slide"
+          :class="{
+            'is-active': index === activeSlide,
+            'is-background-2': slide.includes('background2'),
+            'is-background-4': slide.includes('background4'),
+          }"
+          :style="{ backgroundImage: `url(${slide})` }"
+        >
+          <div class="home-hero-mark" aria-hidden="true">
+            <span class="home-hero-mark-kicker">RADIATE SOFTLY</span>
+            <span class="home-hero-mark-subtitle">BESPOKE FOR LOVE</span>
+            <span class="home-hero-mark-rule"></span>
+            <span class="home-hero-mark-cn">{{ heroMarkLine }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="home-hero-overlay" aria-hidden="true"></div>
+
+      <div class="home-hero-inner">
+        <div
+          v-if="heroSlides.length > 1"
+          class="home-hero-pagination"
+          :aria-label="copy.hero.paginationLabel"
+        >
+          <button
+            v-for="(slide, index) in heroSlides"
+            :key="`${slide}-dot`"
+            class="home-hero-dot"
+            :class="{ 'is-active': index === activeSlide }"
+            type="button"
+            :aria-label="`${copy.hero.goToSlideLabel} ${index + 1}`"
+            @click="setActiveSlide(index)"
+          ></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="home-brand-transition" aria-label="DERING">
+      <div class="home-brand-wordmark">
+        <span>DERING</span>
+        <p>{{ copy.series.scrollHint }}</p>
+      </div>
+    </section>
+
+    <section class="home-series-section" :aria-label="copy.series.ariaLabel">
+      <RouterLink
+        v-for="card in copy.series.cards"
+        :key="card.key"
+        class="home-series-panel"
+        :class="`home-series-panel-${card.key}`"
+        :to="card.to"
+        :aria-label="card.ariaLabel"
       >
-        <section class="hero hero-primary" :class="{ 'is-active': currentPage === 1 }">
-          <div class="hero-shade"></div>
-          <div class="hero-content">
-            <p class="eyebrow">{{ copy.hero.primary.kicker }}</p>
-            <h1>{{ copy.hero.primary.title }}</h1>
-            <p class="hero-copy">
-              {{ copy.hero.primary.summary }}
-            </p>
-            <RouterLink class="primary-link" to="/products">{{ copy.hero.primary.cta }}</RouterLink>
-          </div>
-        </section>
+        <img class="home-series-panel-image" :src="card.image" :alt="card.alt" />
 
-        <section class="hero hero-secondary" :class="{ 'is-active': currentPage === 2 }">
-          <div class="hero-shade"></div>
-          <div class="hero-content align-right">
-            <p class="eyebrow">{{ copy.hero.secondary.kicker }}</p>
-            <h2>{{ copy.hero.secondary.title }}</h2>
-            <p class="hero-copy">
-              {{ copy.hero.secondary.summary }}
-            </p>
-            <RouterLink class="secondary-link" to="/process">{{ copy.hero.secondary.cta }}</RouterLink>
-          </div>
-        </section>
-      </div>
+        <div class="home-series-panel-shade" aria-hidden="true"></div>
 
-      <div class="page-dots" :aria-label="copy.hero.paginationLabel">
-        <button
-          type="button"
-          :class="{ active: currentPage === 1 }"
-          :aria-label="copy.hero.firstDotLabel"
-          @click="goToPage(1)"
-        ></button>
-        <button
-          type="button"
-          :class="{ active: currentPage === 2 }"
-          :aria-label="copy.hero.secondDotLabel"
-          @click="goToPage(2)"
-        ></button>
-      </div>
-    </section>
-
-    <section class="home-section home-film-section">
-      <div class="home-film-shell">
-        <div class="section-heading home-film-heading">
-          <p class="eyebrow dark">{{ locale === 'en' ? 'Brand Film' : '品牌概念宣传片' }}</p>
-          <h2>{{ locale === 'en' ? 'DERING Brand Concept Film' : 'DERING 品牌概念宣传片' }}</h2>
+        <div class="home-series-panel-copy">
+          <p class="eyebrow">{{ card.kicker }}</p>
+          <h2>{{ card.title }}</h2>
+          <p>{{ card.text }}</p>
+          <span>{{ copy.series.cta }}</span>
         </div>
-
-        <div class="home-film-frame">
-          <video
-            class="home-film-video"
-            src="/video/dering-brand-film.mp4"
-            :aria-label="locale === 'en' ? 'DERING brand concept film' : 'DERING 品牌概念宣传片'"
-            controls
-            muted
-            playsinline
-            preload="metadata"
-          ></video>
-        </div>
-      </div>
-    </section>
-
-    <section class="home-section">
-      <div class="section-heading">
-        <p class="eyebrow dark">{{ copy.company.kicker }}</p>
-        <h2>{{ copy.company.title }}</h2>
-      </div>
-      <div class="company-profile">
-        <article v-for="item in copy.company.blocks" :key="item.title" class="company-block">
-          <p class="company-card-eyebrow">{{ item.eyebrow }}</p>
-          <h3>{{ item.title }}</h3>
-          <p>{{ item.body }}</p>
-          <p v-if="item.secondary" class="company-card-en">{{ item.secondary }}</p>
-        </article>
-      </div>
+      </RouterLink>
     </section>
 
     <KnowledgeFooter footer-class="home-footer" />
@@ -92,62 +76,141 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 import KnowledgeFooter from '../components/KnowledgeFooter.vue'
 import { useLocale } from '../composables/useLocale'
 
 const { locale } = useLocale()
 
+const heroBackgroundModules = import.meta.glob('/public/images/home/background*', {
+  eager: true,
+  import: 'default',
+  query: '?url',
+})
+
+const parseBackgroundOrder = (path) => {
+  const match = path.match(/background(\d+)?\.[^.]+$/i)
+  if (!match) {
+    return Number.MAX_SAFE_INTEGER
+  }
+
+  return match[1] ? Number(match[1]) : 0
+}
+
+const heroSlides = Object.entries(heroBackgroundModules)
+  .sort(([leftPath], [rightPath]) => parseBackgroundOrder(leftPath) - parseBackgroundOrder(rightPath))
+  .map(([, url]) => url)
+
+if (!heroSlides.length) {
+  heroSlides.push('/images/home/background1.jpg')
+}
+
+const activeSlide = ref(0)
+let autoplayTimer = null
+
+const stopAutoplay = () => {
+  if (autoplayTimer) {
+    window.clearInterval(autoplayTimer)
+    autoplayTimer = null
+  }
+}
+
+const startAutoplay = () => {
+  if (heroSlides.length < 2) {
+    return
+  }
+
+  stopAutoplay()
+  autoplayTimer = window.setInterval(() => {
+    activeSlide.value = (activeSlide.value + 1) % heroSlides.length
+  }, 5000)
+}
+
+const setActiveSlide = (index) => {
+  activeSlide.value = index
+  startAutoplay()
+}
+
+onMounted(() => {
+  startAutoplay()
+})
+
+onBeforeUnmount(() => {
+  stopAutoplay()
+})
+
+const seriesCards = [
+  {
+    key: 'pink',
+    kicker: { zh: 'Colored Diamond', en: 'Colored Diamond', ja: 'カラーダイヤモンド', th: 'เพชรสี', ko: '컬러 다이아몬드', vi: 'Kim cương màu' },
+    title: { zh: '粉钻系列', en: 'Pink Diamond', ja: 'ピンクダイヤモンド', th: 'เพชรสีชมพู', ko: '핑크 다이아몬드', vi: 'Kim cương hồng' },
+    text: {
+      zh: '柔和粉色调与精致镶嵌，让礼物和收藏都更有记忆点。',
+      en: 'Soft pink tones and refined settings for gifts, milestones, and collectible pieces.',
+      ja: 'やわらかなピンクの色合いと繊細なセッティングが、贈り物やコレクションを印象的にします。',
+      th: 'โทนสีชมพูอ่อนและงานฝังประณีต ทำให้ของขวัญและงานสะสมมีความทรงจำยิ่งขึ้น',
+      ko: '부드러운 핑크 톤과 섬세한 세팅으로 선물과 컬렉션에 특별한 기억을 더합니다.',
+      vi: 'Sắc hồng mềm mại cùng thiết kế tinh tế giúp món quà và bộ sưu tập trở nên đáng nhớ hơn.',
+    },
+    image: '/images/home/series/series1.png',
+    alt: { zh: '粉钻系列', en: 'Pink diamond collection', ja: 'ピンクダイヤモンドコレクション', th: 'คอลเลกชันเพชรสีชมพู', ko: '핑크 다이아몬드 컬렉션', vi: 'Bộ sưu tập kim cương hồng' },
+    ariaLabel: { zh: '查看粉钻系列', en: 'View pink diamond collection', ja: 'ピンクダイヤモンドを見る', th: 'ดูคอลเลกชันเพชรสีชมพู', ko: '핑크 다이아몬드 컬렉션 보기', vi: 'Xem bộ sưu tập kim cương hồng' },
+    to: { name: 'series', params: { slug: 'pink' } },
+  },
+  {
+    key: 'prong',
+    kicker: { zh: 'Classic Setting', en: 'Classic Setting', ja: 'クラシックセッティング', th: 'ตัวเรือนคลาสสิก', ko: '클래식 세팅', vi: 'Ổ chấu cổ điển' },
+    title: { zh: '四爪/六爪系列', en: 'Four-Prong / Six-Prong', ja: '4本爪 / 6本爪', th: 'สี่หนาม / หกหนาม', ko: '4프롱 / 6프롱', vi: 'Bốn chấu / Sáu chấu' },
+    text: {
+      zh: '干净利落的爪镶比例，突出主石火彩与日常佩戴的轻盈感。',
+      en: 'Clean prong proportions designed to highlight fire, brightness, and daily wearability.',
+      ja: 'すっきりとした爪留めのバランスで、主石の輝きと日常使いの軽やかさを引き立てます。',
+      th: 'สัดส่วนหนามเตยที่เรียบคม ช่วยขับประกายไฟและความสว่างของเม็ดหลักในทุกวัน',
+      ko: '간결한 프롱 비율로 메인 스톤의 광채와 데일리 착용의 가벼움을 강조합니다.',
+      vi: 'Tỷ lệ chấu gọn gàng làm nổi bật ánh lửa, độ sáng và cảm giác nhẹ khi đeo hằng ngày.',
+    },
+    image: '/images/home/series/series2.png',
+    alt: { zh: '四爪六爪系列', en: 'Four-prong and six-prong collection', ja: '4本爪と6本爪のコレクション', th: 'คอลเลกชันสี่หนามและหกหนาม', ko: '4프롱 및 6프롱 컬렉션', vi: 'Bộ sưu tập bốn chấu và sáu chấu' },
+    ariaLabel: { zh: '查看四爪和六爪系列', en: 'View four-prong and six-prong collections', ja: '4本爪と6本爪を見る', th: 'ดูคอลเลกชันสี่หนามและหกหนาม', ko: '4프롱 및 6프롱 컬렉션 보기', vi: 'Xem bộ sưu tập bốn chấu và sáu chấu' },
+    to: { name: 'series', params: { slug: 'prong' } },
+  },
+  {
+    key: 'marquise',
+    kicker: { zh: 'Marquise Cut', en: 'Marquise Cut', ja: 'マーキスカット', th: 'ทรงมาร์quise', ko: '마퀴즈 컷', vi: 'Cắt marquise' },
+    title: { zh: '马眼系列', en: 'Marquise', ja: 'マーキス', th: 'มาร์quise', ko: '마퀴즈', vi: 'Marquise' },
+    text: {
+      zh: '修长的马眼切割拉伸线条，适合戒指、耳饰与项链的优雅造型。',
+      en: 'An elongated cut that brings graceful lines to rings, earrings, and necklaces.',
+      ja: '細長いマーキスカットが、リング、イヤーアクセ、ネックレスに優雅なラインを添えます。',
+      th: 'ทรงมาร์quise ที่เรียวยาวช่วยสร้างเส้นสายสง่างามให้แหวน ต่างหู และสร้อยคอ',
+      ko: '길게 뻗은 마퀴즈 컷이 반지, 귀걸이, 목걸이에 우아한 라인을 더합니다.',
+      vi: 'Dáng cắt marquise thon dài mang lại đường nét thanh lịch cho nhẫn, hoa tai và dây chuyền.',
+    },
+    image: '/images/home/series/series3.png',
+    alt: { zh: '马眼系列', en: 'Marquise collection', ja: 'マーキスコレクション', th: 'คอลเลกชันมาร์quise', ko: '마퀴즈 컬렉션', vi: 'Bộ sưu tập marquise' },
+    ariaLabel: { zh: '查看马眼系列', en: 'View marquise collection', ja: 'マーキスコレクションを見る', th: 'ดูคอลเลกชันมาร์quise', ko: '마퀴즈 컬렉션 보기', vi: 'Xem bộ sưu tập marquise' },
+    to: { name: 'series', params: { slug: 'marquise' } },
+  },
+]
+
 const homeCopy = {
   zh: {
     hero: {
       primary: {
         kicker: '高级珠宝与定制设计',
-        title: '戴莉',
-        summary: '以钻石、彩宝与贵金属工艺，呈现值得被珍藏的日常光芒。',
-        cta: '浏览系列',
+        title: 'DERING',
       },
-      secondary: {
-        kicker: 'Lab Grown Diamond',
-        title: '关于培育钻',
-        summary:
-          '培育钻在实验室环境中生长形成，拥有与天然钻石一致的物理和化学特性，兼顾璀璨火彩、佩戴美感与更清晰透明的选择逻辑。',
-        cta: '了解培育钻',
-      },
-      paginationLabel: '首页大屏切换',
-      firstDotLabel: '切换到第 1 屏',
-      secondDotLabel: '切换到第 2 屏',
+      paginationLabel: '首页大图轮播',
+      goToSlideLabel: '切换到第',
+      markKicker: '柔和绽放',
+      markSubtitle: '为爱定制',
+      markLine: '自然的韵律 艺术的共鸣',
     },
-    company: {
-      kicker: 'Company Profile',
-      title: '公司介绍',
-      blocks: [
-        {
-          eyebrow: 'Brand Introduction',
-          title: 'DERING 品牌介绍',
-          body:
-            '品牌名称：DERING（中文：戴莉）。DERING 是港福珠宝旗下专注高品质培育钻石的供应链品牌，依托港福珠宝深耕珠宝行业多年的成熟生产体系、强大供应链整合能力与严苛品控标准，以“让钻石回归价值本身”为理念，坚持高标准钻石品质、稳定现货供应与高性价比定价，为全国零售品牌、电商渠道、直播机构、线下批发商提供一站式培育钻石供货解决方案。',
-          secondary:
-            "DERING is a supply-chain brand under Gangfu Jewelry focused on high-quality lab-grown diamonds. Backed by Gangfu Jewelry's mature manufacturing system, strong supply-chain integration, and rigorous quality control, DERING is guided by the belief of bringing diamonds back to their intrinsic value, offering premium quality, stable ready stock, and competitive pricing for retail brands, e-commerce channels, live-streaming studios, and offline wholesalers across China.",
-        },
-        {
-          eyebrow: 'Products & Quality',
-          title: '设计核心与主营品类',
-          body:
-            '品牌以“简约高级、日常可戴、婚庆 + 悦己双场景”为设计核心，主营培育钻石戒指、项链、耳钉、手链全品类成品。所有产品均采用高品质 CVD/HPHT 培育钻石，搭配 18K 金、Pt950 铂金、S925 银精工镶嵌，全系支持 IGI/NGTC 双证认证，品质透明、溯源可查、售后稳定。',
-          secondary:
-            'Centered on a design language that is minimal yet elevated, easy for daily wear, and suitable for both wedding celebrations and self-reward moments, DERING offers a full range of finished lab-grown diamond jewelry including rings, necklaces, earrings, and bracelets. Every piece uses high-quality CVD/HPHT lab-grown diamonds paired with fine 18K gold, Pt950 platinum, or S925 silver settings, with IGI and NGTC dual certification support for transparent quality, traceable sourcing, and reliable after-sales service.',
-        },
-        {
-          eyebrow: 'Supply & Cooperation',
-          title: '合作能力与长期服务',
-          body:
-            '依托港福珠宝供应链优势，DERING 具备快速现货反应、柔性定制、大货产能、贴牌代工等多元合作能力，可满足批发、定制、直播、贴牌等多渠道需求。未来，DERING 将持续以专业、稳定、高效的服务，成为客户长期信赖的培育钻石合作伙伴。',
-          secondary:
-            "Supported by Gangfu Jewelry's supply-chain strengths, DERING provides diversified cooperation capabilities including fast ready-stock response, flexible customization, large-volume production, and private-label OEM services, meeting the needs of wholesale, custom projects, livestream sales, and branding partnerships across multiple channels. Looking ahead, DERING will continue to serve as a professional, stable, and efficient long-term lab-grown diamond partner trusted by its clients.",
-        },
-      ],
+    series: {
+      ariaLabel: '首页精选系列',
+      cta: '查看系列',
+      scrollHint: '下拉查看更多系列',
     },
   },
   en: {
@@ -155,109 +218,373 @@ const homeCopy = {
       primary: {
         kicker: 'Fine Jewelry and Bespoke Design',
         title: 'DERING',
-        summary:
-          'We shape diamonds, gemstones, and precious metals into jewelry meant to bring lasting brilliance to everyday life.',
-        cta: 'View Collections',
       },
-      secondary: {
-        kicker: 'Lab Grown Diamond',
-        title: 'About Lab Diamonds',
-        summary:
-          'Lab-grown diamonds are created in controlled environments and share the same physical and chemical properties as natural diamonds, combining brilliant sparkle, elegant wearability, and a clearer value proposition.',
-        cta: 'Explore the Process',
-      },
-      paginationLabel: 'Home hero pagination',
-      firstDotLabel: 'Go to slide 1',
-      secondDotLabel: 'Go to slide 2',
+      paginationLabel: 'Home hero carousel',
+      goToSlideLabel: 'Go to slide',
+      markKicker: 'Radiate Softly',
+      markSubtitle: 'Bespoke for Love',
+      markLine: 'Natural rhythm, artistic resonance',
     },
-    company: {
-      kicker: 'Company Profile',
-      title: 'About DERING',
-      blocks: [
-        {
-          eyebrow: 'Brand Introduction',
-          title: 'DERING at a Glance',
-          body:
-            "DERING is a supply-chain jewelry brand under Gangfu Jewelry dedicated to high-quality lab-grown diamonds. With years of manufacturing experience, deep supply-chain integration, and strict quality control, the brand follows one clear principle: let diamonds return to their true value.",
-        },
-        {
-          eyebrow: 'Products & Quality',
-          title: 'Design Direction and Core Categories',
-          body:
-            'Our collections balance minimal elegance, daily wearability, and both wedding and self-reward scenarios. The catalog spans rings, necklaces, earrings, and bracelets crafted with premium CVD/HPHT lab-grown diamonds, paired with 18K gold, Pt950 platinum, and S925 silver settings.',
-        },
-        {
-          eyebrow: 'Supply & Cooperation',
-          title: 'Flexible Supply and Long-Term Service',
-          body:
-            'DERING supports ready-stock fulfillment, flexible customization, volume production, and private-label manufacturing for wholesale, livestream, retail, and branded collaboration channels. The goal is stable, professional, and efficient long-term partnership.',
-        },
-      ],
+    series: {
+      ariaLabel: 'Featured collections on the home page',
+      cta: 'View Collection',
+      scrollHint: 'Scroll to view more collections',
+    },
+  },
+  ja: {
+    hero: {
+      primary: {
+        kicker: 'ファインジュエリーとビスポークデザイン',
+        title: 'DERING',
+      },
+      paginationLabel: 'ホームヒーローカルーセル',
+      goToSlideLabel: 'スライドへ',
+      markKicker: 'やわらかく輝く',
+      markSubtitle: '愛のためのビスポーク',
+      markLine: '自然のリズム、芸術の響き',
+    },
+    series: {
+      ariaLabel: 'ホームの注目コレクション',
+      cta: 'コレクションを見る',
+      scrollHint: 'スクロールしてさらに見る',
+    },
+  },
+  th: {
+    hero: {
+      primary: {
+        kicker: 'ไฟน์จิวเวลรี่และงานออกแบบสั่งทำ',
+        title: 'DERING',
+      },
+      paginationLabel: 'สไลด์ภาพหน้าแรก',
+      goToSlideLabel: 'ไปยังสไลด์',
+      markKicker: 'เปล่งประกายอย่างนุ่มนวล',
+      markSubtitle: 'ออกแบบเพื่อความรัก',
+      markLine: 'จังหวะธรรมชาติ เสียงสะท้อนแห่งศิลปะ',
+    },
+    series: {
+      ariaLabel: 'คอลเลกชันแนะนำบนหน้าแรก',
+      cta: 'ดูคอลเลกชัน',
+      scrollHint: 'เลื่อนเพื่อดูคอลเลกชันเพิ่มเติม',
+    },
+  },
+  ko: {
+    hero: {
+      primary: {
+        kicker: '파인 주얼리와 맞춤 디자인',
+        title: 'DERING',
+      },
+      paginationLabel: '홈 히어로 캐러셀',
+      goToSlideLabel: '슬라이드로 이동',
+      markKicker: '부드럽게 빛나다',
+      markSubtitle: '사랑을 위한 비스포크',
+      markLine: '자연의 리듬, 예술의 울림',
+    },
+    series: {
+      ariaLabel: '홈 주요 컬렉션',
+      cta: '컬렉션 보기',
+      scrollHint: '스크롤하여 더 많은 컬렉션 보기',
+    },
+  },
+  vi: {
+    hero: {
+      primary: {
+        kicker: 'Trang sức cao cấp và thiết kế riêng',
+        title: 'DERING',
+      },
+      paginationLabel: 'Băng chuyền trang chủ',
+      goToSlideLabel: 'Chuyển tới slide',
+      markKicker: 'Tỏa sáng dịu dàng',
+      markSubtitle: 'Thiết kế riêng cho tình yêu',
+      markLine: 'Nhịp điệu tự nhiên, cộng hưởng nghệ thuật',
+    },
+    series: {
+      ariaLabel: 'Bộ sưu tập nổi bật trên trang chủ',
+      cta: 'Xem bộ sưu tập',
+      scrollHint: 'Cuộn xuống để xem thêm bộ sưu tập',
     },
   },
 }
 
-const copy = computed(() => homeCopy[locale.value])
+const cleanSeriesCards = [
+  {
+    key: 'pink',
+    kicker: {
+      zh: '彩钻系列',
+      en: 'Colored Diamond',
+      ja: 'カラーダイヤモンド',
+      th: 'เพชรสี',
+      ko: '컬러 다이아몬드',
+      vi: 'Kim cuong mau',
+    },
+    title: {
+      zh: '粉钻系列',
+      en: 'Pink Diamond',
+      ja: 'ピンクダイヤモンド',
+      th: 'เพชรสีชมพู',
+      ko: '핑크 다이아몬드',
+      vi: 'Kim cuong hong',
+    },
+    text: {
+      zh: '柔和粉色调与精致镶嵌，让礼物和收藏都更有记忆点。',
+      en: 'Soft pink tones and refined settings for gifts, milestones, and collectible pieces.',
+      ja: 'やわらかなピンクの色合いと繊細なセッティングで、贈り物やコレクションを印象的に。',
+      th: 'โทนชมพูอ่อนและงานฝังละเอียด เหมาะสำหรับของขวัญ ช่วงเวลาสำคัญ และชิ้นสะสม',
+      ko: '부드러운 핑크 톤과 섬세한 세팅으로 선물과 컬렉션에 특별한 기억을 더합니다.',
+      vi: 'Sac hong mem mai va thiet ke tinh te cho qua tang, dau moc va nhung mon suu tam dang nho.',
+    },
+    image: '/images/home/series/series1.png',
+    alt: {
+      zh: '粉钻系列',
+      en: 'Pink diamond collection',
+      ja: 'ピンクダイヤモンドコレクション',
+      th: 'คอลเลกชันเพชรสีชมพู',
+      ko: '핑크 다이아몬드 컬렉션',
+      vi: 'Bo suu tap kim cuong hong',
+    },
+    ariaLabel: {
+      zh: '查看粉钻系列',
+      en: 'View pink diamond collection',
+      ja: 'ピンクダイヤモンドを見る',
+      th: 'ดูคอลเลกชันเพชรสีชมพู',
+      ko: '핑크 다이아몬드 컬렉션 보기',
+      vi: 'Xem bo suu tap kim cuong hong',
+    },
+    to: { name: 'series', params: { slug: 'pink' } },
+  },
+  {
+    key: 'prong',
+    kicker: {
+      zh: '经典镶嵌',
+      en: 'Classic Setting',
+      ja: 'クラシックセッティング',
+      th: 'งานฝังคลาสสิก',
+      ko: '클래식 세팅',
+      vi: 'Kieu dinh co dien',
+    },
+    title: {
+      zh: '四爪/六爪系列',
+      en: 'Four-Prong / Six-Prong',
+      ja: '4本爪 / 6本爪',
+      th: 'สี่หนาม / หกหนาม',
+      ko: '4프롱 / 6프롱',
+      vi: 'Bon chau / Sau chau',
+    },
+    text: {
+      zh: '干净利落的爪镶比例，突出主石火彩与日常佩戴的轻盈感。',
+      en: 'Clean prong proportions designed to highlight fire, brightness, and daily wearability.',
+      ja: 'すっきりとした爪留めのバランスで、主石の輝きと毎日の使いやすさを引き立てます。',
+      th: 'สัดส่วนหนามที่สะอาดตา ช่วยขับประกาย ความสว่าง และความเบาสบายในการสวมใส่ทุกวัน',
+      ko: '깔끔한 프롱 비율로 메인 스톤의 광채와 일상 착용의 가벼움을 돋보이게 합니다.',
+      vi: 'Ti le chau gon gang giup noi bat lua, do sang va cam giac de deo hang ngay.',
+    },
+    image: '/images/home/series/series2.png',
+    alt: {
+      zh: '四爪六爪系列',
+      en: 'Four-prong and six-prong collection',
+      ja: '4本爪と6本爪のコレクション',
+      th: 'คอลเลกชันสี่หนามและหกหนาม',
+      ko: '4프롱 및 6프롱 컬렉션',
+      vi: 'Bo suu tap bon chau va sau chau',
+    },
+    ariaLabel: {
+      zh: '查看四爪和六爪系列',
+      en: 'View four-prong and six-prong collections',
+      ja: '4本爪と6本爪を見る',
+      th: 'ดูคอลเลกชันสี่หนามและหกหนาม',
+      ko: '4프롱 및 6프롱 컬렉션 보기',
+      vi: 'Xem bo suu tap bon chau va sau chau',
+    },
+    to: { name: 'series', params: { slug: 'prong' } },
+  },
+  {
+    key: 'marquise',
+    kicker: {
+      zh: '马眼切割',
+      en: 'Marquise Cut',
+      ja: 'マーキスカット',
+      th: 'ทรงมาร์quise',
+      ko: '마퀴즈 컷',
+      vi: 'Cat marquise',
+    },
+    title: {
+      zh: '马眼系列',
+      en: 'Marquise',
+      ja: 'マーキス',
+      th: 'Marquise',
+      ko: '마퀴즈',
+      vi: 'Marquise',
+    },
+    text: {
+      zh: '修长的马眼切割拉伸线条，适合戒指、耳饰与项链的优雅造型。',
+      en: 'An elongated cut that brings graceful lines to rings, earrings, and necklaces.',
+      ja: '細長いマーキスカットが、リング、イヤリング、ネックレスに優雅なラインを添えます。',
+      th: 'รูปทรงยาวเรียวช่วยเพิ่มเส้นสายสง่างามให้แหวน ต่างหู และสร้อยคอ',
+      ko: '길게 뻗은 마퀴즈 컷이 반지, 귀걸이, 목걸이에 우아한 라인을 더합니다.',
+      vi: 'Dang cat marquise thon dai tao duong net thanh lich cho nhan, hoa tai va day chuyen.',
+    },
+    image: '/images/home/series/series3.png',
+    alt: {
+      zh: '马眼系列',
+      en: 'Marquise collection',
+      ja: 'マーキスコレクション',
+      th: 'คอลเลกชัน Marquise',
+      ko: '마퀴즈 컬렉션',
+      vi: 'Bo suu tap marquise',
+    },
+    ariaLabel: {
+      zh: '查看马眼系列',
+      en: 'View marquise collection',
+      ja: 'マーキスコレクションを見る',
+      th: 'ดูคอลเลกชัน Marquise',
+      ko: '마퀴즈 컬렉션 보기',
+      vi: 'Xem bo suu tap marquise',
+    },
+    to: { name: 'series', params: { slug: 'marquise' } },
+  },
+]
 
-const heroStage = ref(null)
-const currentPage = ref(1)
-const isSwitching = ref(false)
-const heroSwitchDurationMs = 820
-const wheelIntentThreshold = 30
-let switchTimer
-
-function goToPage(page) {
-  if (page === currentPage.value || isSwitching.value) {
-    return
-  }
-
-  window.scrollTo({ top: 0, behavior: 'auto' })
-  currentPage.value = page
-  isSwitching.value = true
-  window.clearTimeout(switchTimer)
-  switchTimer = window.setTimeout(() => {
-    isSwitching.value = false
-  }, heroSwitchDurationMs)
+const cleanHomeCopy = {
+  zh: {
+    hero: {
+      primary: {
+        kicker: '高级珠宝与定制设计',
+        title: 'DERING',
+      },
+      paginationLabel: '首页大图轮播',
+      goToSlideLabel: '切换到第',
+      markKicker: '柔和绽放',
+      markSubtitle: '为爱定制',
+      markLine: '自然的韵律 艺术的共鸣',
+    },
+    series: {
+      ariaLabel: '首页精选系列',
+      cta: '查看系列',
+      scrollHint: '下拉查看更多系列',
+    },
+  },
+  en: {
+    hero: {
+      primary: {
+        kicker: 'Fine Jewelry and Bespoke Design',
+        title: 'DERING',
+      },
+      paginationLabel: 'Home hero carousel',
+      goToSlideLabel: 'Go to slide',
+      markKicker: 'Radiate Softly',
+      markSubtitle: 'Bespoke for Love',
+      markLine: 'Natural rhythm, artistic resonance',
+    },
+    series: {
+      ariaLabel: 'Featured collections on the home page',
+      cta: 'View Collection',
+      scrollHint: 'Scroll to view more collections',
+    },
+  },
+  ja: {
+    hero: {
+      primary: {
+        kicker: 'ファインジュエリーとビスポークデザイン',
+        title: 'DERING',
+      },
+      paginationLabel: 'ホームヒーローカルーセル',
+      goToSlideLabel: 'スライドへ移動',
+      markKicker: 'やわらかく輝く',
+      markSubtitle: '愛のためのビスポーク',
+      markLine: '自然のリズム、芸術の響き',
+    },
+    series: {
+      ariaLabel: 'ホームの注目コレクション',
+      cta: 'コレクションを見る',
+      scrollHint: 'スクロールして他のシリーズを見る',
+    },
+  },
+  th: {
+    hero: {
+      primary: {
+        kicker: 'เครื่องประดับชั้นสูงและงานออกแบบเฉพาะคุณ',
+        title: 'DERING',
+      },
+      paginationLabel: 'ภาพสไลด์หน้าแรก',
+      goToSlideLabel: 'ไปยังสไลด์',
+      markKicker: 'เปล่งประกายอย่างอ่อนโยน',
+      markSubtitle: 'ออกแบบเพื่อความรัก',
+      markLine: 'จังหวะแห่งธรรมชาติ เสียงสะท้อนแห่งศิลปะ',
+    },
+    series: {
+      ariaLabel: 'คอลเลกชันแนะนำบนหน้าแรก',
+      cta: 'ดูคอลเลกชัน',
+      scrollHint: 'เลื่อนลงเพื่อดูซีรีส์เพิ่มเติม',
+    },
+  },
+  ko: {
+    hero: {
+      primary: {
+        kicker: '파인 주얼리와 비스포크 디자인',
+        title: 'DERING',
+      },
+      paginationLabel: '홈 히어로 캐러셀',
+      goToSlideLabel: '슬라이드로 이동',
+      markKicker: '부드럽게 빛나다',
+      markSubtitle: '사랑을 위한 맞춤 디자인',
+      markLine: '자연의 리듬, 예술의 울림',
+    },
+    series: {
+      ariaLabel: '홈 추천 컬렉션',
+      cta: '컬렉션 보기',
+      scrollHint: '아래로 스크롤해 더 많은 시리즈 보기',
+    },
+  },
+  vi: {
+    hero: {
+      primary: {
+        kicker: 'Trang suc cao cap va thiet ke rieng',
+        title: 'DERING',
+      },
+      paginationLabel: 'Bang chuyen anh trang chu',
+      goToSlideLabel: 'Chuyen den slide',
+      markKicker: 'Toa sang diu dang',
+      markSubtitle: 'Thiet ke rieng cho tinh yeu',
+      markLine: 'Nhip dieu tu nhien, cong huong nghe thuat',
+    },
+    series: {
+      ariaLabel: 'Bo suu tap noi bat tren trang chu',
+      cta: 'Xem bo suu tap',
+      scrollHint: 'Cuon xuong de xem them bo suu tap',
+    },
+  },
 }
 
-function scrollPastHero() {
-  const nextSection = heroStage.value?.nextElementSibling
-  if (!nextSection) {
-    return
-  }
+const pickLocaleValue = (values, activeLocale) => values?.[activeLocale] || values?.zh || ''
 
-  nextSection.scrollIntoView({
-    behavior: 'smooth',
-    block: 'start',
-  })
+const heroMarkLines = {
+  zh: '自然的韵律 艺术的共鸣',
+  en: 'Natural rhythm, artistic resonance',
+  ja: '自然のリズム、芸術の響き',
+  th: 'จังหวะธรรมชาติ เสียงสะท้อนแห่งศิลปะ',
+  ko: '자연의 리듬, 예술의 울림',
+  vi: 'Nhip dieu tu nhien, cong huong nghe thuat',
 }
 
-function handleHeroWheel(event) {
-  if (!heroStage.value || Math.abs(event.deltaY) < wheelIntentThreshold) {
-    return
+const heroMarkLine = computed(() => heroMarkLines[locale.value] || heroMarkLines.zh)
+
+const localizeSeriesCard = (card, activeLocale) => ({
+  ...card,
+  kicker: pickLocaleValue(card.kicker, activeLocale),
+  title: pickLocaleValue(card.title, activeLocale),
+  text: pickLocaleValue(card.text, activeLocale),
+  alt: pickLocaleValue(card.alt, activeLocale),
+  ariaLabel: pickLocaleValue(card.ariaLabel, activeLocale),
+})
+
+const copy = computed(() => {
+  const activeLocale = cleanHomeCopy[locale.value] ? locale.value : 'zh'
+
+  return {
+    ...cleanHomeCopy[activeLocale],
+    series: {
+      ...cleanHomeCopy[activeLocale].series,
+      cards: cleanSeriesCards.map((card) => localizeSeriesCard(card, activeLocale)),
+    },
   }
-
-  const direction = event.deltaY > 0 ? 1 : -1
-
-  if (currentPage.value === 1 && direction > 0) {
-    event.preventDefault()
-    goToPage(2)
-    return
-  }
-
-  if (currentPage.value === 2 && direction > 0 && !isSwitching.value) {
-    event.preventDefault()
-    scrollPastHero()
-    return
-  }
-
-  if (currentPage.value === 2 && direction < 0 && window.scrollY <= 2) {
-    event.preventDefault()
-    goToPage(1)
-  }
-}
-
-onBeforeUnmount(() => {
-  window.clearTimeout(switchTimer)
 })
 </script>

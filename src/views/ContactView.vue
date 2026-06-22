@@ -97,7 +97,7 @@ const contactCopy = {
     },
     store: {
       title: '到店咨询',
-      body: '上海市静安区南京西路 888 号，欢迎预约到店体验。',
+      body: '广东省深圳市罗湖区贝丽北路99号水贝国际中心4楼',
     },
   },
   en: {
@@ -121,7 +121,7 @@ const contactCopy = {
     },
     store: {
       title: 'Visit the Store',
-      body: '888 West Nanjing Road, Jing an District, Shanghai. Book an appointment before visiting.',
+      body: '4F, Shuibei International Center, No. 99 Beili North Road, Luohu District, Shenzhen, Guangdong.',
     },
   },
 }

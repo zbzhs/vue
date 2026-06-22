@@ -12,6 +12,87 @@ const typeMap = {
   未分类: 'Uncategorized',
 }
 
+const typeTranslations = {
+  zh: {
+    Ring: '戒指',
+    "Men's Ring": '男戒',
+    "Women's Ring": '女戒',
+    Necklace: '项链',
+    Earrings: '耳饰',
+    'Stud Earrings': '耳钉',
+    'Hoop Earrings': '耳圈',
+    'Drop Earrings': '耳坠',
+    Bracelet: '手链',
+    Pendant: '吊坠',
+    Uncategorized: '未分类',
+  },
+  en: {
+    Ring: 'Ring',
+    "Men's Ring": "Men's Ring",
+    "Women's Ring": "Women's Ring",
+    Necklace: 'Necklace',
+    Earrings: 'Earrings',
+    'Stud Earrings': 'Stud Earrings',
+    'Hoop Earrings': 'Hoop Earrings',
+    'Drop Earrings': 'Drop Earrings',
+    Bracelet: 'Bracelet',
+    Pendant: 'Pendant',
+    Uncategorized: 'Uncategorized',
+  },
+  ja: {
+    Ring: 'リング',
+    "Men's Ring": 'メンズリング',
+    "Women's Ring": 'レディースリング',
+    Necklace: 'ネックレス',
+    Earrings: 'イヤーアクセ',
+    'Stud Earrings': 'スタッド',
+    'Hoop Earrings': 'フープ',
+    'Drop Earrings': 'ドロップ',
+    Bracelet: 'ブレスレット',
+    Pendant: 'ペンダント',
+    Uncategorized: '未分類',
+  },
+  th: {
+    Ring: 'แหวน',
+    "Men's Ring": 'แหวนผู้ชาย',
+    "Women's Ring": 'แหวนผู้หญิง',
+    Necklace: 'สร้อยคอ',
+    Earrings: 'ต่างหู',
+    'Stud Earrings': 'ต่างหูแบบหมุด',
+    'Hoop Earrings': 'ต่างหูห่วง',
+    'Drop Earrings': 'ต่างหูระย้า',
+    Bracelet: 'สร้อยข้อมือ',
+    Pendant: 'จี้',
+    Uncategorized: 'ไม่จัดหมวดหมู่',
+  },
+  ko: {
+    Ring: '반지',
+    "Men's Ring": '남성용 반지',
+    "Women's Ring": '여성용 반지',
+    Necklace: '목걸이',
+    Earrings: '귀걸이',
+    'Stud Earrings': '스터드',
+    'Hoop Earrings': '링 귀걸이',
+    'Drop Earrings': '드롭 귀걸이',
+    Bracelet: '팔찌',
+    Pendant: '펜던트',
+    Uncategorized: '미분류',
+  },
+  vi: {
+    Ring: 'Nhẫn',
+    "Men's Ring": 'Nhẫn nam',
+    "Women's Ring": 'Nhẫn nữ',
+    Necklace: 'Dây chuyền',
+    Earrings: 'Hoa tai',
+    'Stud Earrings': 'Hoa tai đinh',
+    'Hoop Earrings': 'Hoa tai vòng',
+    'Drop Earrings': 'Hoa tai thả',
+    Bracelet: 'Vòng tay',
+    Pendant: 'Mặt dây',
+    Uncategorized: 'Chưa phân loại',
+  },
+}
+
 const seriesMap = {
   未分类系列: 'Uncategorized Collection',
   'S925系列': 'S925 Collection',
@@ -117,6 +198,118 @@ const shapeMap = {
   圆形: 'Round',
   心形: 'Heart',
   异形: 'Fancy Shape',
+}
+
+const phraseTranslations = {
+  ja: {
+    'Lab-Grown White Diamond': 'ラボグロウンホワイトダイヤモンド',
+    'Lab-Grown Pink Diamond': 'ラボグロウンピンクダイヤモンド',
+    'Lab-Grown Diamond': 'ラボグロウンダイヤモンド',
+    '18K White Gold': '18Kホワイトゴールド',
+    '18K Yellow Gold': '18Kイエローゴールド',
+    '18K Rose Gold': '18Kローズゴールド',
+    'PT950 Platinum': 'PT950プラチナ',
+    'S925 Silver': 'S925シルバー',
+    'Emerald Cut': 'エメラルドカット',
+    'Fancy Shape': 'ファンシーシェイプ',
+    Round: 'ラウンド',
+    Marquise: 'マーキス',
+    Oval: 'オーバル',
+    Pear: 'ペアシェイプ',
+    Bracelet: 'ブレスレット',
+    Necklace: 'ネックレス',
+    Pendant: 'ペンダント',
+    Ring: 'リング',
+    Earrings: 'イヤーアクセ',
+    Collection: 'コレクション',
+  },
+  th: {
+    'Lab-Grown White Diamond': 'เพชรขาวแล็บโกรว์น',
+    'Lab-Grown Pink Diamond': 'เพชรชมพูแล็บโกรว์น',
+    'Lab-Grown Diamond': 'เพชรแล็บโกรว์น',
+    '18K White Gold': 'ทองคำขาว 18K',
+    '18K Yellow Gold': 'ทองคำเหลือง 18K',
+    '18K Rose Gold': 'โรสโกลด์ 18K',
+    'PT950 Platinum': 'แพลทินัม PT950',
+    'S925 Silver': 'เงิน S925',
+    'Emerald Cut': 'ทรงเอเมอรัลด์',
+    'Fancy Shape': 'ทรงแฟนซี',
+    Round: 'ทรงกลม',
+    Marquise: 'ทรงมาร์quise',
+    Oval: 'ทรงรี',
+    Pear: 'ทรงหยดน้ำ',
+    Bracelet: 'สร้อยข้อมือ',
+    Necklace: 'สร้อยคอ',
+    Pendant: 'จี้',
+    Ring: 'แหวน',
+    Earrings: 'ต่างหู',
+    Collection: 'คอลเลกชัน',
+  },
+  ko: {
+    'Lab-Grown White Diamond': '랩그로운 화이트 다이아몬드',
+    'Lab-Grown Pink Diamond': '랩그로운 핑크 다이아몬드',
+    'Lab-Grown Diamond': '랩그로운 다이아몬드',
+    '18K White Gold': '18K 화이트 골드',
+    '18K Yellow Gold': '18K 옐로 골드',
+    '18K Rose Gold': '18K 로즈 골드',
+    'PT950 Platinum': 'PT950 플래티넘',
+    'S925 Silver': 'S925 실버',
+    'Emerald Cut': '에메랄드 컷',
+    'Fancy Shape': '팬시 셰이프',
+    Round: '라운드',
+    Marquise: '마퀴즈',
+    Oval: '오벌',
+    Pear: '페어',
+    Bracelet: '팔찌',
+    Necklace: '목걸이',
+    Pendant: '펜던트',
+    Ring: '반지',
+    Earrings: '귀걸이',
+    Collection: '컬렉션',
+  },
+  vi: {
+    'Lab-Grown White Diamond': 'Kim cương trắng nuôi cấy',
+    'Lab-Grown Pink Diamond': 'Kim cương hồng nuôi cấy',
+    'Lab-Grown Diamond': 'Kim cương nuôi cấy',
+    '18K White Gold': 'Vàng trắng 18K',
+    '18K Yellow Gold': 'Vàng vàng 18K',
+    '18K Rose Gold': 'Vàng hồng 18K',
+    'PT950 Platinum': 'Bạch kim PT950',
+    'S925 Silver': 'Bạc S925',
+    'Emerald Cut': 'Cắt emerald',
+    'Fancy Shape': 'Dáng fancy',
+    Round: 'Tròn',
+    Marquise: 'Marquise',
+    Oval: 'Oval',
+    Pear: 'Giọt lê',
+    Bracelet: 'Vòng tay',
+    Necklace: 'Dây chuyền',
+    Pendant: 'Mặt dây',
+    Ring: 'Nhẫn',
+    Earrings: 'Hoa tai',
+    Collection: 'Bộ sưu tập',
+  },
+}
+
+const englishPhraseAliases = {
+  'lab-grown white diamond': 'Lab-Grown White Diamond',
+  'lab-grown pink diamond': 'Lab-Grown Pink Diamond',
+  'lab-grown diamond': 'Lab-Grown Diamond',
+  '18K white gold': '18K White Gold',
+  '18K yellow gold': '18K Yellow Gold',
+  '18K rose gold': '18K Rose Gold',
+  'emerald cut': 'Emerald Cut',
+  'fancy shape': 'Fancy Shape',
+  round: 'Round',
+  marquise: 'Marquise',
+  oval: 'Oval',
+  pear: 'Pear',
+  bracelet: 'Bracelet',
+  necklace: 'Necklace',
+  pendant: 'Pendant',
+  ring: 'Ring',
+  earrings: 'Earrings',
+  collection: 'Collection',
 }
 
 const textReplacements = [
@@ -267,36 +460,82 @@ function translateSeriesByPattern(value) {
   return value
 }
 
-export function localizeProductName(value, locale) {
-  if (!value || locale !== 'en') {
+function translateEnglishPhrases(value, locale) {
+  const map = phraseTranslations[locale]
+  if (!map || !value) {
     return value
   }
 
-  return productNameMap[value] ?? translateNameByPattern(value)
+  const aliasMap = Object.fromEntries(
+    Object.entries(englishPhraseAliases)
+      .filter(([, canonical]) => map[canonical])
+      .map(([alias, canonical]) => [alias, map[canonical]]),
+  )
+
+  return Object.entries({ ...map, ...aliasMap })
+    .sort(([left], [right]) => right.length - left.length)
+    .reduce((result, [source, target]) => result.replaceAll(source, target), value)
+}
+
+export function localizeProductName(value, locale) {
+  if (!value || locale === 'zh') {
+    return value
+  }
+
+  return translateEnglishPhrases(productNameMap[value] ?? translateNameByPattern(value), locale)
 }
 
 export function localizeProductType(value, locale) {
-  return localizeByMap(value, typeMap, locale) ?? value
-}
-
-export function localizeSeries(value, locale) {
-  if (!value || locale !== 'en') {
+  if (!value) {
     return value
   }
 
-  return translateSeriesByPattern(value)
+  if (locale === 'en') {
+    return localizeByMap(value, typeMap, locale) ?? value
+  }
+
+  const englishType = typeMap[value] ?? value
+  return typeTranslations[locale]?.[englishType] ?? englishType
+}
+
+const seriesDisplayNameMap = {
+  经典卡家四爪系列: '经典四爪系列',
+  经典T家六爪系列: '经典六爪系列',
+  经典卡家牛头系列: '经典牛头系列',
+}
+
+export function localizeSeries(value, locale) {
+  if (!value) {
+    return value
+  }
+
+  const displayValue = seriesDisplayNameMap[value] ?? value
+
+  if (locale === 'zh') {
+    return displayValue
+  }
+
+  return translateEnglishPhrases(seriesMap[value] ?? translateSeriesByPattern(displayValue), locale)
 }
 
 export function localizeMaterial(value, locale) {
-  return localizeByMap(value, materialMap, locale) ?? value
+  if (locale === 'zh') {
+    return value
+  }
+
+  return translateEnglishPhrases(materialMap[value] ?? value, locale)
 }
 
 export function localizeSpecLabel(value, locale) {
-  return localizeByMap(value, specLabelMap, locale) ?? value
+  if (locale === 'zh') {
+    return value
+  }
+
+  return specLabelMap[value] ?? value
 }
 
 export function localizeFreeText(value, locale) {
-  if (!value || locale !== 'en') {
+  if (!value || locale === 'zh') {
     return value
   }
 
@@ -309,14 +548,14 @@ export function localizeFreeText(value, locale) {
     shapeMap[value]
 
   if (directValue) {
-    return directValue
+    return translateEnglishPhrases(directValue, locale)
   }
 
-  return replaceText(value)
+  return translateEnglishPhrases(replaceText(value), locale)
 }
 
 export function localizeSpecValue(label, value, locale) {
-  if (!value || locale !== 'en') {
+  if (!value || locale === 'zh') {
     return value
   }
 
