@@ -15,11 +15,55 @@ import PreferencesView from './views/PreferencesView.vue'
 import RegisterView from './views/RegisterView.vue'
 import LoginView from './views/LoginView.vue'
 import CartView from './views/CartView.vue'
+import OrdersView from './views/OrdersView.vue'
 import './styles/main.css'
+
+function getRouteQueryValue(query, key) {
+  const value = query[key]
+  return Array.isArray(value) ? value[0] : value
+}
+
+function escapeSelectorValue(value) {
+  if (typeof window !== 'undefined' && window.CSS?.escape) {
+    return window.CSS.escape(value)
+  }
+
+  return String(value).replace(/"/g, '\\"')
+}
+
+async function waitForElement(selector, timeoutMs = 1500) {
+  const startedAt = Date.now()
+
+  while (Date.now() - startedAt < timeoutMs) {
+    const element = document.querySelector(selector)
+    if (element) {
+      return element
+    }
+
+    await new Promise((resolve) => window.requestAnimationFrame(resolve))
+  }
+
+  return null
+}
 
 const router = createRouter({
   history: createWebHistory(),
-  scrollBehavior() {
+  async scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    }
+
+    const productCode = getRouteQueryValue(to.query, 'product')
+    if (to.name === 'products' && productCode) {
+      const selector = `[data-product-code="${escapeSelectorValue(productCode)}"]`
+      const productCard = await waitForElement(selector)
+
+      if (productCard) {
+        const top = Math.max(productCard.getBoundingClientRect().top + window.scrollY - 120, 0)
+        return { top, behavior: 'auto' }
+      }
+    }
+
     return { top: 0, behavior: 'smooth' }
   },
   routes: [
@@ -37,6 +81,7 @@ const router = createRouter({
     { path: '/register', name: 'register', component: RegisterView },
     { path: '/login', name: 'login', component: LoginView },
     { path: '/cart', name: 'cart', component: CartView },
+    { path: '/orders', name: 'orders', component: OrdersView },
   ],
 })
 

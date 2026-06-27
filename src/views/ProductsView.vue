@@ -145,6 +145,7 @@
         :key="product.code"
         class="product-card"
         :class="productCardClass(product)"
+        :data-product-code="product.code"
         type="button"
         @mouseenter="setHoveredProduct(product.code)"
         @mouseleave="clearHoveredProduct(product.code)"
@@ -206,7 +207,7 @@
         <div class="detail-purchase-row">
           <strong>{{ formatPrice(activeProduct.price) }}</strong>
           <button class="detail-cart-button" type="button" @click="addActiveProductToCart">
-            加入购物车
+            {{ ui.addToCart }}
           </button>
         </div>
 
@@ -250,6 +251,16 @@
       <div class="detail-banner" aria-hidden="true">
         <img src="/images/lab-grown-diamond-banner-ultrawide.png" alt="" />
       </div>
+
+      <section class="detail-good-images" :aria-label="`${activeProduct.displayName} details`">
+        <img
+          v-for="(image, index) in detailGoodImages"
+          :key="image"
+          :src="image"
+          :alt="`${activeProduct.displayName} detail ${index + 1}`"
+          loading="lazy"
+        />
+      </section>
     </article>
   </div>
 </template>
@@ -286,9 +297,12 @@ const necklaceFilterKey = '项链'
 const pendantFilterKey = '吊坠'
 const earringFilterKey = '耳饰'
 const earringTypes = ['耳饰', '耳钉', '耳圈', '耳线', '耳吊', '耳扣']
-const primaryImagePrefix = '/api/product-images/product1/'
-const alternateImagePrefix = '/api/product-images/product2/'
 const visibleDetailThumbCount = 4
+const LAST_CART_PRODUCT_STORAGE_KEY = 'dering-last-cart-product'
+const detailGoodImages = Array.from(
+  { length: 9 },
+  (_, index) => `/images/good/%E8%AF%A6%E6%83%85%E9%A1%B5_${String(index + 1).padStart(2, '0')}.jpg`,
+)
 const hiddenDetailSpecLabels = new Set([
   '系列',
   '石颜色',
@@ -335,6 +349,7 @@ const uiCopy = {
     closeDetail: '关闭详情',
     prevImage: '上一张图片',
     nextImage: '下一张图片',
+    addToCart: '加入购物车',
     styleNo: '款号',
     all: '全部',
     priceOnRequest: '面议',
@@ -368,6 +383,7 @@ const uiCopy = {
     closeDetail: 'Close details',
     prevImage: 'Previous image',
     nextImage: 'Next image',
+    addToCart: 'Add to Bag',
     styleNo: 'Style No.',
     all: 'All',
     priceOnRequest: 'Price on request',
@@ -401,6 +417,7 @@ const uiCopy = {
     closeDetail: '詳細を閉じる',
     prevImage: '前の画像',
     nextImage: '次の画像',
+    addToCart: 'カートに追加',
     styleNo: '品番',
     all: 'すべて',
     priceOnRequest: '価格はお問い合わせください',
@@ -434,6 +451,7 @@ const uiCopy = {
     closeDetail: 'ปิดรายละเอียด',
     prevImage: 'รูปก่อนหน้า',
     nextImage: 'รูปถัดไป',
+    addToCart: 'เพิ่มลงตะกร้า',
     styleNo: 'รหัสสินค้า',
     all: 'ทั้งหมด',
     priceOnRequest: 'สอบถามราคา',
@@ -467,6 +485,7 @@ const uiCopy = {
     closeDetail: '상세 닫기',
     prevImage: '이전 이미지',
     nextImage: '다음 이미지',
+    addToCart: '장바구니에 추가',
     styleNo: '스타일 번호',
     all: '전체',
     priceOnRequest: '가격 문의',
@@ -500,6 +519,7 @@ const uiCopy = {
     closeDetail: 'Đóng chi tiết',
     prevImage: 'Ảnh trước',
     nextImage: 'Ảnh tiếp theo',
+    addToCart: 'Them vao gio hang',
     styleNo: 'Mã kiểu',
     all: 'Tất cả',
     priceOnRequest: 'Liên hệ để biết giá',
@@ -631,7 +651,7 @@ const categoryHeroCopy = {
     },
   },
   earrings: {
-    image: '/images/product/earrings/1781602776_78f820882b368d82a263f6761c403c49.png',
+    image: '/images/product/earrings/1782195279_cc05b28eae6d34f7d14697ca2b079e1c.png',
     title: {
       zh: '耳饰',
       en: 'Earrings',
@@ -980,7 +1000,7 @@ function resolveProductImage(image, alternateImage, code) {
     return image
   }
 
-  if (!image.startsWith(primaryImagePrefix) || !alternateImage) {
+  if (!isPrimaryProductImage(image) || !alternateImage) {
     return image
   }
 
@@ -991,18 +1011,38 @@ function resolveProductImage(image, alternateImage, code) {
   return alternateImage
 }
 
+function isPrimaryProductImage(image) {
+  if (!image || typeof image !== 'string') {
+    return false
+  }
+
+  const normalizedImage = image.split('?')[0].replaceAll('\\', '/').toLowerCase()
+  return normalizedImage.includes('/product1/')
+}
+
 function displayProductCardImage(product) {
   return resolveProductImage(product.image, product.alternateImage, product.code) || product.image || ''
 }
 
 function productImageStyle(product) {
-  const scale = Number(product.imageDisplayScale ?? 1)
+  const baseScale = Number(product.imageDisplayScale ?? 1)
+  let scale = baseScale
+
+  if (isBraceletType(product.type)) {
+    scale = Math.max(baseScale, 1.25)
+  } else if (isNecklaceType(product.type)) {
+    scale = baseScale * 0.9
+  } else if (isPendantType(product.type)) {
+    scale = baseScale * 0.82
+  } else if (isRingType(product.type) || isEarringType(product.type)) {
+    scale = Math.max(baseScale, 1.12)
+  }
 
   if (!Number.isFinite(scale) || scale <= 0) {
     return {}
   }
 
-  const hoverScale = Math.min(scale * 1.04, 1.9)
+  const hoverScale = Math.min(scale * 1.035, 1.9)
   return {
     '--product-card-image-scale': scale.toFixed(3),
     '--product-card-image-hover-scale': hoverScale.toFixed(3),
@@ -1010,7 +1050,9 @@ function productImageStyle(product) {
 }
 
 function productCardClass(product) {
-  return {}
+  return {
+    'product-card--necklace': isNecklaceType(product.type),
+  }
 }
 
 function setHoveredProduct(code) {
@@ -1199,10 +1241,27 @@ function openProduct(product) {
   detailThumbStartIndex.value = 0
 }
 
-function closeProduct() {
+function syncProductFromRoute() {
+  const routeProduct = Array.isArray(route.query.product) ? route.query.product[0] : route.query.product
+  if (!routeProduct || !products.value.length) {
+    return
+  }
+
+  const matchedProduct = localizedProducts.value.find((product) => product.code === routeProduct)
+  if (matchedProduct) {
+    openProduct(matchedProduct)
+  }
+}
+
+async function closeProduct({ restoreProductPosition = true } = {}) {
+  const closingProductCode = activeProductCode.value
   activeProductCode.value = ''
   activeDetailImage.value = ''
   detailThumbStartIndex.value = 0
+
+  if (restoreProductPosition && closingProductCode) {
+    await scrollProductCardIntoView(closingProductCode)
+  }
 }
 
 function addActiveProductToCart() {
@@ -1210,9 +1269,31 @@ function addActiveProductToCart() {
     return
   }
 
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(
+      LAST_CART_PRODUCT_STORAGE_KEY,
+      JSON.stringify({
+        code: activeProduct.value.code,
+        query: {
+          ...route.query,
+          product: activeProduct.value.code,
+        },
+      }),
+    )
+  }
+
   addCartItem(activeProduct.value)
-  closeProduct()
+  closeProduct({ restoreProductPosition: false })
   router.push({ name: 'cart' })
+}
+
+async function scrollProductCardIntoView(code) {
+  await nextTick()
+  await new Promise((resolve) => window.requestAnimationFrame(resolve))
+
+  const productCards = Array.from(productSection.value?.querySelectorAll('.product-card') ?? [])
+  const productCard = productCards.find((card) => card.dataset.productCode === code)
+  productCard?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
 async function selectDetailImage(image, index = activeProductGalleryImages.value.indexOf(image)) {
@@ -1293,8 +1374,9 @@ onBeforeUnmount(() => {
 watch(
   () => [route.query.series, route.query.q, route.query.type, products.value.length],
   () => {
-    closeProduct()
+    closeProduct({ restoreProductPosition: false })
     syncSeriesFromRoute()
+    syncProductFromRoute()
   },
   { immediate: true },
 )

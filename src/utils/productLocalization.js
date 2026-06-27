@@ -183,6 +183,7 @@ const specLabelMap = {
 const colorMap = {
   培育白钻: 'Lab-Grown White Diamond',
   培育粉钻: 'Lab-Grown Pink Diamond',
+  培育黄钻: 'Lab-Grown Yellow Diamond',
   培育钻: 'Lab-Grown Diamond',
 }
 
@@ -204,6 +205,7 @@ const phraseTranslations = {
   ja: {
     'Lab-Grown White Diamond': 'ラボグロウンホワイトダイヤモンド',
     'Lab-Grown Pink Diamond': 'ラボグロウンピンクダイヤモンド',
+    'Lab-Grown Yellow Diamond': 'ラボグロウンイエローダイヤモンド',
     'Lab-Grown Diamond': 'ラボグロウンダイヤモンド',
     '18K White Gold': '18Kホワイトゴールド',
     '18K Yellow Gold': '18Kイエローゴールド',
@@ -226,6 +228,7 @@ const phraseTranslations = {
   th: {
     'Lab-Grown White Diamond': 'เพชรขาวแล็บโกรว์น',
     'Lab-Grown Pink Diamond': 'เพชรชมพูแล็บโกรว์น',
+    'Lab-Grown Yellow Diamond': 'เพชรเหลืองแล็บโกรว์น',
     'Lab-Grown Diamond': 'เพชรแล็บโกรว์น',
     '18K White Gold': 'ทองคำขาว 18K',
     '18K Yellow Gold': 'ทองคำเหลือง 18K',
@@ -248,6 +251,7 @@ const phraseTranslations = {
   ko: {
     'Lab-Grown White Diamond': '랩그로운 화이트 다이아몬드',
     'Lab-Grown Pink Diamond': '랩그로운 핑크 다이아몬드',
+    'Lab-Grown Yellow Diamond': '랩그로운 옐로 다이아몬드',
     'Lab-Grown Diamond': '랩그로운 다이아몬드',
     '18K White Gold': '18K 화이트 골드',
     '18K Yellow Gold': '18K 옐로 골드',
@@ -270,6 +274,7 @@ const phraseTranslations = {
   vi: {
     'Lab-Grown White Diamond': 'Kim cương trắng nuôi cấy',
     'Lab-Grown Pink Diamond': 'Kim cương hồng nuôi cấy',
+    'Lab-Grown Yellow Diamond': 'Kim cương vàng nuôi cấy',
     'Lab-Grown Diamond': 'Kim cương nuôi cấy',
     '18K White Gold': 'Vàng trắng 18K',
     '18K Yellow Gold': 'Vàng vàng 18K',
@@ -294,6 +299,7 @@ const phraseTranslations = {
 const englishPhraseAliases = {
   'lab-grown white diamond': 'Lab-Grown White Diamond',
   'lab-grown pink diamond': 'Lab-Grown Pink Diamond',
+  'lab-grown yellow diamond': 'Lab-Grown Yellow Diamond',
   'lab-grown diamond': 'Lab-Grown Diamond',
   '18K white gold': '18K White Gold',
   '18K yellow gold': '18K Yellow Gold',
@@ -326,6 +332,7 @@ const textReplacements = [
   ['异形', 'fancy shape'],
   ['培育白钻', 'lab-grown white diamond'],
   ['培育粉钻', 'lab-grown pink diamond'],
+  ['培育黄钻', 'lab-grown yellow diamond'],
   ['培育钻', 'lab-grown diamond'],
   ['18K白', '18K White Gold'],
   ['18K黄', '18K Yellow Gold'],

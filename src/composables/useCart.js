@@ -81,6 +81,12 @@ function removeCartItem(code) {
   writeStoredItems(cartItems.value)
 }
 
+function removeCartItems(codes) {
+  const codeSet = new Set(codes)
+  cartItems.value = cartItems.value.filter((item) => !codeSet.has(item.code))
+  writeStoredItems(cartItems.value)
+}
+
 function clearCart() {
   cartItems.value = []
   writeStoredItems(cartItems.value)
@@ -119,6 +125,7 @@ export function useCart() {
     setCartItemSelected,
     setAllCartItemsSelected,
     removeCartItem,
+    removeCartItems,
     clearCart,
   }
 }

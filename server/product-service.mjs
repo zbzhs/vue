@@ -1,14 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import mysql from "mysql2/promise";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, "..");
-const productImageDir = path.join(projectRoot, "public", "images", "products");
-let cachedProductImageNames = null;
 
 const dbConfig = {
   host: process.env.DB_HOST || "localhost",
@@ -44,23 +34,34 @@ function splitLines(value) {
     .filter(Boolean);
 }
 
-function isJpgImageUrl(value) {
-  const text = normalizeText(value);
-  if (!text) {
-    return false;
+function getProductImageKind(row) {
+  const values = [row.object, row.image_url].map((value) => normalizeText(value))
+
+  for (const value of values) {
+    if (!value) {
+      continue
+    }
+
+    const normalizedValue = value.replaceAll('\\', '/').toLowerCase()
+    if (normalizedValue.startsWith('product1/') || normalizedValue.includes('/product1/')) {
+      return 'product1'
+    }
+
+    if (normalizedValue.startsWith('product2/') || normalizedValue.includes('/product2/')) {
+      return 'product2'
+    }
   }
 
-  const normalized = text.split("?")[0].split("#")[0].toLowerCase();
-  return normalized.endsWith(".jpg") || normalized.endsWith(".jpeg");
+  return ''
 }
 
-async function fetchProductDetailImagesMap(connection) {
+async function fetchProductImagesMap(connection) {
   try {
     const [rows] = await connection.execute(`
-      SELECT product_style_no, image_url, sort_no, id
+      SELECT product_style_no, image_url, \`object\`, id
       FROM product_image
-      WHERE image_url IS NOT NULL
-      ORDER BY product_style_no, sort_no, id
+      WHERE image_url IS NOT NULL AND image_url <> ''
+      ORDER BY product_style_no, id
     `);
 
     const imageMap = new Map();
@@ -68,69 +69,37 @@ async function fetchProductDetailImagesMap(connection) {
     for (const row of rows) {
       const styleNo = normalizeText(row.product_style_no);
       const imageUrl = normalizeText(row.image_url);
+      const imageKind = getProductImageKind(row);
 
-      if (!styleNo || !isJpgImageUrl(imageUrl)) {
+      if (!styleNo || !imageUrl) {
         continue;
       }
 
       if (!imageMap.has(styleNo)) {
-        imageMap.set(styleNo, []);
+        imageMap.set(styleNo, {
+          primary: '',
+          alternate: '',
+          gallery: [],
+        });
       }
 
       const images = imageMap.get(styleNo);
-      if (!images.includes(imageUrl)) {
-        images.push(imageUrl);
+      if (!images.gallery.includes(imageUrl)) {
+        images.gallery.push(imageUrl);
+      }
+
+      if (imageKind === 'product1' && !images.primary) {
+        images.primary = imageUrl;
+      } else if (imageKind === 'product2' && !images.alternate) {
+        images.alternate = imageUrl;
       }
     }
 
     return imageMap;
   } catch (error) {
-    console.warn("Failed to load product detail images:", error);
+    console.warn("Failed to load product images:", error);
     return new Map();
   }
-}
-
-function resolveImage(styleNo) {
-  const exactName = `${styleNo}.png`;
-  const exactPath = path.join(productImageDir, exactName);
-
-  if (fileExists(exactPath)) {
-    return `/images/products/${exactName}`;
-  }
-
-  const candidates = getProductImageNames()
-    .filter((name) => name.startsWith(`${styleNo}-`) && name.endsWith(".png"))
-    .sort();
-
-  if (candidates.length > 0) {
-    return `/images/products/${candidates[0]}`;
-  }
-
-  return "/images/products-hero-earring.png";
-}
-
-function fileExists(targetPath) {
-  try {
-    return !!targetPath && fs.existsSync(targetPath);
-  } catch {
-    return false;
-  }
-}
-
-function safeReadDir(targetDir) {
-  try {
-    return fs.readdirSync(targetDir);
-  } catch {
-    return [];
-  }
-}
-
-function getProductImageNames() {
-  if (cachedProductImageNames === null) {
-    cachedProductImageNames = safeReadDir(productImageDir);
-  }
-
-  return cachedProductImageNames;
 }
 
 function buildNote(row) {
@@ -198,11 +167,15 @@ function buildSpecs(row) {
   return specs;
 }
 
-function mapRow(row, detailImagesMap) {
+function mapRow(row, productImagesMap) {
   const guaranteeInfo = normalizeText(row.guarantee_info);
   const remark = normalizeText(row.remark);
   const sellingPoint = normalizeText(row.selling_point);
   const styleNo = String(row.style_no);
+  const productImages = productImagesMap.get(styleNo) || {};
+  const image = normalizeText(productImages.primary);
+  const alternateImage = normalizeText(productImages.alternate);
+  const detailImages = Array.isArray(productImages.gallery) ? productImages.gallery : [];
   const displayPrice =
     row.max_label_price === null || row.max_label_price === undefined
       ? row.live_price === null || row.live_price === undefined
@@ -224,8 +197,10 @@ function mapRow(row, detailImagesMap) {
     unshippedQty: row.unshipped_qty,
     commission: row.commission === null || row.commission === undefined ? null : Number(row.commission),
     note: buildNote(row),
-    image: resolveImage(styleNo),
-    detailImages: detailImagesMap.get(styleNo) || [],
+    image: image || alternateImage || "/images/products-hero-earring.png",
+    alternateImage,
+    imageDisplayScale: 1,
+    detailImages,
     brand: "DERING",
     sellingPoint,
     guaranteeInfo,
@@ -264,8 +239,8 @@ export async function getProductsPayload() {
       ORDER BY style_no
     `);
 
-    const detailImagesMap = await fetchProductDetailImagesMap(connection);
-    const products = rows.map((row) => mapRow(row, detailImagesMap));
+    const productImagesMap = await fetchProductImagesMap(connection);
+    const products = rows.map((row) => mapRow(row, productImagesMap));
     return {
       count: products.length,
       products,
