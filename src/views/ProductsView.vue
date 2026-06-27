@@ -187,7 +187,12 @@
         &times;
       </button>
       <div class="detail-media">
-        <img class="detail-main-image" :src="activeDetailImage" :alt="activeProduct.displayName" />
+        <img
+          v-if="activeDetailImage"
+          class="detail-main-image"
+          :src="activeDetailImage"
+          :alt="activeProduct.displayName"
+        />
       </div>
 
       <div class="detail-copy">
@@ -819,14 +824,21 @@ const activeProduct = computed(() => {
   return localizedProducts.value.find((product) => product.code === activeProductCode.value) ?? null
 })
 
-const activeProductGalleryImages = computed(() => {
+const activeProductDetailImages = computed(() => {
   if (!activeProduct.value) {
     return []
   }
 
   const detailImages = (activeProduct.value.detailImages ?? []).filter(Boolean)
-  const images = detailImages.length ? detailImages : [activeProduct.value.image].filter(Boolean)
-  return images.filter((image, index) => images.indexOf(image) === index)
+  return detailImages.filter((image, index) => detailImages.indexOf(image) === index)
+})
+
+const activeProductGalleryImages = computed(() => {
+  if (!activeProduct.value) {
+    return []
+  }
+
+  return activeProductDetailImages.value
 })
 
 const visibleDetailThumbItems = computed(() => {
@@ -1237,7 +1249,7 @@ async function scrollToProducts() {
 
 function openProduct(product) {
   activeProductCode.value = product.code
-  activeDetailImage.value = (product.detailImages ?? []).filter(Boolean)[0] || product.image
+  activeDetailImage.value = (product.detailImages ?? []).filter(Boolean)[0] || ''
   detailThumbStartIndex.value = 0
 }
 

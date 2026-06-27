@@ -1,4 +1,11 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import mysql from "mysql2/promise";
+
+export const productDetailImageDir =
+  process.env.PRODUCT_DETAIL_IMAGE_DIR || "D:\\projects\\产品展示\\ALL\\product_details";
+const productAssetsRoot = path.resolve(path.dirname(productDetailImageDir));
 
 const dbConfig = {
   host: process.env.DB_HOST || "localhost",
@@ -34,25 +41,145 @@ function splitLines(value) {
     .filter(Boolean);
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getProductImageValues(row) {
+  return [row.object, row.image_url].map((value) => normalizeText(value)).filter(Boolean);
+}
+
 function getProductImageKind(row) {
-  const values = [row.object, row.image_url].map((value) => normalizeText(value))
+  const values = getProductImageValues(row);
 
   for (const value of values) {
     if (!value) {
-      continue
+      continue;
     }
 
-    const normalizedValue = value.replaceAll('\\', '/').toLowerCase()
-    if (normalizedValue.startsWith('product1/') || normalizedValue.includes('/product1/')) {
-      return 'product1'
+    const normalizedValue = value.replaceAll("\\", "/").toLowerCase();
+    if (normalizedValue.startsWith("product1/") || normalizedValue.includes("/product1/")) {
+      return "product1";
     }
 
-    if (normalizedValue.startsWith('product2/') || normalizedValue.includes('/product2/')) {
-      return 'product2'
+    if (normalizedValue.startsWith("product2/") || normalizedValue.includes("/product2/")) {
+      return "product2";
+    }
+
+    if (normalizedValue.startsWith("product_details/") || normalizedValue.includes("/product_details/")) {
+      return "product_details";
     }
   }
 
-  return ''
+  return "";
+}
+
+function extractProductImageFileName(row) {
+  for (const value of getProductImageValues(row)) {
+    let normalizedValue = value.replaceAll("\\", "/");
+
+    if (normalizedValue.includes("://")) {
+      try {
+        normalizedValue = decodeURIComponent(new URL(normalizedValue).pathname);
+      } catch {
+        // Keep the original value when URL parsing fails.
+      }
+    }
+
+    const segments = normalizedValue.split("/").filter(Boolean);
+    const fileName = segments.at(-1);
+    if (fileName) {
+      return fileName;
+    }
+  }
+
+  return "";
+}
+
+function getProductDetailSortData(row) {
+  const styleNo = normalizeText(row.product_style_no) || "";
+  const fileName = extractProductImageFileName(row);
+  const stem = fileName.replace(/\.[^.]+$/, "");
+  const stylePattern = styleNo ? new RegExp(`^${escapeRegExp(styleNo)}_(\\d+)$`, "i") : null;
+  const matchedStyleIndex = stylePattern ? stem.match(stylePattern) : null;
+  const matchedTrailingIndex = matchedStyleIndex || stem.match(/_(\d+)$/);
+  const sequence = matchedTrailingIndex ? Number(matchedTrailingIndex[1]) : Number.MAX_SAFE_INTEGER;
+
+  return {
+    sequence,
+    stem: stem.toLowerCase(),
+    fileName: fileName.toLowerCase(),
+    id: Number(row.id) || 0,
+  };
+}
+
+function buildLocalDetailImageUrl(styleNo, row) {
+  const fileName = extractProductImageFileName(row);
+  if (!fileName) {
+    return "";
+  }
+
+  return `/api/product-detail-images/${encodeURIComponent(styleNo)}/${encodeURIComponent(fileName)}`;
+}
+
+function buildLocalProductImageUrl(imageKind, row) {
+  const fileName = extractProductImageFileName(row);
+  if (!fileName || (imageKind !== "product1" && imageKind !== "product2")) {
+    return "";
+  }
+
+  return `/api/product-images/${encodeURIComponent(imageKind)}/${encodeURIComponent(fileName)}`;
+}
+
+export function resolveDetailImagePath(styleNo, fileName) {
+  if (!/\.(jpe?g|png|webp)$/i.test(fileName)) {
+    return null;
+  }
+
+  const normalizedStyleNo = normalizeText(styleNo);
+  const normalizedFileName = path.basename(fileName);
+  if (!normalizedStyleNo || !normalizedFileName) {
+    return null;
+  }
+
+  const stem = normalizedFileName.replace(/\.[^.]+$/, "");
+  if (!stem.toLowerCase().startsWith(`${normalizedStyleNo.toLowerCase()}_`)) {
+    return null;
+  }
+
+  const rootPath = path.resolve(productDetailImageDir);
+  const imagePath = path.resolve(rootPath, normalizedFileName);
+  const relativePath = path.relative(rootPath, imagePath);
+
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    return null;
+  }
+
+  return fs.existsSync(imagePath) ? imagePath : null;
+}
+
+export function resolveProductImagePath(imageKind, fileName) {
+  if (!/\.(jpe?g|png|webp)$/i.test(fileName)) {
+    return null;
+  }
+
+  if (imageKind !== "product1" && imageKind !== "product2") {
+    return null;
+  }
+
+  const normalizedFileName = path.basename(fileName);
+  if (!normalizedFileName) {
+    return null;
+  }
+
+  const imagePath = path.resolve(productAssetsRoot, imageKind, normalizedFileName);
+  const relativePath = path.relative(productAssetsRoot, imagePath);
+
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+    return null;
+  }
+
+  return fs.existsSync(imagePath) ? imagePath : null;
 }
 
 async function fetchProductImagesMap(connection) {
@@ -77,8 +204,9 @@ async function fetchProductImagesMap(connection) {
 
       if (!imageMap.has(styleNo)) {
         imageMap.set(styleNo, {
-          primary: '',
-          alternate: '',
+          primary: "",
+          alternate: "",
+          detailImages: [],
           gallery: [],
         });
       }
@@ -88,11 +216,43 @@ async function fetchProductImagesMap(connection) {
         images.gallery.push(imageUrl);
       }
 
-      if (imageKind === 'product1' && !images.primary) {
-        images.primary = imageUrl;
-      } else if (imageKind === 'product2' && !images.alternate) {
-        images.alternate = imageUrl;
+      if (imageKind === "product_details") {
+        const localDetailImageUrl = buildLocalDetailImageUrl(styleNo, row);
+        const detailImageUrl = localDetailImageUrl || imageUrl;
+        const alreadyExists = images.detailImages.some((item) => item.imageUrl === detailImageUrl);
+        if (!alreadyExists && detailImageUrl) {
+          images.detailImages.push({
+            imageUrl: detailImageUrl,
+            sortData: getProductDetailSortData(row),
+          });
+        }
       }
+
+      if (imageKind === "product1" && !images.primary) {
+        images.primary = buildLocalProductImageUrl(imageKind, row) || imageUrl;
+      } else if (imageKind === "product2" && !images.alternate) {
+        images.alternate = buildLocalProductImageUrl(imageKind, row) || imageUrl;
+      }
+    }
+
+    for (const images of imageMap.values()) {
+      images.detailImages = images.detailImages
+        .sort((left, right) => {
+          if (left.sortData.sequence !== right.sortData.sequence) {
+            return left.sortData.sequence - right.sortData.sequence;
+          }
+
+          if (left.sortData.stem !== right.sortData.stem) {
+            return left.sortData.stem.localeCompare(right.sortData.stem);
+          }
+
+          if (left.sortData.fileName !== right.sortData.fileName) {
+            return left.sortData.fileName.localeCompare(right.sortData.fileName);
+          }
+
+          return left.sortData.id - right.sortData.id;
+        })
+        .map((item) => item.imageUrl);
     }
 
     return imageMap;
@@ -173,9 +333,9 @@ function mapRow(row, productImagesMap) {
   const sellingPoint = normalizeText(row.selling_point);
   const styleNo = String(row.style_no);
   const productImages = productImagesMap.get(styleNo) || {};
+  const detailImages = Array.isArray(productImages.detailImages) ? productImages.detailImages : [];
   const image = normalizeText(productImages.primary);
   const alternateImage = normalizeText(productImages.alternate);
-  const detailImages = Array.isArray(productImages.gallery) ? productImages.gallery : [];
   const displayPrice =
     row.max_label_price === null || row.max_label_price === undefined
       ? row.live_price === null || row.live_price === undefined
