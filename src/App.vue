@@ -8,7 +8,7 @@
       }"
     >
       <RouterLink class="nav-brand-wordmark" to="/" aria-label="DERING home">
-        DERING
+        <img src="/logo/logo.png" alt="DERING" />
       </RouterLink>
 
       <nav class="nav-category-row" aria-label="Product categories">

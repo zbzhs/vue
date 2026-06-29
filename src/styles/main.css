@@ -218,17 +218,26 @@ img {
   grid-column: 2;
   justify-content: center;
   color: #111111;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(26px, 3vw, 36px);
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  line-height: 0.92;
+  line-height: 1;
   text-decoration: none;
-  transition: color 220ms ease, font-size 220ms ease;
+  transition: color 220ms ease;
+}
+
+.nav-brand-wordmark img {
+  display: block;
+  width: clamp(160px, 21vw, 260px);
+  height: auto;
+  background: transparent;
+  filter: invert(1);
+  transition: filter 220ms ease, opacity 220ms ease;
 }
 
 .nav-bar--hero-top .nav-brand-wordmark {
   color: #ffffff;
+}
+
+.nav-bar--hero-top .nav-brand-wordmark img {
+  filter: none;
 }
 
 .nav-category-row {
@@ -6204,7 +6213,10 @@ form button:hover {
     grid-column: 1;
     grid-row: 1;
     justify-self: center;
-    font-size: 26px;
+  }
+
+  .nav-brand-wordmark img {
+    width: min(58vw, 210px);
   }
 
   .nav-category-row {
