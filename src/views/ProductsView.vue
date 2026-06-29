@@ -141,7 +141,7 @@
 
     <div v-else class="product-grid">
       <button
-        v-for="product in filteredProducts"
+        v-for="product in visibleProducts"
         :key="product.code"
         class="product-card"
         :class="productCardClass(product)"
@@ -171,6 +171,12 @@
     <p v-if="!isLoading && !loadError && filteredProducts.length === 0" class="empty-products">
       {{ ui.empty }}
     </p>
+
+    <div v-if="!isLoading && !loadError && canLoadMoreProducts" class="product-load-more">
+      <button type="button" :disabled="isLoadingMore" @click="loadMoreProducts">
+        {{ isLoadingMore ? loadMoreLoadingLabel : loadMoreLabel }}
+      </button>
+    </div>
   </section>
 
   <KnowledgeFooter footer-class="home-footer product-page-footer" />
@@ -270,13 +276,6 @@
   </div>
 </template>
 
-<script>
-let cachedProductsPayload = null
-let cachedProductsLoadPromise = null
-let cachedProductsPayloadExpiresAt = 0
-const productsCacheTtlMs = 30000
-</script>
-
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -308,6 +307,7 @@ const detailGoodImages = Array.from(
   { length: 9 },
   (_, index) => `/images/good/%E8%AF%A6%E6%83%85%E9%A1%B5_${String(index + 1).padStart(2, '0')}.jpg`,
 )
+const productsPageSize = 28
 const hiddenDetailSpecLabels = new Set([
   '系列',
   '石颜色',
@@ -713,7 +713,12 @@ const priceRanges = computed(() => [
 
 const products = ref([])
 const isLoading = ref(true)
+const isLoadingMore = ref(false)
 const loadError = ref(false)
+const productsPage = ref(0)
+const productsHasMore = ref(false)
+const productsTotal = ref(0)
+const visibleProductLimit = ref(productsPageSize)
 const searchQuery = ref('')
 const selectedType = ref(allFilterKey)
 const selectedPrice = ref(allFilterKey)
@@ -812,6 +817,38 @@ const filteredProducts = computed(() => {
 
     return matchesType && matchesSeries && matchesPrice
   })
+})
+
+const visibleProducts = computed(() => filteredProducts.value.slice(0, visibleProductLimit.value))
+
+const canLoadMoreProducts = computed(() => {
+  return filteredProducts.value.length > visibleProductLimit.value || productsHasMore.value
+})
+
+const loadMoreLabel = computed(() => {
+  const labels = {
+    zh: '查看更多',
+    en: 'Load More',
+    ja: 'もっと見る',
+    th: 'ดูเพิ่มเติม',
+    ko: '더 보기',
+    vi: 'Xem thêm',
+  }
+
+  return labels[languageAwareLocale.value] || labels.zh
+})
+
+const loadMoreLoadingLabel = computed(() => {
+  const labels = {
+    zh: '正在加载...',
+    en: 'Loading...',
+    ja: '読み込み中...',
+    th: 'กำลังโหลด...',
+    ko: '불러오는 중...',
+    vi: 'Đang tải...',
+  }
+
+  return labels[languageAwareLocale.value] || labels.zh
 })
 
 const activeFilterCount = computed(() => {
@@ -1081,59 +1118,112 @@ function clearHoveredProduct(code) {
   }
 }
 
-async function loadProducts() {
-  if (Array.isArray(cachedProductsPayload) && Date.now() < cachedProductsPayloadExpiresAt) {
-    products.value = cachedProductsPayload
-    isLoading.value = false
-    loadError.value = false
-    return
+function appendUniqueProducts(items) {
+  const incomingProducts = Array.isArray(items) ? items : []
+  if (!incomingProducts.length) {
+    return 0
   }
 
-  if (cachedProductsLoadPromise) {
-    isLoading.value = true
-    loadError.value = false
+  const existingCodes = new Set(products.value.map((product) => product.code))
+  const newProducts = incomingProducts.filter((product) => !existingCodes.has(product.code))
+  if (!newProducts.length) {
+    return 0
+  }
 
-    try {
-      products.value = await cachedProductsLoadPromise
-    } catch (error) {
-      console.error('Failed to load products:', error)
-      loadError.value = true
-      products.value = []
-    } finally {
-      isLoading.value = false
+  products.value = [...products.value, ...newProducts]
+  return newProducts.length
+}
+
+async function fetchAndAppendNextProductsPage() {
+  if (!productsHasMore.value) {
+    return 0
+  }
+
+  const payload = await fetchProductsPage(productsPage.value + 1)
+  const addedCount = appendUniqueProducts(payload.items)
+  productsPage.value = payload.page
+  productsHasMore.value = payload.hasMore
+  productsTotal.value = payload.total
+  return addedCount
+}
+
+async function fillProductsToVisibleLimit() {
+  while (filteredProducts.value.length < visibleProductLimit.value && productsHasMore.value) {
+    const addedCount = await fetchAndAppendNextProductsPage()
+    if (!addedCount) {
+      break
     }
-
-    return
   }
+}
 
+async function loadProducts() {
   isLoading.value = true
   loadError.value = false
+  products.value = []
+  productsPage.value = 0
+  productsHasMore.value = false
+  productsTotal.value = 0
+  visibleProductLimit.value = productsPageSize
 
   try {
-    cachedProductsLoadPromise = fetch('/api/products')
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`)
-        }
-
-        const payload = await response.json()
-        const items = Array.isArray(payload) ? payload : payload.products
-        cachedProductsPayload = Array.isArray(items) ? items : []
-        cachedProductsPayloadExpiresAt = Date.now() + productsCacheTtlMs
-        return cachedProductsPayload
-      })
-      .finally(() => {
-        cachedProductsLoadPromise = null
-      })
-
-    const items = await cachedProductsLoadPromise
-    products.value = Array.isArray(items) ? items : []
+    const payload = await fetchProductsPage(1)
+    products.value = payload.items
+    productsPage.value = payload.page
+    productsHasMore.value = payload.hasMore
+    productsTotal.value = payload.total
+    syncSeriesFromRoute()
+    await fillProductsToVisibleLimit()
+    syncProductFromRoute()
   } catch (error) {
     console.error('Failed to load products:', error)
     loadError.value = true
     products.value = []
   } finally {
     isLoading.value = false
+  }
+}
+
+async function loadMoreProducts() {
+  if (isLoadingMore.value || !canLoadMoreProducts.value) {
+    return
+  }
+
+  visibleProductLimit.value += productsPageSize
+
+  if (filteredProducts.value.length >= visibleProductLimit.value || !productsHasMore.value) {
+    return
+  }
+
+  isLoadingMore.value = true
+
+  try {
+    await fillProductsToVisibleLimit()
+  } catch (error) {
+    console.error('Failed to load more products:', error)
+  } finally {
+    isLoadingMore.value = false
+  }
+}
+
+async function fetchProductsPage(page) {
+  const params = new URLSearchParams({
+    page: String(page),
+    pageSize: String(productsPageSize),
+  })
+  const response = await fetch(`/api/products?${params}`)
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`)
+  }
+
+  const payload = await response.json()
+  const items = Array.isArray(payload) ? payload : payload.products
+  const productsPayload = Array.isArray(items) ? items : []
+
+  return {
+    items: productsPayload,
+    page: Number(payload.page ?? page),
+    total: Number(payload.total ?? productsPayload.length),
+    hasMore: Boolean(payload.hasMore),
   }
 }
 
@@ -1209,32 +1299,42 @@ async function applyFilters() {
   selectedType.value = draftType.value
   selectedPrice.value = draftPrice.value
   selectedSeries.value = draftSeries.value
+  visibleProductLimit.value = productsPageSize
+  await fillProductsToVisibleLimit()
   showFilterPanel.value = false
   await scrollToProducts()
 }
 
-function selectTypeFilter(type) {
+async function selectTypeFilter(type) {
   draftType.value = type
   selectedType.value = type
+  visibleProductLimit.value = productsPageSize
+  await fillProductsToVisibleLimit()
 }
 
-function selectPriceFilter(price) {
+async function selectPriceFilter(price) {
   draftPrice.value = price
   selectedPrice.value = price
+  visibleProductLimit.value = productsPageSize
+  await fillProductsToVisibleLimit()
 }
 
-function selectSeriesFilter(series) {
+async function selectSeriesFilter(series) {
   draftSeries.value = series
   selectedSeries.value = series
+  visibleProductLimit.value = productsPageSize
+  await fillProductsToVisibleLimit()
 }
 
-function resetFilters() {
+async function resetFilters() {
   draftType.value = allFilterKey
   draftPrice.value = allFilterKey
   draftSeries.value = allFilterKey
   selectedType.value = allFilterKey
   selectedPrice.value = allFilterKey
   selectedSeries.value = allFilterKey
+  visibleProductLimit.value = productsPageSize
+  await fillProductsToVisibleLimit()
 }
 
 async function chooseRecommendation(product) {
@@ -1384,10 +1484,12 @@ onBeforeUnmount(() => {
 })
 
 watch(
-  () => [route.query.series, route.query.q, route.query.type, products.value.length],
-  () => {
+  () => [route.query.series, route.query.q, route.query.type],
+  async () => {
     closeProduct({ restoreProductPosition: false })
+    visibleProductLimit.value = productsPageSize
     syncSeriesFromRoute()
+    await fillProductsToVisibleLimit()
     syncProductFromRoute()
   },
   { immediate: true },

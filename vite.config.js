@@ -8,12 +8,12 @@ export default defineConfig({
       ignored: ['**/dist/**', '**/public/video/6月15日.mp4'],
     },
     proxy: {
-      '/api': 'http://localhost:3001',
+      '/api': 'http://127.0.0.1:3001',
     },
   },
   preview: {
     proxy: {
-      '/api': 'http://localhost:3001',
+      '/api': 'http://127.0.0.1:3001',
     },
   },
 })

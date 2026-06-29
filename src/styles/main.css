@@ -4160,6 +4160,46 @@ p {
   text-align: center;
 }
 
+.product-load-more {
+  display: flex;
+  justify-content: center;
+  padding: 34px 16px 46px;
+  background: rgba(225, 228, 233, 0.72);
+}
+
+.product-load-more button {
+  min-width: 168px;
+  min-height: 44px;
+  padding: 0 26px;
+  color: #f7f3ec;
+  background: #23262b;
+  border: 1px solid rgba(35, 38, 43, 0.78);
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    opacity 160ms ease;
+}
+
+.product-load-more button:hover:not(:disabled) {
+  color: #23262b;
+  background: #f7f3ec;
+  border-color: rgba(35, 38, 43, 0.3);
+  transform: translateY(-1px);
+}
+
+.product-load-more button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
 .product-detail-backdrop {
   position: fixed;
   top: var(--nav-height);
