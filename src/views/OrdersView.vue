@@ -149,7 +149,12 @@ function deleteOrder(orderId) {
 }
 
 function addItemBackToCart(item) {
-  addCartItem({
+  if (!currentUser.value) {
+    statusMessage.value = copy.value.loginRequired
+    return
+  }
+
+  const added = addCartItem({
     ...item,
     name: item.rawName || item.name,
     type: item.rawType || item.type,
@@ -158,6 +163,12 @@ function addItemBackToCart(item) {
     displayType: item.type,
     displaySeries: item.series,
   })
+
+  if (!added) {
+    statusMessage.value = copy.value.loginRequired
+    return
+  }
+
   statusMessage.value = copy.value.addedToCart
 }
 

@@ -36,6 +36,11 @@
         </label>
 
         <label class="register-field">
+          <span>{{ copy.phoneLabel }}</span>
+          <input v-model.trim="form.phone" type="tel" inputmode="tel" autocomplete="tel" :placeholder="copy.phonePlaceholder" />
+        </label>
+
+        <label class="register-field">
           <span>{{ copy.passwordLabel }}</span>
           <input v-model="form.password" type="password" autocomplete="new-password" :placeholder="copy.passwordPlaceholder" />
         </label>
@@ -91,6 +96,8 @@ const copies = {
     sentCode: '已发送',
     nicknameLabel: '昵称*',
     nicknamePlaceholder: '请输入昵称',
+    phoneLabel: '手机号*',
+    phonePlaceholder: '请输入手机号',
     passwordLabel: '密码*',
     passwordPlaceholder: '至少 8 位密码',
     titleLabel: '称谓*',
@@ -110,6 +117,8 @@ const copies = {
     codeSent: '邮箱验证码已发送，请查收邮箱',
     missingEmailCode: '请输入邮箱验证码',
     missingNickname: '请输入昵称',
+    missingPhone: '请输入手机号',
+    invalidPhone: '请输入正确的手机号',
     missingPassword: '请输入密码',
     weakPassword: '密码至少需要 8 位',
     missingTitle: '请选择称谓',
@@ -134,6 +143,8 @@ const copies = {
     sentCode: 'Sent',
     nicknameLabel: 'Nickname*',
     nicknamePlaceholder: 'Enter your nickname',
+    phoneLabel: 'Phone*',
+    phonePlaceholder: 'Enter your phone number',
     passwordLabel: 'Password*',
     passwordPlaceholder: 'At least 8 characters',
     titleLabel: 'Title*',
@@ -153,6 +164,8 @@ const copies = {
     codeSent: 'The email verification code has been sent. Please check your inbox.',
     missingEmailCode: 'Please enter the email verification code',
     missingNickname: 'Please enter your nickname',
+    missingPhone: 'Please enter your phone number',
+    invalidPhone: 'Please enter a valid phone number',
     missingPassword: 'Please enter your password',
     weakPassword: 'Password must be at least 8 characters',
     missingTitle: 'Please select a title',
@@ -177,6 +190,7 @@ const form = reactive({
   captcha: '',
   emailCode: '',
   nickname: '',
+  phone: '',
   password: '',
   title: '',
 })
@@ -215,6 +229,11 @@ function isEmail(value) {
   return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(String(value || '').trim())
 }
 
+function isPhone(value) {
+  const text = String(value || '').trim()
+  return /^\+?[0-9][0-9\s-]{5,18}[0-9]$/.test(text)
+}
+
 function setStatus(message, type = 'info') {
   statusMessage.value = message
   statusType.value = type
@@ -237,6 +256,10 @@ function formatErrorMessage(message, fallback) {
 
   if (text.includes('请输入正确的邮箱格式')) {
     return copy.value.invalidEmail
+  }
+
+  if (text.includes('请输入正确的手机号')) {
+    return copy.value.invalidPhone
   }
 
   if (text.includes('请选择称谓')) {
@@ -312,6 +335,16 @@ async function submitRegister() {
     return
   }
 
+  if (!form.phone.trim()) {
+    setStatus(copy.value.missingPhone, 'error')
+    return
+  }
+
+  if (!isPhone(form.phone)) {
+    setStatus(copy.value.invalidPhone, 'error')
+    return
+  }
+
   if (!form.password) {
     setStatus(copy.value.missingPassword, 'error')
     return
@@ -338,6 +371,7 @@ async function submitRegister() {
         email: form.email,
         emailCode: form.emailCode,
         nickname: form.nickname,
+        phone: form.phone,
         password: form.password,
         title: form.title,
       }),
@@ -354,6 +388,7 @@ async function submitRegister() {
     form.captcha = ''
     form.emailCode = ''
     form.nickname = ''
+    form.phone = ''
     form.password = ''
     form.title = ''
     hasSentCode.value = false

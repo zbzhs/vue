@@ -6,24 +6,6 @@
         {{ ui.close }}
       </button>
 
-      <button
-        class="drawer-search-toggle"
-        type="button"
-        :aria-label="ui.searchProducts"
-        @click="showDrawerSearch = !showDrawerSearch"
-      >
-        <span></span>
-      </button>
-
-      <div v-if="showDrawerSearch" class="drawer-search">
-        <input
-          v-model.trim="searchQuery"
-          type="search"
-          :placeholder="ui.searchProducts"
-          @keydown.enter.prevent="applyFilters"
-        />
-      </div>
-
       <div class="drawer-filter-group">
         <div class="drawer-filter-head">
           <h2>{{ ui.typeLabel }}</h2>
@@ -160,7 +142,6 @@
           />
         </span>
         <div class="product-info">
-          <p>{{ product.displayType }}</p>
           <h2>{{ product.displayName }}</h2>
           <span>{{ product.displayNote || product.displaySeries }}</span>
           <strong>{{ formatPrice(product.price) }}</strong>
@@ -193,27 +174,118 @@
         &times;
       </button>
       <div class="detail-media">
-        <img
+        <button
           v-if="activeDetailImage"
-          class="detail-main-image"
-          :src="activeDetailImage"
-          :alt="activeProduct.displayName"
-        />
+          class="detail-main-image-button"
+          type="button"
+          :aria-label="ui.previewImage || ui.closeDetail"
+          @click="openImagePreview(activeDetailImage)"
+          @wheel.prevent="handleDetailImageWheel"
+        >
+          <img
+            class="detail-main-image"
+            :src="activeDetailImage"
+            :alt="activeProduct.displayName"
+            :style="{ transform: `scale(${detailImageZoom})` }"
+          />
+        </button>
       </div>
 
       <div class="detail-copy">
         <h2>{{ activeProduct.displayName }}</h2>
-        <p>{{ ui.styleNo }}: {{ activeProduct.code }} | {{ activeProduct.brand }}</p>
-
-        <dl class="detail-specs">
-          <div
-            v-for="item in activeProduct.displaySpecs"
-            :key="`${activeProduct.code}-${item.rawLabel}`"
+        <div class="detail-meta">
+          <span>{{ activeProduct.code }}</span>
+          <span aria-hidden="true">|</span>
+          <span>{{ activeProduct.brand }}</span>
+          <span aria-hidden="true">|</span>
+          <button
+            type="button"
+            :aria-expanded="activeDetailDrawer === 'product'"
+            @click="openDetailDrawer('product')"
           >
-            <dt>{{ item.label }}</dt>
-            <dd>{{ item.value }}</dd>
+            产品详情
+          </button>
+        </div>
+
+        <div
+          v-if="activeProductGalleryImages.length > 1"
+          ref="detailThumbs"
+          class="detail-thumbs detail-thumbs--service"
+        >
+          <button
+            v-if="activeProductGalleryImages.length > visibleDetailThumbCount"
+            type="button"
+            class="detail-thumb-nav detail-thumb-nav-prev"
+            :aria-label="ui.prevImage"
+            @click="showPreviousDetailThumbs"
+          >
+            <span aria-hidden="true">&lsaquo;</span>
+          </button>
+          <div class="detail-thumb-list">
+            <button
+              v-for="item in visibleDetailThumbItems"
+              :key="`${activeProduct.code}-service-thumb-${item.index}`"
+              type="button"
+              class="detail-thumb"
+              :class="{ active: activeDetailImage === item.image }"
+              @click="selectDetailImage(item.image, item.index)"
+            >
+              <img :src="item.image" :alt="`${activeProduct.displayName} ${item.index + 1}`" />
+            </button>
           </div>
-        </dl>
+          <button
+            v-if="activeProductGalleryImages.length > visibleDetailThumbCount"
+            type="button"
+            class="detail-thumb-nav detail-thumb-nav-next"
+            :aria-label="ui.nextImage"
+            @click="showNextDetailThumbs"
+          >
+            <span aria-hidden="true">&rsaquo;</span>
+          </button>
+        </div>
+
+        <div class="detail-service-menu" aria-label="商品服务">
+          <div class="detail-service-item">
+            <button
+              type="button"
+              :aria-expanded="activeDetailDrawer === 'size'"
+              @click="openDetailDrawer('size')"
+            >
+              <span>尺寸选择</span>
+              <i aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <div class="detail-service-item">
+            <button
+              type="button"
+              :aria-expanded="activeDetailDrawer === 'quality'"
+              @click="openDetailDrawer('quality')"
+            >
+              <span>质量保证</span>
+              <em>配有国检证书</em>
+              <i aria-hidden="true"></i>
+            </button>
+          </div>
+
+          <div class="detail-contact-block">
+            <p>有什么疑虑？</p>
+            <div class="detail-contact-service">
+              <span>
+                <i class="detail-contact-icon detail-contact-icon--mark" aria-hidden="true"></i>
+                致电 13715011967
+              </span>
+              <button
+                type="button"
+                :aria-expanded="activeDetailDrawer === 'contact'"
+                @click="openDetailDrawer('contact')"
+              >
+                <i class="detail-contact-icon detail-contact-icon--chat" aria-hidden="true"></i>
+                咨询我们
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div class="detail-purchase-row">
           <strong>{{ formatPrice(activeProduct.price) }}</strong>
@@ -222,58 +294,106 @@
           </button>
         </div>
 
+        <div class="detail-after-purchase">
+          <button
+            type="button"
+            :aria-expanded="activeDetailDrawer === 'care'"
+            @click="openDetailDrawer('care')"
+          >
+            <span>保养维修服务</span>
+            <i aria-hidden="true"></i>
+          </button>
+        </div>
+
         <p v-if="activeProduct.displaySellingPoint">{{ activeProduct.displaySellingPoint }}</p>
         <p v-if="activeProduct.displayRemark">{{ activeProduct.displayRemark }}</p>
       </div>
 
-      <div v-if="activeProductGalleryImages.length > 1" ref="detailThumbs" class="detail-thumbs">
-        <button
-          v-if="activeProductGalleryImages.length > visibleDetailThumbCount"
-          type="button"
-          class="detail-thumb-nav detail-thumb-nav-prev"
-          :aria-label="ui.prevImage"
-          @click="showPreviousDetailThumbs"
-        >
-          <span aria-hidden="true">&lsaquo;</span>
-        </button>
-        <div class="detail-thumb-list">
-          <button
-            v-for="item in visibleDetailThumbItems"
-            :key="`${activeProduct.code}-thumb-${item.index}`"
-            type="button"
-            class="detail-thumb"
-            :class="{ active: activeDetailImage === item.image }"
-            @click="selectDetailImage(item.image, item.index)"
-          >
-            <img :src="item.image" :alt="`${activeProduct.displayName} ${item.index + 1}`" />
+      <aside v-if="activeDetailDrawer" class="detail-spec-drawer" :aria-label="detailDrawerTitle">
+        <div class="detail-spec-drawer-head">
+          <h3>{{ detailDrawerTitle }}</h3>
+          <button type="button" :aria-label="`关闭${detailDrawerTitle}`" @click="activeDetailDrawer = ''">
+            &times;
           </button>
         </div>
-        <button
-          v-if="activeProductGalleryImages.length > visibleDetailThumbCount"
-          type="button"
-          class="detail-thumb-nav detail-thumb-nav-next"
-          :aria-label="ui.nextImage"
-          @click="showNextDetailThumbs"
-        >
-          <span aria-hidden="true">&rsaquo;</span>
-        </button>
-      </div>
 
-      <div class="detail-banner" aria-hidden="true">
-        <img src="/images/lab-grown-diamond-banner-ultrawide.png" alt="" />
-      </div>
+        <template v-if="activeDetailDrawer === 'product'">
+          <p>{{ activeProduct.displayName }}</p>
 
-      <section class="detail-good-images" :aria-label="`${activeProduct.displayName} details`">
-        <img
-          v-for="(image, index) in detailGoodImages"
-          :key="image"
-          :src="image"
-          :alt="`${activeProduct.displayName} detail ${index + 1}`"
-          loading="lazy"
-        />
-      </section>
+          <dl v-if="activeProductCoreSpecs.length" class="detail-specs">
+            <div
+              v-for="item in activeProductCoreSpecs"
+              :key="`${activeProduct.code}-${item.rawLabel}`"
+            >
+              <dt>{{ item.label }}</dt>
+              <dd>{{ item.value }}</dd>
+            </div>
+          </dl>
+        </template>
+
+        <template v-else-if="activeDetailDrawer === 'size'">
+          <p v-if="activeProductSizeOptions.length">请选择适合的戒指尺寸。若不确定手寸，可联系客服协助测量与确认。</p>
+          <div
+            v-if="activeProductSizeOptions.length"
+            class="detail-size-options detail-size-options--drawer"
+            role="group"
+            aria-label="尺寸选择"
+          >
+            <button
+              v-for="size in activeProductSizeOptions"
+              :key="size"
+              type="button"
+              :class="{ active: selectedRingSize === size }"
+              @click="selectedRingSize = size"
+            >
+              {{ size }}
+            </button>
+          </div>
+        </template>
+
+        <template v-else-if="activeDetailDrawer === 'contact'">
+          <div class="detail-contact-drawer">
+            <img src="/images/contact/wechat.jpg" alt="微信二维码" />
+            <div>
+              <span>联系电话</span>
+              <strong>13715011967</strong>
+              <p>可通过电话或扫码添加微信咨询尺寸、库存、定制与售后服务。</p>
+            </div>
+          </div>
+        </template>
+
+        <template v-else-if="activeDetailDrawer === 'quality'">
+          <p>每件 DERING 作品均配有国检证书，可用于核验钻石、金属材质与作品信息。</p>
+          <p>如需查看证书信息或确认检测细节，可联系顾问协助核对。</p>
+        </template>
+
+        <template v-else-if="activeDetailDrawer === 'care'">
+          <p>DERING 提供日常清洁、镶口检查、尺寸微调、抛光保养与维修评估服务。</p>
+          <p>如作品出现松动、刮痕或佩戴尺寸不适，建议先联系我们确认作品结构与服务周期。</p>
+        </template>
+      </aside>
+
     </article>
   </div>
+
+  <Teleport to="body">
+    <div v-if="previewImage" class="image-preview-backdrop" @click.self="closeImagePreview">
+      <article class="image-preview" role="dialog" aria-modal="true" :aria-label="ui.previewImage || ui.closeDetail">
+        <div class="image-preview-tools">
+          <button type="button" :aria-label="ui.zoomOut || '-'" @click="zoomPreviewImage(-0.25)">-</button>
+          <button type="button" :aria-label="ui.resetZoom || '1:1'" @click="resetPreviewZoom">1:1</button>
+          <button type="button" :aria-label="ui.zoomIn || '+'" @click="zoomPreviewImage(0.25)">+</button>
+          <button type="button" :aria-label="ui.closeDetail" @click="closeImagePreview">&times;</button>
+        </div>
+        <img
+          :src="previewImage"
+          :alt="activeProduct?.displayName || ''"
+          :style="{ transform: `scale(${previewZoom})` }"
+          @wheel.prevent="handlePreviewWheel"
+        />
+      </article>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -281,6 +401,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import KnowledgeFooter from '../components/KnowledgeFooter.vue'
+import { useAuth } from '../composables/useAuth'
 import { useCart } from '../composables/useCart'
 import { useLocale } from '../composables/useLocale'
 import { formatCurrencyFromCny } from '../utils/currency'
@@ -324,6 +445,7 @@ const hiddenDetailTexts = new Set(['送胶耳堵', 'Complimentary silicone backs
 const route = useRoute()
 const router = useRouter()
 const { locale, currencyRegion } = useLocale()
+const { currentUser } = useAuth()
 const { addCartItem } = useCart()
 
 const uiCopy = {
@@ -352,6 +474,10 @@ const uiCopy = {
     loadError: '产品数据加载失败，请检查 API 接口或数据库连接。',
     empty: '暂无符合条件的产品',
     closeDetail: '关闭详情',
+    previewImage: '查看大图',
+    zoomIn: '放大图片',
+    zoomOut: '缩小图片',
+    resetZoom: '重置缩放',
     prevImage: '上一张图片',
     nextImage: '下一张图片',
     addToCart: '加入购物车',
@@ -386,6 +512,10 @@ const uiCopy = {
     loadError: 'Failed to load product data. Please check the API or database connection.',
     empty: 'No products match the current filters.',
     closeDetail: 'Close details',
+    previewImage: 'Preview image',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    resetZoom: 'Reset zoom',
     prevImage: 'Previous image',
     nextImage: 'Next image',
     addToCart: 'Add to Bag',
@@ -727,13 +857,18 @@ const draftType = ref(allFilterKey)
 const draftPrice = ref(allFilterKey)
 const draftSeries = ref(allFilterKey)
 const showFilterPanel = ref(false)
-const showDrawerSearch = ref(false)
 const activeProductCode = ref('')
 const activeDetailImage = ref('')
 const detailThumbStartIndex = ref(0)
 const detailThumbs = ref(null)
 const productSection = ref(null)
 const hoveredProductCode = ref('')
+const activeDetailDrawer = ref('')
+const selectedRingSize = ref('')
+const detailImageZoom = ref(1)
+const previewImage = ref('')
+const previewZoom = ref(1)
+const ringSizeOptions = ['9', '10', '11', '12', '13', '14', '15', '16']
 
 const filterTypes = computed(() => {
   const types = products.value
@@ -859,6 +994,54 @@ const activeFilterCount = computed(() => {
 
 const activeProduct = computed(() => {
   return localizedProducts.value.find((product) => product.code === activeProductCode.value) ?? null
+})
+
+const activeProductSizeOptions = computed(() => {
+  if (!activeProduct.value || !isRingType(activeProduct.value.type)) {
+    return []
+  }
+
+  return ringSizeOptions
+})
+
+const detailDrawerTitle = computed(() => {
+  const titles = {
+    product: '产品详情',
+    size: '尺寸选择',
+    contact: '联系我们',
+    quality: '质量保证',
+    care: '保养维修服务',
+  }
+
+  return titles[activeDetailDrawer.value] ?? ''
+})
+
+const coreDetailSpecLabels = new Set([
+  '品类',
+  '金属材质',
+  '总重',
+  '主石',
+  '副石',
+  '鍝佺被',
+  '閲戝睘鏉愯川',
+  '鎬婚噸',
+  '涓荤煶',
+  '鍓煶',
+  'Category',
+  'Metal',
+  'Total Weight',
+  'Center Stone',
+  'Side Stone',
+])
+
+const activeProductCoreSpecs = computed(() => {
+  if (!activeProduct.value) {
+    return []
+  }
+
+  return activeProduct.value.displaySpecs.filter((item) => {
+    return coreDetailSpecLabels.has(item.rawLabel) || coreDetailSpecLabels.has(item.label)
+  })
 })
 
 const activeProductDetailImages = computed(() => {
@@ -1350,7 +1533,10 @@ async function scrollToProducts() {
 function openProduct(product) {
   activeProductCode.value = product.code
   activeDetailImage.value = (product.detailImages ?? []).filter(Boolean)[0] || ''
+  resetDetailImageZoom()
   detailThumbStartIndex.value = 0
+  activeDetailDrawer.value = ''
+  selectedRingSize.value = ''
 }
 
 function syncProductFromRoute() {
@@ -1369,15 +1555,73 @@ async function closeProduct({ restoreProductPosition = true } = {}) {
   const closingProductCode = activeProductCode.value
   activeProductCode.value = ''
   activeDetailImage.value = ''
+  resetDetailImageZoom()
   detailThumbStartIndex.value = 0
+  activeDetailDrawer.value = ''
+  selectedRingSize.value = ''
+  closeImagePreview()
 
   if (restoreProductPosition && closingProductCode) {
     await scrollProductCardIntoView(closingProductCode)
   }
 }
 
+function openDetailDrawer(drawer) {
+  activeDetailDrawer.value = activeDetailDrawer.value === drawer ? '' : drawer
+}
+
+function clampPreviewZoom(value) {
+  return Math.min(Math.max(Number(value) || 1, 0.5), 4)
+}
+
+function clampDetailImageZoom(value) {
+  return Math.min(Math.max(Number(value) || 1, 0.75), 1.8)
+}
+
+function openImagePreview(image) {
+  previewImage.value = image
+  previewZoom.value = 1
+}
+
+function closeImagePreview() {
+  previewImage.value = ''
+  previewZoom.value = 1
+}
+
+function zoomPreviewImage(delta) {
+  previewZoom.value = clampPreviewZoom(previewZoom.value + delta)
+}
+
+function resetPreviewZoom() {
+  previewZoom.value = 1
+}
+
+function handlePreviewWheel(event) {
+  zoomPreviewImage(event.deltaY < 0 ? 0.15 : -0.15)
+}
+
+function zoomDetailImage(delta) {
+  detailImageZoom.value = clampDetailImageZoom(detailImageZoom.value + delta)
+}
+
+function resetDetailImageZoom() {
+  detailImageZoom.value = 1
+}
+
+function handleDetailImageWheel(event) {
+  zoomDetailImage(event.deltaY < 0 ? 0.12 : -0.12)
+}
+
 function addActiveProductToCart() {
   if (!activeProduct.value) {
+    return
+  }
+
+  if (!currentUser.value) {
+    window.alert(locale.value === 'en'
+      ? 'Please sign in or register before adding items to your bag.'
+      : '请先登录或注册后再加入购物车。')
+    router.push({ name: 'login' })
     return
   }
 
@@ -1394,7 +1638,10 @@ function addActiveProductToCart() {
     )
   }
 
-  addCartItem(activeProduct.value)
+  if (!addCartItem(activeProduct.value)) {
+    return
+  }
+
   closeProduct({ restoreProductPosition: false })
   router.push({ name: 'cart' })
 }
@@ -1410,6 +1657,7 @@ async function scrollProductCardIntoView(code) {
 
 async function selectDetailImage(image, index = activeProductGalleryImages.value.indexOf(image)) {
   activeDetailImage.value = image
+  resetDetailImageZoom()
   syncVisibleThumbWindow(index)
   await scrollActiveThumbIntoView(index)
 }

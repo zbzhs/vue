@@ -54,7 +54,7 @@
         v-for="card in copy.series.cards"
         :key="card.key"
         class="home-series-panel"
-        :class="`home-series-panel-${card.key}`"
+        :class="[`home-series-panel-${card.key}`, { 'home-series-panel-reverse': card.imageSide === 'right' }]"
         :to="card.to"
         :aria-label="card.ariaLabel"
       >
@@ -178,9 +178,9 @@ const seriesCards = [
   {
     key: 'marquise',
     kicker: { zh: 'Marquise Cut', en: 'Marquise Cut', ja: 'マーキスカット', th: 'ทรงมาร์quise', ko: '마퀴즈 컷', vi: 'Cắt marquise' },
-    title: { zh: '马眼系列', en: 'Marquise', ja: 'マーキス', th: 'มาร์quise', ko: '마퀴즈', vi: 'Marquise' },
+    title: { zh: '星隅私造・星河臻品系列', en: 'Marquise', ja: 'マーキス', th: 'มาร์quise', ko: '마퀴즈', vi: 'Marquise' },
     text: {
-      zh: '修长的马眼切割拉伸线条，适合戒指、耳饰与项链的优雅造型。',
+      zh: '独家原创手稿，撷取漫天星隅灵感，小众独版星辰首饰。',
       en: 'An elongated cut that brings graceful lines to rings, earrings, and necklaces.',
       ja: '細長いマーキスカットが、リング、イヤーアクセ、ネックレスに優雅なラインを添えます。',
       th: 'ทรงมาร์quise ที่เรียวยาวช่วยสร้างเส้นสายสง่างามให้แหวน ต่างหู และสร้อยคอ',
@@ -191,6 +191,32 @@ const seriesCards = [
     alt: { zh: '马眼系列', en: 'Marquise collection', ja: 'マーキスコレクション', th: 'คอลเลกชันมาร์quise', ko: '마퀴즈 컬렉션', vi: 'Bộ sưu tập marquise' },
     ariaLabel: { zh: '查看马眼系列', en: 'View marquise collection', ja: 'マーキスコレクションを見る', th: 'ดูคอลเลกชันมาร์quise', ko: '마퀴즈 컬렉션 보기', vi: 'Xem bộ sưu tập marquise' },
     to: { name: 'series', params: { slug: 'marquise' } },
+  },
+  {
+    key: 'banquet',
+    imageSide: 'right',
+    kicker: {
+      zh: '鎏光宴叙',
+      en: 'Banquet High Jewelry',
+    },
+    title: {
+      zh: '鎏光宴叙・高奢宴会系列',
+      en: 'Banquet High Jewelry Collection',
+    },
+    text: {
+      zh: '原创高奢宴会美学手稿，以重工工艺凝聚鎏光华彩，打造红毯、晚宴、婚礼场合的瞩目奢华珠宝。',
+      en: 'Original evening-jewelry studies shaped with couture craftsmanship for red carpets, galas, and weddings.',
+    },
+    image: '/images/home/series/series4.png',
+    alt: {
+      zh: '鎏光宴叙・高奢宴会系列',
+      en: 'Banquet high jewelry collection',
+    },
+    ariaLabel: {
+      zh: '查看鎏光宴叙・高奢宴会系列',
+      en: 'View banquet high jewelry collection',
+    },
+    to: { name: 'series', params: { slug: 'banquet' } },
   },
 ]
 
@@ -317,7 +343,7 @@ const cleanSeriesCards = [
       vi: 'Kim cuong mau',
     },
     title: {
-      zh: '粉钻系列',
+      zh: '情定永恒・告白经典系列',
       en: 'Pink Diamond',
       ja: 'ピンクダイヤモンド',
       th: 'เพชรสีชมพู',
@@ -325,7 +351,7 @@ const cleanSeriesCards = [
       vi: 'Kim cuong hong',
     },
     text: {
-      zh: '柔和粉色调与精致镶嵌，让礼物和收藏都更有记忆点。',
+      zh: '求婚、纪念日、情侣对饰，百搭传世款。',
       en: 'Soft pink tones and refined settings for gifts, milestones, and collectible pieces.',
       ja: 'やわらかなピンクの色合いと繊細なセッティングで、贈り物やコレクションを印象的に。',
       th: 'โทนชมพูอ่อนและงานฝังละเอียด เหมาะสำหรับของขวัญ ช่วงเวลาสำคัญ และชิ้นสะสม',
@@ -353,8 +379,9 @@ const cleanSeriesCards = [
   },
   {
     key: 'prong',
+    imageSide: 'right',
     kicker: {
-      zh: '经典镶嵌',
+      zh: '悦己序章',
       en: 'Classic Setting',
       ja: 'クラシックセッティング',
       th: 'งานฝังคลาสสิก',
@@ -362,7 +389,7 @@ const cleanSeriesCards = [
       vi: 'Kieu dinh co dien',
     },
     title: {
-      zh: '四爪/六爪系列',
+      zh: '悦己序章・日常轻奢系列',
       en: 'Four-Prong / Six-Prong',
       ja: '4本爪 / 6本爪',
       th: 'สี่หนาม / หกหนาม',
@@ -370,7 +397,7 @@ const cleanSeriesCards = [
       vi: 'Bon chau / Sau chau',
     },
     text: {
-      zh: '干净利落的爪镶比例，突出主石火彩与日常佩戴的轻盈感。',
+      zh: '主打通勤、百搭小众首饰，取悦自我日常佩戴',
       en: 'Clean prong proportions designed to highlight fire, brightness, and daily wearability.',
       ja: 'すっきりとした爪留めのバランスで、主石の輝きと毎日の使いやすさを引き立てます。',
       th: 'สัดส่วนหนามที่สะอาดตา ช่วยขับประกาย ความสว่าง และความเบาสบายในการสวมใส่ทุกวัน',
@@ -407,7 +434,7 @@ const cleanSeriesCards = [
       vi: 'Cat marquise',
     },
     title: {
-      zh: '马眼系列',
+      zh: '星隅私造・星河臻品系列',
       en: 'Marquise',
       ja: 'マーキス',
       th: 'Marquise',
@@ -415,7 +442,7 @@ const cleanSeriesCards = [
       vi: 'Marquise',
     },
     text: {
-      zh: '修长的马眼切割拉伸线条，适合戒指、耳饰与项链的优雅造型。',
+      zh: '独家原创手稿，撷取漫天星隅灵感，小众独版星辰首饰。',
       en: 'An elongated cut that brings graceful lines to rings, earrings, and necklaces.',
       ja: '細長いマーキスカットが、リング、イヤリング、ネックレスに優雅なラインを添えます。',
       th: 'รูปทรงยาวเรียวช่วยเพิ่มเส้นสายสง่างามให้แหวน ต่างหู และสร้อยคอ',
@@ -440,6 +467,57 @@ const cleanSeriesCards = [
       vi: 'Xem bo suu tap marquise',
     },
     to: { name: 'series', params: { slug: 'marquise' } },
+  },
+  {
+    key: 'banquet',
+    imageSide: 'right',
+    kicker: {
+      zh: '鎏光宴叙',
+      en: 'Banquet High Jewelry',
+    },
+    title: {
+      zh: '鎏光宴叙・高奢宴会系列',
+      en: 'Banquet High Jewelry Collection',
+    },
+    text: {
+      zh: '原创高奢宴会美学手稿，以重工工艺凝聚鎏光华彩，打造红毯、晚宴、婚礼场合的瞩目奢华珠宝。',
+      en: 'Original evening-jewelry studies shaped with couture craftsmanship for red carpets, galas, and weddings.',
+    },
+    image: '/images/home/series/series4.png',
+    alt: {
+      zh: '鎏光宴叙・高奢宴会系列',
+      en: 'Banquet high jewelry collection',
+    },
+    ariaLabel: {
+      zh: '查看鎏光宴叙・高奢宴会系列',
+      en: 'View banquet high jewelry collection',
+    },
+    to: { name: 'series', params: { slug: 'banquet' } },
+  },
+  {
+    key: 'chroma',
+    kicker: {
+      zh: '幻彩艺藏',
+      en: 'Chroma Art Collection',
+    },
+    title: {
+      zh: '幻彩艺藏・彩钻限定系列',
+      en: 'Chroma Art Colored Diamond Limited Collection',
+    },
+    text: {
+      zh: '甄选珍稀彩钻，以艺术切割凝练幻彩光影，呈献限量典藏级珠宝单品。原创幻彩艺术手稿，以珍稀彩钻与灵动切割，塑造限量典藏款式。',
+      en: 'Rare colored diamonds meet artistic cuts, shaping luminous limited-edition collectible jewels.',
+    },
+    image: '/images/home/series/series5.png',
+    alt: {
+      zh: '幻彩艺藏・彩钻限定系列',
+      en: 'Chroma art colored diamond limited collection',
+    },
+    ariaLabel: {
+      zh: '查看幻彩艺藏・彩钻限定系列',
+      en: 'View chroma art colored diamond limited collection',
+    },
+    to: { name: 'series', params: { slug: 'chroma' } },
   },
 ]
 
@@ -574,6 +652,13 @@ const localizeSeriesCard = (card, activeLocale) => ({
   text: pickLocaleValue(card.text, activeLocale),
   alt: pickLocaleValue(card.alt, activeLocale),
   ariaLabel: pickLocaleValue(card.ariaLabel, activeLocale),
+  to: {
+    ...card.to,
+    query: {
+      ...(card.to.query || {}),
+      entry: 'cover',
+    },
+  },
 })
 
 const copy = computed(() => {

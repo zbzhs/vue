@@ -38,6 +38,10 @@ function setCurrentUser(user) {
   writeStoredUser(user)
 }
 
+function logout() {
+  setCurrentUser(null)
+}
+
 function isFemaleTitle(title) {
   return ['女士', '濂冲＋'].includes(title)
 }
@@ -80,6 +84,7 @@ export function useAuth() {
   return {
     currentUser,
     displayName,
+    logout,
     setCurrentUser,
   }
 }

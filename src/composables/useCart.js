@@ -1,29 +1,52 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
-const CART_STORAGE_KEY = 'dering-cart-items'
+import { useAuth } from './useAuth'
+
+const CART_STORAGE_PREFIX = 'dering-cart-items'
+const { currentUser } = useAuth()
 const cartItems = ref(readStoredItems())
 
-function readStoredItems() {
+function getUserCartIdentity(user = currentUser.value) {
+  return String(user?.id || user?.email || user?.nickname || '').trim()
+}
+
+function getCartStorageKey(user = currentUser.value) {
+  const identity = getUserCartIdentity(user)
+  return identity ? `${CART_STORAGE_PREFIX}:${encodeURIComponent(identity)}` : ''
+}
+
+function readStoredItems(user = currentUser.value) {
   if (typeof window === 'undefined') {
     return []
   }
 
+  const storageKey = getCartStorageKey(user)
+  if (!storageKey) {
+    return []
+  }
+
   try {
-    const stored = window.localStorage.getItem(CART_STORAGE_KEY)
+    const stored = window.localStorage.getItem(storageKey)
     const items = stored ? JSON.parse(stored) : []
     return Array.isArray(items) ? items.map((item) => ({ selected: true, ...item })) : []
   } catch {
-    window.localStorage.removeItem(CART_STORAGE_KEY)
+    window.localStorage.removeItem(storageKey)
     return []
   }
 }
 
 function writeStoredItems(items) {
   if (typeof window === 'undefined') {
-    return
+    return false
   }
 
-  window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
+  const storageKey = getCartStorageKey()
+  if (!storageKey) {
+    return false
+  }
+
+  window.localStorage.setItem(storageKey, JSON.stringify(items))
+  return true
 }
 
 function normalizeCartProduct(product) {
@@ -43,6 +66,10 @@ function normalizeCartProduct(product) {
 }
 
 function addCartItem(product) {
+  if (!getUserCartIdentity()) {
+    return false
+  }
+
   const item = normalizeCartProduct(product)
   const existingItem = cartItems.value.find((entry) => entry.code === item.code)
 
@@ -54,6 +81,7 @@ function addCartItem(product) {
   }
 
   writeStoredItems(cartItems.value)
+  return true
 }
 
 function updateCartItemQuantity(code, quantity) {
@@ -91,6 +119,10 @@ function clearCart() {
   cartItems.value = []
   writeStoredItems(cartItems.value)
 }
+
+watch(currentUser, () => {
+  cartItems.value = readStoredItems()
+})
 
 export function useCart() {
   const cartCount = computed(() =>

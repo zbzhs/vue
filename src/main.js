@@ -11,6 +11,7 @@ import AdvantagesView from './views/AdvantagesView.vue'
 import BuyingGuideView from './views/BuyingGuideView.vue'
 import FaqView from './views/FaqView.vue'
 import ContactView from './views/ContactView.vue'
+import SearchView from './views/SearchView.vue'
 import PreferencesView from './views/PreferencesView.vue'
 import RegisterView from './views/RegisterView.vue'
 import LoginView from './views/LoginView.vue'
@@ -77,6 +78,7 @@ const router = createRouter({
     { path: '/buying-guide', name: 'buyingGuide', component: BuyingGuideView },
     { path: '/faq', name: 'faq', component: FaqView },
     { path: '/contact', name: 'contact', component: ContactView },
+    { path: '/search', name: 'search', component: SearchView },
     { path: '/preferences', name: 'preferences', component: PreferencesView },
     { path: '/register', name: 'register', component: RegisterView },
     { path: '/login', name: 'login', component: LoginView },

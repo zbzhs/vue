@@ -125,7 +125,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useAuth } from '../composables/useAuth'
@@ -243,6 +243,13 @@ const lastCartProduct = ref(readLastCartProduct())
 function toggleAllSelected(event) {
   setAllCartItemsSelected(event.target.checked)
 }
+
+onMounted(() => {
+  if (!currentUser.value) {
+    window.alert(copy.value.loginRequired)
+    router.push({ name: 'login' })
+  }
+})
 
 function readLastCartProduct() {
   if (typeof window === 'undefined') {

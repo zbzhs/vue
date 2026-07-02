@@ -29,10 +29,14 @@
             <h2>{{ copy.consult.title }}</h2>
           </div>
           <div class="contact-action-body">
-            <div class="contact-chat-mark" aria-hidden="true">
-              <span></span>
-              <span></span>
-            </div>
+            <svg class="contact-chat-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+              <path d="M32 57.2c13.9 0 25.2-11.3 25.2-25.2S45.9 6.8 32 6.8 6.8 18.1 6.8 32 18.1 57.2 32 57.2Z" />
+              <path d="M19.4 33.2v-4.1c0-7.4 5.4-12.9 12.6-12.9s12.6 5.5 12.6 12.9v4.1" />
+              <path d="M19.3 31.2h-2c-1.5 0-2.7 1.2-2.7 2.7v4.4c0 1.5 1.2 2.7 2.7 2.7h3V31.2Zm25.4 0h2c1.5 0 2.7 1.2 2.7 2.7v4.4c0 1.5-1.2 2.7-2.7 2.7h-3V31.2Z" />
+              <path d="M26.8 36.9c1.3 1.1 3.1 1.7 5.2 1.7s3.9-.6 5.2-1.7" />
+              <path d="M44.6 40.8c0 4.2-3.5 6.7-8.1 6.7h-3.9" />
+              <path d="M31.8 47.5h-3" />
+            </svg>
             <p>{{ copy.consult.body }}</p>
           </div>
         </article>
