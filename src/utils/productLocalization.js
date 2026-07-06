@@ -6,6 +6,7 @@ const typeMap = {
   耳饰: 'Earrings',
   耳钉: 'Stud Earrings',
   耳圈: 'Hoop Earrings',
+  耳吊: 'Drop Earrings',
   耳坠: 'Drop Earrings',
   手链: 'Bracelet',
   吊坠: 'Pendant',
@@ -181,6 +182,11 @@ const specLabelMap = {
 }
 
 const colorMap = {
+  白钻: 'White Diamond',
+  粉钻: 'Pink Diamond',
+  黄钻: 'Yellow Diamond',
+  培育兰宝: 'Lab-Grown Sapphire',
+  培育蓝宝: 'Lab-Grown Sapphire',
   培育白钻: 'Lab-Grown White Diamond',
   培育粉钻: 'Lab-Grown Pink Diamond',
   培育黄钻: 'Lab-Grown Yellow Diamond',
@@ -333,7 +339,12 @@ const textReplacements = [
   ['培育白钻', 'lab-grown white diamond'],
   ['培育粉钻', 'lab-grown pink diamond'],
   ['培育黄钻', 'lab-grown yellow diamond'],
+  ['培育兰宝', 'lab-grown sapphire'],
+  ['培育蓝宝', 'lab-grown sapphire'],
   ['培育钻', 'lab-grown diamond'],
+  ['白钻', 'white diamond'],
+  ['粉钻', 'pink diamond'],
+  ['黄钻', 'yellow diamond'],
   ['18K白', '18K White Gold'],
   ['18K黄', '18K Yellow Gold'],
   ['Pt950', 'PT950 Platinum'],
@@ -354,6 +365,7 @@ const textReplacements = [
   ['耳针式', 'post-back'],
   ['耳钉', 'stud earrings'],
   ['耳圈', 'hoop earrings'],
+  ['耳吊', 'drop earrings'],
   ['耳坠', 'drop earrings'],
   ['吊坠', 'pendant'],
   ['项链', 'necklace'],
@@ -531,6 +543,21 @@ export function localizeMaterial(value, locale) {
   }
 
   return translateEnglishPhrases(materialMap[value] ?? value, locale)
+}
+
+export function localizeFilterValue(value, locale) {
+  if (!value || locale === 'zh') {
+    return value
+  }
+
+  const directValue =
+    materialMap[value] ??
+    seriesMap[value] ??
+    typeMap[value] ??
+    colorMap[value] ??
+    shapeMap[value]
+
+  return translateEnglishPhrases(directValue ?? replaceText(value), locale)
 }
 
 export function localizeSpecLabel(value, locale) {

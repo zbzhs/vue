@@ -6,52 +6,52 @@
         {{ ui.close }}
       </button>
 
-      <div class="drawer-filter-group">
-        <div class="drawer-filter-head">
-          <h2>{{ ui.typeLabel }}</h2>
-          <span aria-hidden="true">+</span>
-        </div>
-        <button
-          v-for="type in filterTypes"
-          :key="type"
-          type="button"
-          :class="{ active: draftType === type }"
-          @click="selectTypeFilter(type)"
+      <div class="drawer-filter-modules">
+        <section
+          v-for="module in filterModules"
+          :key="module.id"
+          class="drawer-filter-group"
+          :class="{ active: activeFilterModule === module.id }"
         >
-          {{ displayType(type) }}
-        </button>
-      </div>
+          <button
+            class="drawer-filter-head"
+            type="button"
+            :aria-expanded="activeFilterModule === module.id"
+            @click="activeFilterModule = activeFilterModule === module.id ? '' : module.id"
+          >
+            <span>
+              <h2>{{ module.label }}</h2>
+              <small v-if="module.summary">{{ module.summary }}</small>
+            </span>
+            <i aria-hidden="true">{{ activeFilterModule === module.id ? '-' : '+' }}</i>
+          </button>
 
-      <div class="drawer-filter-group">
-        <div class="drawer-filter-head">
-          <h2>{{ ui.priceLabel }}</h2>
-          <span aria-hidden="true">+</span>
-        </div>
-        <button
-          v-for="range in priceRanges"
-          :key="range.id"
-          type="button"
-          :class="{ active: draftPrice === range.id }"
-          @click="selectPriceFilter(range.id)"
-        >
-          {{ displayPriceRange(range) }}
-        </button>
-      </div>
-
-      <div class="drawer-filter-group">
-        <div class="drawer-filter-head">
-          <h2>{{ ui.seriesLabel }}</h2>
-          <span aria-hidden="true">+</span>
-        </div>
-        <button
-          v-for="series in filterSeries"
-          :key="series"
-          type="button"
-          :class="{ active: draftSeries === series }"
-          @click="selectSeriesFilter(series)"
-        >
-          {{ displaySeries(series) }}
-        </button>
+          <div v-if="activeFilterModule === module.id" class="drawer-filter-options">
+            <template v-for="option in module.options" :key="option.value">
+              <button
+                type="button"
+                :class="{ active: module.value === option.value }"
+                @click="selectFilterOption(module.id, option.value)"
+              >
+                {{ option.label }}
+              </button>
+              <div
+                v-if="module.child && option.value === earringFilterKey && module.value === earringFilterKey"
+                class="drawer-filter-subgroup"
+              >
+                <button
+                  v-for="childOption in module.child.options"
+                  :key="childOption.value"
+                  type="button"
+                  :class="{ active: module.child.value === childOption.value }"
+                  @click="selectFilterOption(module.child.id, childOption.value)"
+                >
+                  {{ childOption.label }}
+                </button>
+              </div>
+            </template>
+          </div>
+        </section>
       </div>
 
       <div class="drawer-filter-actions">
@@ -76,7 +76,7 @@
       <p>{{ categoryHero.text }}</p>
     </div>
 
-    <img class="category-hero-image" :src="categoryHero.image" :alt="categoryHero.alt" />
+    <img v-if="categoryHero.image" class="category-hero-image" :src="categoryHero.image" :alt="categoryHero.alt" />
   </section>
 
   <section class="product-discovery" :aria-label="ui.discoveryAria">
@@ -104,7 +104,7 @@
             @mouseleave="clearHoveredProduct(product.code)"
             @click="chooseRecommendation(product)"
           >
-            <img :src="resolveProductImage(product.image, product.alternateImage, product.code)" :alt="product.displayName" />
+            <img :src="displayProductCardImage(product)" :alt="product.displayName" />
             <span>
               <strong>{{ product.displayName }}</strong>
               <small>
@@ -136,6 +136,7 @@
         <span class="product-visual">
           <img
             v-if="displayProductCardImage(product)"
+            class="product-image"
             :src="displayProductCardImage(product)"
             :alt="product.displayName"
             :style="productImageStyle(product)"
@@ -171,7 +172,10 @@
       @mouseleave="clearHoveredProduct(activeProduct.code)"
     >
       <button class="detail-close" type="button" :aria-label="ui.closeDetail" @click="closeProduct">
-        &times;
+        <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <path d="M20.5 8.5 13 16l7.5 7.5" />
+          <path d="M14 16h15" />
+        </svg>
       </button>
       <div class="detail-media">
         <button
@@ -194,7 +198,7 @@
       <div class="detail-copy">
         <h2>{{ activeProduct.displayName }}</h2>
         <div class="detail-meta">
-          <span>{{ activeProduct.code }}</span>
+          <span>{{ activeProductDisplayCode }}</span>
           <span aria-hidden="true">|</span>
           <span>{{ activeProduct.brand }}</span>
           <span aria-hidden="true">|</span>
@@ -203,7 +207,7 @@
             :aria-expanded="activeDetailDrawer === 'product'"
             @click="openDetailDrawer('product')"
           >
-            产品详情
+            {{ ui.productDetails }}
           </button>
         </div>
 
@@ -244,14 +248,14 @@
           </button>
         </div>
 
-        <div class="detail-service-menu" aria-label="商品服务">
+        <div class="detail-service-menu" :aria-label="ui.serviceMenuAria">
           <div class="detail-service-item">
             <button
               type="button"
               :aria-expanded="activeDetailDrawer === 'size'"
               @click="openDetailDrawer('size')"
             >
-              <span>尺寸选择</span>
+              <span>{{ ui.sizeSelect }}</span>
               <i aria-hidden="true"></i>
             </button>
           </div>
@@ -262,18 +266,18 @@
               :aria-expanded="activeDetailDrawer === 'quality'"
               @click="openDetailDrawer('quality')"
             >
-              <span>质量保证</span>
-              <em>配有国检证书</em>
+              <span>{{ ui.qualityAssurance }}</span>
+              <em>{{ ui.certificateIncluded }}</em>
               <i aria-hidden="true"></i>
             </button>
           </div>
 
           <div class="detail-contact-block">
-            <p>有什么疑虑？</p>
+            <p>{{ ui.questions }}</p>
             <div class="detail-contact-service">
               <span>
                 <i class="detail-contact-icon detail-contact-icon--mark" aria-hidden="true"></i>
-                致电 13715011967
+                {{ ui.call }} 13715011967
               </span>
               <button
                 type="button"
@@ -281,14 +285,14 @@
                 @click="openDetailDrawer('contact')"
               >
                 <i class="detail-contact-icon detail-contact-icon--chat" aria-hidden="true"></i>
-                咨询我们
+                {{ ui.consultUs }}
               </button>
             </div>
           </div>
         </div>
 
         <div class="detail-purchase-row">
-          <strong>{{ formatPrice(activeProduct.price) }}</strong>
+          <strong>{{ formatPrice(activeProductPurchasePrice) }}</strong>
           <button class="detail-cart-button" type="button" @click="addActiveProductToCart">
             {{ ui.addToCart }}
           </button>
@@ -300,7 +304,7 @@
             :aria-expanded="activeDetailDrawer === 'care'"
             @click="openDetailDrawer('care')"
           >
-            <span>保养维修服务</span>
+            <span>{{ ui.careRepair }}</span>
             <i aria-hidden="true"></i>
           </button>
         </div>
@@ -309,10 +313,48 @@
         <p v-if="activeProduct.displayRemark">{{ activeProduct.displayRemark }}</p>
       </div>
 
-      <aside v-if="activeDetailDrawer" class="detail-spec-drawer" :aria-label="detailDrawerTitle">
-        <div class="detail-spec-drawer-head">
-          <h3>{{ detailDrawerTitle }}</h3>
-          <button type="button" :aria-label="`关闭${detailDrawerTitle}`" @click="activeDetailDrawer = ''">
+      <aside
+        v-if="activeDetailDrawer"
+        class="detail-spec-drawer"
+        :class="{ 'detail-spec-drawer--goods': activeDetailDrawer === 'size' }"
+        :aria-label="detailDrawerTitle"
+      >
+        <div
+          class="detail-spec-drawer-head"
+          :class="{ 'detail-spec-drawer-head--tabs': activeDetailDrawer === 'size' }"
+        >
+          <div
+            v-if="activeDetailDrawer === 'size'"
+            class="detail-drawer-tabs"
+            role="tablist"
+            :aria-label="ui.sizeOptionsAria"
+          >
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="activeSizePanel === 'select'"
+              :class="{ active: activeSizePanel === 'select' }"
+              @click="activeSizePanel = 'select'"
+            >
+              {{ ui.sizeSelect }}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="activeSizePanel === 'guide'"
+              :class="{ active: activeSizePanel === 'guide' }"
+              @click="activeSizePanel = 'guide'"
+            >
+              {{ ui.sizeGuide }}
+            </button>
+          </div>
+          <h3 v-else>{{ detailDrawerTitle }}</h3>
+          <button
+            class="detail-spec-drawer-close"
+            type="button"
+            :aria-label="`${ui.close} ${detailDrawerTitle}`"
+            @click="activeDetailDrawer = ''"
+          >
             &times;
           </button>
         </div>
@@ -332,44 +374,83 @@
         </template>
 
         <template v-else-if="activeDetailDrawer === 'size'">
-          <p v-if="activeProductSizeOptions.length">请选择适合的戒指尺寸。若不确定手寸，可联系客服协助测量与确认。</p>
-          <div
-            v-if="activeProductSizeOptions.length"
-            class="detail-size-options detail-size-options--drawer"
-            role="group"
-            aria-label="尺寸选择"
-          >
-            <button
-              v-for="size in activeProductSizeOptions"
-              :key="size"
-              type="button"
-              :class="{ active: selectedRingSize === size }"
-              @click="selectedRingSize = size"
+          <template v-if="activeSizePanel === 'select'">
+            <p v-if="activeProductGoodsLoading">{{ ui.goodsLoading }}</p>
+            <p v-else-if="activeProductGoodsLoadError">{{ ui.goodsLoadError }}</p>
+            <p v-else-if="activeProductGoodsOptions.length">{{ ui.goodsPrompt }}</p>
+            <div
+              v-if="!activeProductGoodsLoading && activeProductGoodsOptions.length"
+              class="detail-goods-options"
+              role="group"
+              :aria-label="ui.goodsOptionsAria"
             >
-              {{ size }}
-            </button>
+              <button
+                v-for="item in activeProductGoodsOptions"
+                :key="item.goodsNo"
+                type="button"
+                :class="{ active: draftSelectedGoodsNo === item.goodsNo }"
+                @click="selectGoodsOption(item)"
+              >
+                <span>{{ ui.goodsNo }}</span>
+                <span class="detail-goods-main">
+                  <strong>{{ item.goodsNo }}</strong>
+                  <em v-if="item.salesPrice">¥{{ item.salesPrice }}</em>
+                </span>
+                <small>
+                  <b>{{ ui.goodsWeight }} {{ item.goodsWeight || '-' }}</b>
+                  <b>{{ ui.goldWeight }} {{ item.goldWeight || '-' }}</b>
+                  <b>{{ ui.sideStoneWeight }} {{ item.sideStoneWeight || '-' }}</b>
+                </small>
+              </button>
+            </div>
+            <div
+              v-if="!activeProductGoodsLoading && activeProductGoodsOptions.length"
+              class="detail-goods-actions"
+            >
+              <button
+                type="button"
+                :disabled="!draftSelectedGoodsNo"
+                @click="confirmSelectedGoodsOption"
+              >
+                {{ ui.confirm }}
+              </button>
+            </div>
+            <p v-else-if="!activeProductGoodsLoading">{{ ui.noGoods }}</p>
+          </template>
+          <div v-else class="detail-size-guide-panel">
+            <figure v-if="activeSizeGuide?.image">
+              <img :src="activeSizeGuide.image" :alt="activeSizeGuide.alt" />
+            </figure>
+            <div v-else-if="activeSizeGuide?.sections?.length" class="detail-size-guide-notes">
+              <section v-for="section in activeSizeGuide.sections" :key="section.title">
+                <h4>{{ section.title }}</h4>
+                <p v-for="item in section.items" :key="item">{{ item }}</p>
+              </section>
+            </div>
+            <p v-else>{{ ui.noSizeGuide }}</p>
           </div>
         </template>
 
         <template v-else-if="activeDetailDrawer === 'contact'">
           <div class="detail-contact-drawer">
-            <img src="/images/contact/wechat.jpg" alt="微信二维码" />
+            <img src="/images/contact/wechat.jpg" :alt="ui.wechatQrAlt" />
             <div>
-              <span>联系电话</span>
+              <span>{{ ui.contactPhone }}</span>
               <strong>13715011967</strong>
-              <p>可通过电话或扫码添加微信咨询尺寸、库存、定制与售后服务。</p>
+              <p>{{ ui.contactBody }}</p>
             </div>
           </div>
         </template>
 
         <template v-else-if="activeDetailDrawer === 'quality'">
-          <p>每件 DERING 作品均配有国检证书，可用于核验钻石、金属材质与作品信息。</p>
-          <p>如需查看证书信息或确认检测细节，可联系顾问协助核对。</p>
+          <p>{{ ui.qualityBody1 }}</p>
+          <p>{{ ui.qualityBody2 }}</p>
         </template>
 
         <template v-else-if="activeDetailDrawer === 'care'">
-          <p>DERING 提供日常清洁、镶口检查、尺寸微调、抛光保养与维修评估服务。</p>
-          <p>如作品出现松动、刮痕或佩戴尺寸不适，建议先联系我们确认作品结构与服务周期。</p>
+          <div class="detail-care-drawer">
+            <img src="/images/size-guide/%E8%AF%A6%E6%83%85%E9%A1%B5_09.jpg" :alt="ui.careRepair" />
+          </div>
         </template>
       </aside>
 
@@ -406,6 +487,7 @@ import { useCart } from '../composables/useCart'
 import { useLocale } from '../composables/useLocale'
 import { formatCurrencyFromCny } from '../utils/currency'
 import {
+  localizeFilterValue,
   localizeFreeText,
   localizeMaterial,
   localizeProductName,
@@ -421,7 +503,14 @@ const braceletFilterKey = '手链'
 const necklaceFilterKey = '项链'
 const pendantFilterKey = '吊坠'
 const earringFilterKey = '耳饰'
-const earringTypes = ['耳饰', '耳钉', '耳圈', '耳线', '耳吊', '耳扣']
+const earringDropTypeValues = ['耳吊', '耳坠']
+const earringTypes = ['耳饰', '耳钉', '耳圈', '耳线', ...earringDropTypeValues, '耳扣']
+const earringSubtypeOptions = [
+  { value: allFilterKey, label: '全部耳饰' },
+  { value: '耳圈', label: '耳圈' },
+  { value: '耳钉', label: '耳钉' },
+  { value: '耳吊', label: '耳吊' },
+]
 const visibleDetailThumbCount = 4
 const LAST_CART_PRODUCT_STORAGE_KEY = 'dering-last-cart-product'
 const detailGoodImages = Array.from(
@@ -486,6 +575,39 @@ const uiCopy = {
     priceOnRequest: '面议',
     priceUnder: (value) => `${value} 以下`,
     priceAbove: (value) => `${value} 以上`,
+    materialLabel: '材质',
+    stoneShapeLabel: '主石形状',
+    mainStoneLabel: '主石大小',
+    stoneColorLabel: '颜色',
+    earringSubtypeLabel: '耳饰细分',
+    allEarrings: '全部耳饰',
+    productDetails: '产品详情',
+    serviceMenuAria: '商品服务',
+    sizeSelect: '尺寸选择',
+    sizeGuide: '尺寸指南',
+    sizeOptionsAria: '尺寸选项',
+    qualityAssurance: '质量保证',
+    certificateIncluded: '配有国检证书',
+    questions: '有什么疑虑？',
+    call: '致电',
+    consultUs: '咨询我们',
+    careRepair: '保养维修服务',
+    goodsLoading: '正在加载同款货号...',
+    goodsLoadError: '货号数据加载失败，请稍后重试。',
+    goodsPrompt: '请选择同款款号下的具体货号，顾问可按货号进一步核对库存与证书。',
+    goodsOptionsAria: '同款货号选择',
+    goodsNo: '货号',
+    goodsWeight: '货重',
+    goldWeight: '金重',
+    sideStoneWeight: '辅石重',
+    confirm: '确定',
+    noGoods: '暂无同款货号数据，请联系客服确认库存。',
+    noSizeGuide: '当前品类暂无尺寸指南，请联系客服确认尺寸。',
+    wechatQrAlt: '微信二维码',
+    contactPhone: '联系电话',
+    contactBody: '可通过电话或扫码添加微信咨询尺寸、库存、定制与售后服务。',
+    qualityBody1: '每件 DERING 作品均配有国检证书，可用于核验钻石、金属材质与作品信息。',
+    qualityBody2: '如需查看证书信息或确认检测细节，可联系顾问协助核对。',
   },
   en: {
     heroKicker: 'Products',
@@ -524,6 +646,39 @@ const uiCopy = {
     priceOnRequest: 'Price on request',
     priceUnder: (value) => `Under ${value}`,
     priceAbove: (value) => `Above ${value}`,
+    materialLabel: 'Metal',
+    stoneShapeLabel: 'Center Stone Shape',
+    mainStoneLabel: 'Center Stone Size',
+    stoneColorLabel: 'Color',
+    earringSubtypeLabel: 'Earring Type',
+    allEarrings: 'All Earrings',
+    productDetails: 'Product Details',
+    serviceMenuAria: 'Product services',
+    sizeSelect: 'Size Selection',
+    sizeGuide: 'Size Guide',
+    sizeOptionsAria: 'Size options',
+    qualityAssurance: 'Quality Assurance',
+    certificateIncluded: 'Certificate included',
+    questions: 'Need help?',
+    call: 'Call',
+    consultUs: 'Contact Us',
+    careRepair: 'Care & Repair Service',
+    goodsLoading: 'Loading available item numbers...',
+    goodsLoadError: 'Failed to load item data. Please try again later.',
+    goodsPrompt: 'Select the exact item number for this style. Our consultant can use it to verify stock and certificate details.',
+    goodsOptionsAria: 'Available item number selection',
+    goodsNo: 'Item No.',
+    goodsWeight: 'Total weight',
+    goldWeight: 'Gold weight',
+    sideStoneWeight: 'Side stone weight',
+    confirm: 'Confirm',
+    noGoods: 'No item data is available for this style. Please contact us to confirm stock.',
+    noSizeGuide: 'No size guide is available for this category. Please contact us to confirm sizing.',
+    wechatQrAlt: 'WeChat QR code',
+    contactPhone: 'Phone',
+    contactBody: 'Call us or scan the QR code to ask about sizing, stock, customization, and after-sales service.',
+    qualityBody1: 'Every DERING piece includes a national inspection certificate for verifying diamond, metal, and product details.',
+    qualityBody2: 'Contact our consultant if you need certificate information or help checking inspection details.',
   },
   ja: {
     heroKicker: 'Products',
@@ -678,7 +833,6 @@ const breadcrumbCopies = {
 
 const categoryHeroCopy = {
   ring: {
-    image: '/images/product/rings/1.jpg',
     title: {
       zh: '戒指',
       en: 'Rings',
@@ -688,7 +842,7 @@ const categoryHeroCopy = {
       vi: 'Nhan',
     },
     text: {
-      zh: '以生活日常与人生纪念为创作灵感，我们雕琢多款戒指臻品。简约单钻纯粹大气，繁复群镶华丽动人，宝石折射细碎柔光，金属勾勒流畅线条，于方寸指尖演绎独属于你的优雅光芒，见证爱意、仪式与岁岁日常。',
+      zh: '以生活日常与人生纪念为创作灵感，我们雕琢多款戒指臻品。简约单钻纯粹大气，于方寸指尖演绎独属于你的优雅光芒，见证爱意、仪式与岁岁日常。',
       en: 'Designed for everyday wear and meaningful moments, our rings range from classic solitaires to refined diamond settings.',
       ja: '日常使いから特別な瞬間まで、クラシックな一粒石から繊細なセッティングまで揃えました。',
       th: 'แหวนสำหรับทุกวันและช่วงเวลาสำคัญ ตั้งแต่ดีไซน์เม็ดเดี่ยวคลาสสิกไปจนถึงงานฝังเพชรที่ประณีต',
@@ -705,7 +859,6 @@ const categoryHeroCopy = {
     },
   },
   bracelet: {
-    image: '/images/product/bracelets/APYB0006-W-30(1).png',
     title: {
       zh: '手链',
       en: 'Bracelets',
@@ -715,7 +868,7 @@ const categoryHeroCopy = {
       vi: 'Vong tay',
     },
     text: {
-      zh: '灵感源于日常细碎美好与珍贵纪念，雕琢多款腕间珠宝。连贯排钻自带大气华丽质感，细巧单链低调温柔，宝石随手腕动作折射灵动光芒，衬显手腕纤细，轻松适配休闲、正装各类造型。',
+      zh: '灵感源于日常细碎美好与珍贵纪念，雕琢多款腕间珠宝。连贯排钻自带大气华丽质感，细巧单链低调温柔，轻松适配休闲、正装各类造型。',
       en: 'Bracelets follow the wrist with refined proportions, bringing subtle brilliance from delicate chains to diamond-set designs.',
       ja: '手元に沿う繊細なバランスで、シンプルなチェーンからダイヤモンドセッティングまで日常に輝きを添えます。',
       th: 'สร้อยข้อมือออกแบบให้รับกับข้อมืออย่างประณีต ตั้งแต่เส้นเรียบง่ายไปจนถึงดีไซน์ฝังเพชร',
@@ -732,7 +885,6 @@ const categoryHeroCopy = {
     },
   },
   necklace: {
-    image: '/images/product/necklaces/03fbdeb5-250b-47c8-86d4-4483c6dfdebe.png',
     title: {
       zh: '项链',
       en: 'Necklaces',
@@ -742,7 +894,7 @@ const categoryHeroCopy = {
       vi: 'Day chuyen',
     },
     text: {
-      zh: '以优雅与仪式感为创作内核，打造多元项链臻品。极简素链低调内敛，满钻重工款璀璨夺目，宝石折射温润柔光，贴合脖颈曲线自然衬肤，无论日常穿搭或是重要晚宴，都能流露独一份的精致格调。',
+      zh: '以优雅与仪式感为创作内核，打造多元项链臻品。极简素链低调内敛，满钻重工款璀璨夺目，无论日常穿搭或是重要晚宴，都能流露独一份的精致格调。',
       en: 'Necklaces frame the neckline with balanced drops, connecting stones, chains, and collarbone lines for polished styling.',
       ja: '首元のラインを美しく見せるバランスで、石、チェーン、鎖骨のラインが自然に響き合います。',
       th: 'สร้อยคอเน้นสัดส่วนที่รับกับลำคอ ให้ตัวเรือน โซ่ และเส้นไหปลาร้าดูสมดุล',
@@ -759,7 +911,6 @@ const categoryHeroCopy = {
     },
   },
   pendant: {
-    image: '/images/product/pendants/1781603252_1ed77c707cf6a9dd4cca69453f13bf3e.png',
     title: {
       zh: '吊坠',
       en: 'Pendants',
@@ -769,7 +920,7 @@ const categoryHeroCopy = {
       vi: 'Mat day',
     },
     text: {
-      zh: '以爱意与日常温柔为创作内核，雕琢多款吊坠臻品。利落极简款适配通勤，重工彩宝款饱含仪式感，宝石折射温润柔光悬于锁骨，可单戴可叠搭，随身珍藏每一份心动与纪念。',
+      zh: '以爱意与日常温柔为创作内核，雕琢多款吊坠臻品。利落极简款适配通勤，重工彩宝款饱含仪式感，可单戴可叠搭，随身珍藏每一份心动与纪念。',
       en: 'Pendants carry the stone with refined proportions, bringing a polished focal point to everyday chains and meaningful gifts.',
       ja: 'ペンダントは繊細なバランスで石の輝きを引き立て、日常のチェーンにもギフトにも上品な印象を添えます。',
       th: 'จี้ออกแบบด้วยสัดส่วนประณีต ช่วยขับประกายของเม็ดหลักให้เป็นจุดเด่นสำหรับทุกวันและของขวัญ',
@@ -786,7 +937,6 @@ const categoryHeroCopy = {
     },
   },
   earrings: {
-    image: '/images/product/earrings/1782195279_cc05b28eae6d34f7d14697ca2b079e1c.png',
     title: {
       zh: '耳饰',
       en: 'Earrings',
@@ -796,7 +946,7 @@ const categoryHeroCopy = {
       vi: 'Hoa tai',
     },
     text: {
-      zh: '撷取日常美好与仪式时刻为灵感，打造多款耳畔臻品。极简单钻干净耐看，重工彩宝群镶华贵动人，宝石流转柔和光影，柔和修饰脸型，无论休闲穿搭或是隆重场合，都能衬出独一份精致气质。',
+      zh: '撷取日常美好与仪式时刻为灵感，打造多款耳畔臻品。极简单钻干净耐看，重工彩宝群镶华贵动人，无论休闲穿搭或是隆重场合，都能衬出独一份精致气质。',
       en: 'From clean studs to fluid threaders, hoops, and cuffs, our earrings frame the face with refined sparkle for everyday and occasion styling.',
       ja: 'シンプルなスタッドからチェーン、フープ、イヤーカフまで、顔まわりに繊細な輝きを添えます。',
       th: 'ตั้งแต่ต่างหูเม็ดเดี่ยว ต่างหูสาย ต่างหูห่วง ไปจนถึงเอียร์คัฟ ทุกชิ้นช่วยขับกรอบหน้าให้ดูประณีต',
@@ -826,7 +976,7 @@ const categoryHero = computed(() => {
   const hero = categoryHeroCopy[categoryKey]
 
   return {
-    image: hero.image,
+    image: '',
     title: hero.title[activeLocale] || hero.title.zh,
     text: hero.text[activeLocale] || hero.text.zh,
     alt: hero.alt[activeLocale] || hero.alt.zh,
@@ -851,12 +1001,23 @@ const productsTotal = ref(0)
 const visibleProductLimit = ref(productsPageSize)
 const searchQuery = ref('')
 const selectedType = ref(allFilterKey)
+const selectedEarringSubtype = ref(allFilterKey)
 const selectedPrice = ref(allFilterKey)
 const selectedSeries = ref(allFilterKey)
+const selectedMaterial = ref(allFilterKey)
+const selectedStoneShape = ref(allFilterKey)
+const selectedMainStone = ref(allFilterKey)
+const selectedStoneColor = ref(allFilterKey)
 const draftType = ref(allFilterKey)
+const draftEarringSubtype = ref(allFilterKey)
 const draftPrice = ref(allFilterKey)
 const draftSeries = ref(allFilterKey)
+const draftMaterial = ref(allFilterKey)
+const draftStoneShape = ref(allFilterKey)
+const draftMainStone = ref(allFilterKey)
+const draftStoneColor = ref(allFilterKey)
 const showFilterPanel = ref(false)
+const activeFilterModule = ref('type')
 const activeProductCode = ref('')
 const activeDetailImage = ref('')
 const detailThumbStartIndex = ref(0)
@@ -864,23 +1025,103 @@ const detailThumbs = ref(null)
 const productSection = ref(null)
 const hoveredProductCode = ref('')
 const activeDetailDrawer = ref('')
-const selectedRingSize = ref('')
+const activeSizePanel = ref('select')
+const selectedGoodsNo = ref('')
+const draftSelectedGoodsNo = ref('')
+const activeProductGoodsByStyleNo = ref({})
+const activeProductGoodsLoading = ref(false)
+const activeProductGoodsLoadError = ref(false)
 const detailImageZoom = ref(1)
 const previewImage = ref('')
 const previewZoom = ref(1)
-const ringSizeOptions = ['9', '10', '11', '12', '13', '14', '15', '16']
 
 const filterTypes = computed(() => {
-  const types = products.value
-    .map((product) => normalizeCategoryType(product.type))
-    .filter(Boolean)
-
-  return [allFilterKey, ...new Set(types)]
+  return [allFilterKey, braceletFilterKey, earringFilterKey, ringFilterKey, necklaceFilterKey, pendantFilterKey]
 })
 
 const filterSeries = computed(() => {
   return [allFilterKey, ...new Set(products.value.map((product) => product.series).filter(Boolean))]
 })
+
+const filterMaterials = computed(() => {
+  return [allFilterKey, ...getUniqueProductValues((product) => product.material)]
+})
+
+const filterStoneShapes = computed(() => {
+  return [allFilterKey, ...getUniqueProductValues((product) => getProductSpecValue(product, ['石形状']))]
+})
+
+const filterMainStones = computed(() => {
+  return [allFilterKey, ...getUniqueProductValues((product) => getProductSpecValue(product, ['主石']))]
+})
+
+const filterStoneColors = computed(() => {
+  return [allFilterKey, ...getUniqueProductValues((product) => normalizeStoneColor(getProductSpecValue(product, ['石颜色'])))]
+})
+
+const filterModules = computed(() => [
+  {
+    id: 'type',
+    label: ui.value.typeLabel,
+    value: draftType.value,
+    summary: getFilterSummary(draftType.value, displayType),
+    options: filterTypes.value.map((value) => ({ value, label: displayType(value) })),
+    child:
+      draftType.value === earringFilterKey
+        ? {
+            id: 'earringSubtype',
+            label: ui.value.earringSubtypeLabel,
+            value: draftEarringSubtype.value,
+            options: earringSubtypeOptions.map((option) => ({
+              value: option.value,
+              label: displayEarringSubtype(option.value),
+            })),
+          }
+        : null,
+  },
+  {
+    id: 'material',
+    label: ui.value.materialLabel,
+    value: draftMaterial.value,
+    summary: getFilterSummary(draftMaterial.value, displayMaterialFilterValue),
+    options: filterMaterials.value.map((value) => ({ value, label: displayMaterialFilterValue(value) })),
+  },
+  {
+    id: 'stoneShape',
+    label: ui.value.stoneShapeLabel,
+    value: draftStoneShape.value,
+    summary: getFilterSummary(draftStoneShape.value, displayFilterValue),
+    options: filterStoneShapes.value.map((value) => ({ value, label: displayFilterValue(value) })),
+  },
+  {
+    id: 'mainStone',
+    label: ui.value.mainStoneLabel,
+    value: draftMainStone.value,
+    summary: getFilterSummary(draftMainStone.value, displayFilterValue),
+    options: filterMainStones.value.map((value) => ({ value, label: displayFilterValue(value) })),
+  },
+  {
+    id: 'series',
+    label: ui.value.seriesLabel,
+    value: draftSeries.value,
+    summary: getFilterSummary(draftSeries.value, displaySeries),
+    options: filterSeries.value.map((value) => ({ value, label: displaySeries(value) })),
+  },
+  {
+    id: 'price',
+    label: ui.value.priceLabel,
+    value: draftPrice.value,
+    summary: getFilterSummary(draftPrice.value, displayPriceFilterValue),
+    options: priceRanges.value.map((range) => ({ value: range.id, label: displayPriceRange(range) })),
+  },
+  {
+    id: 'stoneColor',
+    label: ui.value.stoneColorLabel,
+    value: draftStoneColor.value,
+    summary: getFilterSummary(draftStoneColor.value, displayFilterValue),
+    options: filterStoneColors.value.map((value) => ({ value, label: displayFilterValue(value) })),
+  },
+])
 
 const normalizedSearch = computed(() => searchQuery.value.trim().toLowerCase())
 
@@ -945,12 +1186,34 @@ const filteredProducts = computed(() => {
     const matchesType =
       selectedType.value === allFilterKey ||
       isProductMatchingSelectedType(product.type, selectedType.value)
+    const matchesEarringSubtype =
+      selectedType.value !== earringFilterKey ||
+      isProductMatchingEarringSubtype(product.type, selectedEarringSubtype.value)
     const matchesSeries = selectedSeries.value === allFilterKey || product.series === selectedSeries.value
+    const matchesMaterial = selectedMaterial.value === allFilterKey || product.material === selectedMaterial.value
+    const matchesStoneShape =
+      selectedStoneShape.value === allFilterKey ||
+      getProductSpecValue(product, ['石形状']) === selectedStoneShape.value
+    const matchesMainStone =
+      selectedMainStone.value === allFilterKey ||
+      getProductSpecValue(product, ['主石']) === selectedMainStone.value
+    const matchesStoneColor =
+      selectedStoneColor.value === allFilterKey ||
+      normalizeStoneColor(getProductSpecValue(product, ['石颜色'])) === selectedStoneColor.value
     const price = Number(product.price ?? 0)
     const matchesPrice =
       selectedPrice.value === allFilterKey || (price >= priceRange.min && price <= priceRange.max)
 
-    return matchesType && matchesSeries && matchesPrice
+    return (
+      matchesType &&
+      matchesEarringSubtype &&
+      matchesSeries &&
+      matchesMaterial &&
+      matchesStoneShape &&
+      matchesMainStone &&
+      matchesStoneColor &&
+      matchesPrice
+    )
   })
 })
 
@@ -987,30 +1250,265 @@ const loadMoreLoadingLabel = computed(() => {
 })
 
 const activeFilterCount = computed(() => {
-  return [selectedType.value, selectedPrice.value, selectedSeries.value].filter(
-    (value) => value !== allFilterKey,
-  ).length
+  return [
+    selectedType.value,
+    selectedEarringSubtype.value,
+    selectedMaterial.value,
+    selectedStoneShape.value,
+    selectedMainStone.value,
+    selectedSeries.value,
+    selectedPrice.value,
+    selectedStoneColor.value,
+  ].filter((value) => value !== allFilterKey).length
 })
 
 const activeProduct = computed(() => {
   return localizedProducts.value.find((product) => product.code === activeProductCode.value) ?? null
 })
 
-const activeProductSizeOptions = computed(() => {
-  if (!activeProduct.value || !isRingType(activeProduct.value.type)) {
+const activeProductGoodsOptions = computed(() => {
+  const styleNo = activeProduct.value?.styleNo || activeProduct.value?.code
+  if (!styleNo) {
     return []
   }
 
-  return ringSizeOptions
+  return activeProductGoodsByStyleNo.value[styleNo] ?? []
+})
+
+const selectedGoodsItem = computed(() => {
+  if (!selectedGoodsNo.value) {
+    return null
+  }
+
+  return activeProductGoodsOptions.value.find((item) => item.goodsNo === selectedGoodsNo.value) ?? null
+})
+
+const activeProductPurchasePrice = computed(() => {
+  const goodsPrice = parsePositiveNumber(selectedGoodsItem.value?.salesPrice)
+  if (goodsPrice !== null) {
+    return goodsPrice
+  }
+
+  return activeProduct.value?.price
+})
+
+const activeProductDisplayCode = computed(() => {
+  return selectedGoodsItem.value?.goodsNo || activeProduct.value?.code || ''
+})
+
+const activeSizeGuide = computed(() => {
+  const type = activeProduct.value?.type || ''
+  const isEnglish = languageAwareLocale.value === 'en'
+  if (isRingType(type)) {
+    return {
+      alt: isEnglish ? 'Ring size guide' : '戒指尺寸指南',
+      image: '/images/size-guide/%E8%AF%A6%E6%83%85%E9%A1%B5_08.jpg',
+    }
+  }
+
+  if (isNecklaceType(type)) {
+    return {
+      alt: isEnglish ? 'Necklace size guide' : '项链尺寸指南',
+      image: '/images/size-guide/%E8%AF%A6%E6%83%85%E9%A1%B5_07.jpg',
+    }
+  }
+
+  if (isPendantType(type)) {
+    if (isEnglish) {
+      return {
+        sections: [
+          {
+            title: 'Chain Length',
+            items: [
+              '40-42 cm sits close to the collarbone and works well for petite pendants and everyday wear.',
+              '43-45 cm is the most common length, with a natural position for most pendants.',
+              '46-50 cm creates a lower drop, suitable for layering, lower necklines, or stronger pendant silhouettes.',
+            ],
+          },
+          {
+            title: 'Pendant Proportion',
+            items: [
+              'Larger pendants can sit better on a slightly longer chain so the piece does not feel too high.',
+              'Small pendants pair well with shorter chains, keeping the diamond or center stone near the collarbone.',
+              'For heavier pendants, choose a chain style with more stable support.',
+            ],
+          },
+          {
+            title: 'Styling Notes',
+            items: [
+              'For shirts, knitwear, or crew neck tops, 43-45 cm is usually the safest choice.',
+              'For layering, leave 4-6 cm between two chains so the spacing looks clear.',
+              'Contact our consultant if you want help judging the on-body position by height, neck size, and pendant size.',
+            ],
+          },
+        ],
+      }
+    }
+
+    return {
+      sections: [
+        {
+          title: '链长选择',
+          items: [
+            '40-42cm 贴近锁骨，适合小巧吊坠和日常通勤。',
+            '43-45cm 是最常用长度，位置自然，适合大多数吊坠。',
+            '46-50cm 垂落感更明显，适合叠戴、低领造型或存在感更强的吊坠。',
+          ],
+        },
+        {
+          title: '吊坠比例',
+          items: [
+            '吊坠越大，链长可以适当放长，避免坠饰贴得太高。',
+            '细小吊坠适合短链，能让钻石或主石更靠近锁骨线。',
+            '如果吊坠本身较重，建议选择承重更稳定的链型。',
+          ],
+        },
+        {
+          title: '佩戴建议',
+          items: [
+            '搭配衬衫、针织或圆领上衣时，43-45cm 通常最稳妥。',
+            '需要叠戴时，可让两条链相差 4-6cm，层次会更清楚。',
+            '如需确认上身位置，可联系顾问按身高、颈围和吊坠尺寸协助判断。',
+          ],
+        },
+      ],
+    }
+  }
+
+  if (isBraceletType(type)) {
+    if (isEnglish) {
+      return {
+        sections: [
+          {
+            title: 'How to Measure',
+            items: [
+              'Wrap a soft measuring tape around the narrowest part of your wrist. Keep it close to the skin without tightening.',
+              'If you do not have a tape, mark a strip of paper or string around your wrist, then measure it with a ruler.',
+              'Left and right wrists can differ slightly, so measure the wrist you plan to wear it on.',
+            ],
+          },
+          {
+            title: 'Fit Reference',
+            items: [
+              'Snug fit: add about 0.5-1 cm to your wrist measurement.',
+              'Natural movement: add about 1-1.5 cm to your wrist measurement.',
+              'Relaxed drape: add about 1.5-2 cm to your wrist measurement.',
+            ],
+          },
+          {
+            title: 'Style Notes',
+            items: [
+              'Tennis bracelets, rigid structures, and wider bracelets leave less movement room, so avoid choosing too tight.',
+              'Fine chain bracelets feel lighter and more natural with a little ease, but too much room may cause flipping.',
+              'If there is an extender chain, start with the middle fastening point and adjust to the most comfortable position.',
+            ],
+          },
+        ],
+      }
+    }
+
+    return {
+      sections: [
+        {
+          title: '测量方式',
+          items: [
+            '用软尺绕手腕最细处一圈，贴合但不要勒紧，读出腕围。',
+            '没有软尺时，可用纸条或细绳绕腕一圈做标记，再用直尺测量长度。',
+            '左右手腕围可能略有差异，建议以实际佩戴那只手为准。',
+          ],
+        },
+        {
+          title: '松紧参考',
+          items: [
+            '喜欢贴手佩戴：腕围基础上增加约 0.5-1cm。',
+            '喜欢自然活动空间：腕围基础上增加约 1-1.5cm。',
+            '喜欢松弛垂坠感：腕围基础上增加约 1.5-2cm。',
+          ],
+        },
+        {
+          title: '款式提醒',
+          items: [
+            '排钻手链、硬挺结构和宽版手链活动空间较小，建议不要选得过紧。',
+            '细链款更轻盈，略松一些会更自然，但过松容易翻转。',
+            '如有延长链，可优先选择中间扣位试戴，再微调到舒适位置。',
+          ],
+        },
+      ],
+    }
+  }
+
+  if (isEarringType(type)) {
+    if (isEnglish) {
+      return {
+        sections: [
+          {
+            title: 'Stud Earrings',
+            items: [
+              'Studs usually do not require a size selection. Focus on single-piece dimensions, wearing weight, and back stability.',
+              'For everyday wear, lighter styles are generally more comfortable over long periods.',
+              'If your earlobe is thin, the piercing sits low, or earrings tilt forward easily, choose a steadier back structure.',
+            ],
+          },
+          {
+            title: 'Hoops and Drops',
+            items: [
+              'For hoops, check the diameter: smaller hoops sit closer to the ear, while larger hoops create a stronger look.',
+              'For drop earrings and threaders, check the drop length and consider face shape, hairstyle, and occasion.',
+              'Long earrings suit evening or styling-focused occasions; for daily wear, lighter and shorter pieces are easier.',
+            ],
+          },
+          {
+            title: 'Wearing Notes',
+            items: [
+              'If your ears are sensitive, confirm the metal material and post thickness first.',
+              'If the two piercings sit at different heights, drop styles can make the difference more visible.',
+              'When wearing a set, let either the earrings or necklace be the main focus so the overall look stays clean.',
+            ],
+          },
+        ],
+      }
+    }
+
+    return {
+      sections: [
+        {
+          title: '耳钉',
+          items: [
+            '耳钉通常无需选择圈号，重点看单只尺寸、佩戴重量和耳堵稳定性。',
+            '日常通勤建议选择轻量款，佩戴时间更长也更舒适。',
+            '耳垂较薄、耳洞较低或容易前倾时，建议选择贴耳更稳的耳堵结构。',
+          ],
+        },
+        {
+          title: '耳圈与耳吊',
+          items: [
+            '耳圈主要确认直径，越小越贴耳，越大越有造型感。',
+            '耳吊、耳线主要确认垂坠长度，建议结合脸型、发型和使用场景选择。',
+            '长款耳饰更适合晚宴或造型场合，日常佩戴可优先选择轻量短款。',
+          ],
+        },
+        {
+          title: '佩戴建议',
+          items: [
+            '如果耳洞较敏感，建议优先确认金属材质和耳针粗细。',
+            '左右耳洞高度不一致时，垂坠款视觉差异会更明显，可先咨询顾问。',
+            '成套佩戴时，可让耳饰和项链只保留一个视觉重点，整体更干净。',
+          ],
+        },
+      ],
+    }
+  }
+
+  return null
 })
 
 const detailDrawerTitle = computed(() => {
   const titles = {
-    product: '产品详情',
-    size: '尺寸选择',
-    contact: '联系我们',
-    quality: '质量保证',
-    care: '保养维修服务',
+    product: ui.value.productDetails,
+    size: ui.value.sizeSelect,
+    contact: ui.value.consultUs,
+    quality: ui.value.qualityAssurance,
+    care: ui.value.careRepair,
   }
 
   return titles[activeDetailDrawer.value] ?? ''
@@ -1049,7 +1547,7 @@ const activeProductDetailImages = computed(() => {
     return []
   }
 
-  const detailImages = (activeProduct.value.detailImages ?? []).filter(Boolean)
+  const detailImages = productDetailImages(activeProduct.value)
   return detailImages.filter((image, index) => detailImages.indexOf(image) === index)
 })
 
@@ -1106,6 +1604,15 @@ function formatPrice(price) {
   }
 
   return formatCurrencyFromCny(numericPrice, currencyRegion.value)
+}
+
+function parsePositiveNumber(value) {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null
+}
+
+function getDefaultGoodsNo(items) {
+  return items.find((item) => item?.goodsNo)?.goodsNo || ''
 }
 
 function priceRangeLabel(min, max, mode = 'range') {
@@ -1215,6 +1722,30 @@ function isProductMatchingSelectedType(productType, selectedFilterType) {
   return normalizeCategoryType(productType) === normalizedSelectedType
 }
 
+function isProductMatchingEarringSubtype(productType, selectedSubtype) {
+  if (selectedSubtype === allFilterKey) {
+    return true
+  }
+
+  if (selectedSubtype === '耳吊') {
+    return earringDropTypeValues.includes(productType)
+  }
+
+  return productType === selectedSubtype
+}
+
+function normalizeEarringSubtype(type) {
+  if (type === '耳圈' || type === '耳钉') {
+    return type
+  }
+
+  if (earringDropTypeValues.includes(type)) {
+    return '耳吊'
+  }
+
+  return ''
+}
+
 function displaySeries(series) {
   if (series === allFilterKey) {
     return ui.value.all
@@ -1227,33 +1758,89 @@ function displayPriceRange(range) {
   return range.label
 }
 
-function resolveProductImage(image, alternateImage, code) {
-  if (!image || typeof image !== 'string') {
-    return image
-  }
-
-  if (!isPrimaryProductImage(image) || !alternateImage) {
-    return image
-  }
-
-  if (hoveredProductCode.value !== code) {
-    return image
-  }
-
-  return alternateImage
+function displayPriceFilterValue(value) {
+  const range = priceRanges.value.find((item) => item.id === value)
+  return range ? displayPriceRange(range) : displayPlainFilterValue(value)
 }
 
-function isPrimaryProductImage(image) {
-  if (!image || typeof image !== 'string') {
+function displayPlainFilterValue(value) {
+  return value === allFilterKey ? ui.value.all : value
+}
+
+function displayFilterValue(value) {
+  return value === allFilterKey ? ui.value.all : localizeFilterValue(value, languageAwareLocale.value)
+}
+
+function displayMaterialFilterValue(value) {
+  return value === allFilterKey ? ui.value.all : localizeMaterial(value, languageAwareLocale.value)
+}
+
+function displayEarringSubtype(value) {
+  return value === allFilterKey ? ui.value.allEarrings : localizeProductType(value, languageAwareLocale.value)
+}
+
+function getFilterSummary(value, displayValue) {
+  return value === allFilterKey ? '' : displayValue(value)
+}
+
+function getUniqueProductValues(getValue) {
+  return [
+    ...new Set(
+      products.value
+        .map((product) => normalizeFilterValue(getValue(product)))
+        .filter(Boolean),
+    ),
+  ]
+}
+
+function normalizeFilterValue(value) {
+  return String(value || '').trim()
+}
+
+function getProductSpecValue(product, labels) {
+  const labelSet = new Set(labels)
+  const spec = (product?.specs ?? []).find((item) => labelSet.has(item.label))
+  return normalizeFilterValue(spec?.value)
+}
+
+function normalizeStoneColor(value) {
+  return normalizeFilterValue(value)
+    .replace(/^培育/, '')
+    .replace(/^天然/, '')
+}
+
+function isLocalProductImage(image, folderName) {
+  if (!image || typeof image !== 'string' || !folderName) {
     return false
   }
 
   const normalizedImage = image.split('?')[0].replaceAll('\\', '/').toLowerCase()
-  return normalizedImage.includes('/product1/')
+  return normalizedImage.includes(`/local-products/${folderName.toLowerCase()}/`)
+    || normalizedImage.includes(`/${folderName.toLowerCase()}/`)
+}
+
+function productPrimaryImage(product) {
+  return isLocalProductImage(product?.image, 'product1') ? product.image : ''
+}
+
+function productHoverImage(product) {
+  return isLocalProductImage(product?.alternateImage, 'product2') ? product.alternateImage : ''
+}
+
+function productDetailImages(product) {
+  const detailImages = Array.isArray(product?.detailImages) ? product.detailImages : []
+  return detailImages.filter((image) => isLocalProductImage(image, 'product_details'))
 }
 
 function displayProductCardImage(product) {
-  return resolveProductImage(product.image, product.alternateImage, product.code) || product.image || ''
+  const primaryImage = productPrimaryImage(product)
+  const hoverImage = productHoverImage(product)
+
+  if (hoveredProductCode.value === product?.code && hoverImage) {
+    return hoverImage
+  }
+
+  return primaryImage
 }
 
 function productImageStyle(product) {
@@ -1420,6 +2007,20 @@ function syncSeriesFromRoute() {
   }
 
   if (routeType) {
+    const routeEarringSubtype = normalizeEarringSubtype(routeType)
+    if (routeEarringSubtype) {
+      selectedType.value = earringFilterKey
+      draftType.value = earringFilterKey
+      selectedSeries.value = allFilterKey
+      draftSeries.value = allFilterKey
+      selectedPrice.value = allFilterKey
+      draftPrice.value = allFilterKey
+      clearSecondaryFilters()
+      selectedEarringSubtype.value = routeEarringSubtype
+      draftEarringSubtype.value = routeEarringSubtype
+      return
+    }
+
     const normalizedRouteType = normalizeCategoryType(routeType)
     const hasGroupedType = [ringFilterKey, braceletFilterKey, necklaceFilterKey, pendantFilterKey, earringFilterKey].includes(normalizedRouteType)
 
@@ -1430,6 +2031,7 @@ function syncSeriesFromRoute() {
       draftSeries.value = allFilterKey
       selectedPrice.value = allFilterKey
       draftPrice.value = allFilterKey
+      clearSecondaryFilters()
       return
     }
 
@@ -1441,6 +2043,7 @@ function syncSeriesFromRoute() {
       draftSeries.value = allFilterKey
       selectedPrice.value = allFilterKey
       draftPrice.value = allFilterKey
+      clearSecondaryFilters()
       return
     }
   }
@@ -1457,21 +2060,42 @@ function syncSeriesFromRoute() {
     draftType.value = allFilterKey
     selectedPrice.value = allFilterKey
     draftPrice.value = allFilterKey
+    clearSecondaryFilters()
   }
 }
 
+function clearSecondaryFilters() {
+  selectedEarringSubtype.value = allFilterKey
+  draftEarringSubtype.value = allFilterKey
+  selectedMaterial.value = allFilterKey
+  draftMaterial.value = allFilterKey
+  selectedStoneShape.value = allFilterKey
+  draftStoneShape.value = allFilterKey
+  selectedMainStone.value = allFilterKey
+  draftMainStone.value = allFilterKey
+  selectedStoneColor.value = allFilterKey
+  draftStoneColor.value = allFilterKey
+}
+
 function toggleFilterPanel() {
-  draftType.value = selectedType.value
-  draftPrice.value = selectedPrice.value
-  draftSeries.value = selectedSeries.value
+  syncDraftFilters()
   showFilterPanel.value = !showFilterPanel.value
 }
 
 function openFilterPanel() {
-  draftType.value = selectedType.value
-  draftPrice.value = selectedPrice.value
-  draftSeries.value = selectedSeries.value
+  syncDraftFilters()
   showFilterPanel.value = true
+}
+
+function syncDraftFilters() {
+  draftType.value = selectedType.value
+  draftEarringSubtype.value = selectedEarringSubtype.value
+  draftMaterial.value = selectedMaterial.value
+  draftStoneShape.value = selectedStoneShape.value
+  draftMainStone.value = selectedMainStone.value
+  draftSeries.value = selectedSeries.value
+  draftPrice.value = selectedPrice.value
+  draftStoneColor.value = selectedStoneColor.value
 }
 
 async function showProducts() {
@@ -1480,12 +2104,57 @@ async function showProducts() {
 
 async function applyFilters() {
   selectedType.value = draftType.value
+  selectedEarringSubtype.value = draftType.value === earringFilterKey ? draftEarringSubtype.value : allFilterKey
+  selectedMaterial.value = draftMaterial.value
+  selectedStoneShape.value = draftStoneShape.value
+  selectedMainStone.value = draftMainStone.value
   selectedPrice.value = draftPrice.value
   selectedSeries.value = draftSeries.value
+  selectedStoneColor.value = draftStoneColor.value
   visibleProductLimit.value = productsPageSize
   await fillProductsToVisibleLimit()
   showFilterPanel.value = false
   await scrollToProducts()
+}
+
+async function selectFilterOption(moduleId, value) {
+  setFilterValue(moduleId, value)
+  visibleProductLimit.value = productsPageSize
+  await fillProductsToVisibleLimit()
+}
+
+function setFilterValue(moduleId, value) {
+  if (moduleId === 'type') {
+    draftType.value = value
+    selectedType.value = value
+    if (value !== earringFilterKey) {
+      draftEarringSubtype.value = allFilterKey
+      selectedEarringSubtype.value = allFilterKey
+    }
+  } else if (moduleId === 'earringSubtype') {
+    draftType.value = earringFilterKey
+    selectedType.value = earringFilterKey
+    draftEarringSubtype.value = value
+    selectedEarringSubtype.value = value
+  } else if (moduleId === 'material') {
+    draftMaterial.value = value
+    selectedMaterial.value = value
+  } else if (moduleId === 'stoneShape') {
+    draftStoneShape.value = value
+    selectedStoneShape.value = value
+  } else if (moduleId === 'mainStone') {
+    draftMainStone.value = value
+    selectedMainStone.value = value
+  } else if (moduleId === 'series') {
+    draftSeries.value = value
+    selectedSeries.value = value
+  } else if (moduleId === 'price') {
+    draftPrice.value = value
+    selectedPrice.value = value
+  } else if (moduleId === 'stoneColor') {
+    draftStoneColor.value = value
+    selectedStoneColor.value = value
+  }
 }
 
 async function selectTypeFilter(type) {
@@ -1511,11 +2180,21 @@ async function selectSeriesFilter(series) {
 
 async function resetFilters() {
   draftType.value = allFilterKey
+  draftEarringSubtype.value = allFilterKey
+  draftMaterial.value = allFilterKey
+  draftStoneShape.value = allFilterKey
+  draftMainStone.value = allFilterKey
   draftPrice.value = allFilterKey
   draftSeries.value = allFilterKey
+  draftStoneColor.value = allFilterKey
   selectedType.value = allFilterKey
+  selectedEarringSubtype.value = allFilterKey
+  selectedMaterial.value = allFilterKey
+  selectedStoneShape.value = allFilterKey
+  selectedMainStone.value = allFilterKey
   selectedPrice.value = allFilterKey
   selectedSeries.value = allFilterKey
+  selectedStoneColor.value = allFilterKey
   visibleProductLimit.value = productsPageSize
   await fillProductsToVisibleLimit()
 }
@@ -1532,11 +2211,14 @@ async function scrollToProducts() {
 
 function openProduct(product) {
   activeProductCode.value = product.code
-  activeDetailImage.value = (product.detailImages ?? []).filter(Boolean)[0] || ''
+  activeDetailImage.value = productDetailImages(product)[0] || ''
   resetDetailImageZoom()
   detailThumbStartIndex.value = 0
   activeDetailDrawer.value = ''
-  selectedRingSize.value = ''
+  activeSizePanel.value = 'select'
+  selectedGoodsNo.value = ''
+  draftSelectedGoodsNo.value = ''
+  activeProductGoodsLoadError.value = false
 }
 
 function syncProductFromRoute() {
@@ -1558,7 +2240,10 @@ async function closeProduct({ restoreProductPosition = true } = {}) {
   resetDetailImageZoom()
   detailThumbStartIndex.value = 0
   activeDetailDrawer.value = ''
-  selectedRingSize.value = ''
+  activeSizePanel.value = 'select'
+  selectedGoodsNo.value = ''
+  draftSelectedGoodsNo.value = ''
+  activeProductGoodsLoadError.value = false
   closeImagePreview()
 
   if (restoreProductPosition && closingProductCode) {
@@ -1566,8 +2251,69 @@ async function closeProduct({ restoreProductPosition = true } = {}) {
   }
 }
 
-function openDetailDrawer(drawer) {
-  activeDetailDrawer.value = activeDetailDrawer.value === drawer ? '' : drawer
+async function openDetailDrawer(drawer) {
+  const nextDrawer = activeDetailDrawer.value === drawer ? '' : drawer
+  activeDetailDrawer.value = nextDrawer
+
+  if (nextDrawer === 'size') {
+    activeSizePanel.value = 'select'
+    draftSelectedGoodsNo.value = selectedGoodsNo.value
+    await loadActiveProductGoodsOptions()
+  }
+}
+
+async function loadActiveProductGoodsOptions() {
+  const styleNo = activeProduct.value?.styleNo || activeProduct.value?.code
+  if (!styleNo) {
+    return
+  }
+
+  const cachedItems = activeProductGoodsByStyleNo.value[styleNo]
+  if (cachedItems) {
+    if (!draftSelectedGoodsNo.value && cachedItems.length) {
+      draftSelectedGoodsNo.value = selectedGoodsNo.value || getDefaultGoodsNo(cachedItems)
+    }
+    return
+  }
+
+  activeProductGoodsLoading.value = true
+  activeProductGoodsLoadError.value = false
+
+  try {
+    const response = await fetch(`/api/products/${encodeURIComponent(styleNo)}/goods-certificates`)
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    const payload = await response.json()
+    const items = Array.isArray(payload.items) ? payload.items : []
+    activeProductGoodsByStyleNo.value = {
+      ...activeProductGoodsByStyleNo.value,
+      [styleNo]: items,
+    }
+
+    if (!draftSelectedGoodsNo.value && items.length) {
+      draftSelectedGoodsNo.value = selectedGoodsNo.value || getDefaultGoodsNo(items)
+    }
+  } catch (error) {
+    console.error('Failed to load product goods certificates:', error)
+    activeProductGoodsLoadError.value = true
+  } finally {
+    activeProductGoodsLoading.value = false
+  }
+}
+
+function selectGoodsOption(item) {
+  draftSelectedGoodsNo.value = item?.goodsNo || ''
+}
+
+function confirmSelectedGoodsOption() {
+  if (!draftSelectedGoodsNo.value) {
+    return
+  }
+
+  selectedGoodsNo.value = draftSelectedGoodsNo.value
+  activeDetailDrawer.value = ''
 }
 
 function clampPreviewZoom(value) {
@@ -1612,6 +2358,26 @@ function handleDetailImageWheel(event) {
   zoomDetailImage(event.deltaY < 0 ? 0.12 : -0.12)
 }
 
+function buildCartProduct(product, goodsItem) {
+  if (!goodsItem?.goodsNo) {
+    return product
+  }
+
+  const goodsPrice = parsePositiveNumber(goodsItem.salesPrice)
+  const styleNo = product.styleNo || product.code
+
+  return {
+    ...product,
+    code: goodsItem.goodsNo,
+    styleNo,
+    goodsNo: goodsItem.goodsNo,
+    goodsWeight: goodsItem.goodsWeight,
+    goldWeight: goodsItem.goldWeight,
+    sideStoneWeight: goodsItem.sideStoneWeight,
+    price: goodsPrice ?? product.price,
+  }
+}
+
 function addActiveProductToCart() {
   if (!activeProduct.value) {
     return
@@ -1638,7 +2404,8 @@ function addActiveProductToCart() {
     )
   }
 
-  if (!addCartItem(activeProduct.value)) {
+  const cartProduct = buildCartProduct(activeProduct.value, selectedGoodsItem.value)
+  if (!addCartItem(cartProduct)) {
     return
   }
 

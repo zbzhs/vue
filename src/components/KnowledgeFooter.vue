@@ -20,6 +20,7 @@
         </RouterLink>
       </template>
     </nav>
+    <p class="home-footer-icp">粤ICP备2026082836号-1</p>
   </footer>
 </template>
 

@@ -9,15 +9,39 @@
           :class="{
             'is-active': index === activeSlide,
             'is-background-2': slide.includes('background2'),
+            'is-background-3': slide.includes('background3'),
             'is-background-4': slide.includes('background4'),
           }"
           :style="{ backgroundImage: `url(${slide})` }"
         >
-          <div class="home-hero-mark" aria-hidden="true">
-            <span class="home-hero-mark-kicker">RADIATE SOFTLY</span>
-            <span class="home-hero-mark-subtitle">BESPOKE FOR LOVE</span>
-            <span class="home-hero-mark-rule"></span>
-            <span class="home-hero-mark-cn">{{ heroMarkLine }}</span>
+          <div
+            class="home-hero-mark"
+            :class="[
+              heroSlideMark(slide).className,
+              {
+                'home-hero-mark--sentence': heroSlideMark(slide).sentence,
+                'home-hero-mark--english-only': heroSlideMark(slide).englishOnly,
+              },
+            ]"
+            aria-hidden="true"
+          >
+            <template v-if="heroSlideMark(slide).englishOnly">
+              <span class="home-hero-mark-en">{{ heroSlideMark(slide).english }}</span>
+            </template>
+            <template v-else-if="heroSlideMark(slide).kicker">
+              <span class="home-hero-mark-kicker">{{ heroSlideMark(slide).kicker }}</span>
+              <span class="home-hero-mark-subtitle">{{ heroSlideMark(slide).title }}</span>
+              <span v-if="heroSlideMark(slide).showRule" class="home-hero-mark-rule"></span>
+              <span class="home-hero-mark-cn">{{ heroSlideMark(slide).text }}</span>
+            </template>
+            <template v-else>
+              <span v-if="heroSlideMark(slide).english" class="home-hero-mark-en">
+                {{ heroSlideMark(slide).english }}
+              </span>
+              <span v-if="heroSlideMark(slide).showRule" class="home-hero-mark-rule"></span>
+              <span class="home-hero-mark-subtitle">{{ heroSlideMark(slide).title }}</span>
+              <span class="home-hero-mark-cn">{{ heroSlideMark(slide).text }}</span>
+            </template>
           </div>
         </div>
       </div>
@@ -634,16 +658,48 @@ const cleanHomeCopy = {
 
 const pickLocaleValue = (values, activeLocale) => values?.[activeLocale] || values?.zh || ''
 
-const heroMarkLines = {
-  zh: '自然的韵律 艺术的共鸣',
-  en: 'Natural rhythm, artistic resonance',
-  ja: '自然のリズム、芸術の響き',
-  th: 'จังหวะธรรมชาติ เสียงสะท้อนแห่งศิลปะ',
-  ko: '자연의 리듬, 예술의 울림',
-  vi: 'Nhip dieu tu nhien, cong huong nghe thuat',
-}
+function heroSlideMark(slide) {
+  if (slide.includes('background4')) {
+    return {
+      title: '垂钻流光，温柔自生',
+      text: 'Bespoke For Love，专属定制钻石耳饰。',
+      className: 'home-hero-mark--right',
+      sentence: true,
+      showRule: true,
+    }
+  }
 
-const heroMarkLine = computed(() => heroMarkLines[locale.value] || heroMarkLines.zh)
+  if (slide.includes('background3')) {
+    return {
+      title: '鎏金漾波光，钻光赴浪漫',
+      text: '不同钻型，解锁日常与仪式感双重精致。',
+      english: 'Water holds starlight, rings hold love',
+      className: 'home-hero-mark--rings',
+      englishOnly: true,
+      sentence: true,
+      showRule: false,
+    }
+  }
+
+  if (slide.includes('background2')) {
+    return {
+      title: '循自然之序，琢时光之璨',
+      text: '剥离冗余浮华，用细腻钻光，定格独属于你的仪式美学',
+      className: '',
+      sentence: true,
+      showRule: true,
+    }
+  }
+
+  return {
+    kicker: 'RADIATE SOFTLY',
+    title: 'BESPOKE FOR LOVE',
+    text: '自然的韵律 艺术的共鸣',
+    className: 'home-hero-mark--glass',
+    sentence: false,
+    showRule: true,
+  }
+}
 
 const localizeSeriesCard = (card, activeLocale) => ({
   ...card,

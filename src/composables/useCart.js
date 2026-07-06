@@ -50,12 +50,21 @@ function writeStoredItems(items) {
 }
 
 function normalizeCartProduct(product) {
+  const styleNo = product.styleNo || (product.goodsNo ? '' : product.code)
+  const goodsNo = product.goodsNo || product.selectedGoodsNo || ''
+  const code = goodsNo || product.code || styleNo
+
   return {
-    code: product.code,
-    rawName: product.name || product.displayName || product.code,
+    code,
+    styleNo,
+    goodsNo,
+    goodsWeight: product.goodsWeight || '',
+    goldWeight: product.goldWeight || '',
+    sideStoneWeight: product.sideStoneWeight || '',
+    rawName: product.name || product.displayName || code,
     rawType: product.type || product.displayType || '',
     rawSeries: product.series || product.displaySeries || '',
-    name: product.displayName || product.name || product.code,
+    name: product.displayName || product.name || code,
     type: product.displayType || product.type || '',
     series: product.displaySeries || product.series || '',
     image: product.image || product.alternateImage || '',

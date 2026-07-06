@@ -31,7 +31,8 @@
               <div>
                 <p>{{ item.type }}<span v-if="item.series"> / {{ item.series }}</span></p>
                 <h3>{{ item.name }}</h3>
-                <span>{{ copy.styleNo }}: {{ item.code }}</span>
+                <span>{{ copy.styleNo }}: {{ item.styleNo || item.code }}</span>
+                <span v-if="item.goodsNo">{{ copy.goodsNo }}: {{ item.goodsNo }}</span>
               </div>
               <div class="cart-order-product-actions">
                 <strong>{{ formatCartPrice(item.price) }} x {{ item.quantity }}</strong>
@@ -75,6 +76,7 @@ const copies = {
     empty: '暂无已提交订单。',
     createdAt: '创建时间',
     styleNo: '款号',
+    goodsNo: '货号',
     orderSummary: (count, total) => `${count} 件商品 / 合计 ${total}`,
     deleteOrder: '删除订单',
     addToCart: '加入购物车',
@@ -90,6 +92,7 @@ const copies = {
     empty: 'No submitted orders yet.',
     createdAt: 'Created At',
     styleNo: 'Style No.',
+    goodsNo: 'Goods No.',
     orderSummary: (count, total) => `${count} items / Total ${total}`,
     deleteOrder: 'Delete Order',
     addToCart: 'Add to Bag',

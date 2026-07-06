@@ -51,7 +51,8 @@
             <div class="cart-item-copy">
               <p>{{ item.type }}<span v-if="item.series"> / {{ item.series }}</span></p>
               <h2>{{ item.name }}</h2>
-              <span>{{ copy.styleNo }}: {{ item.code }}</span>
+              <span>{{ copy.styleNo }}: {{ item.styleNo || item.code }}</span>
+              <span v-if="item.goodsNo">{{ copy.goodsNo }}: {{ item.goodsNo }}</span>
               <strong>{{ formatCartPrice(item.price) }}</strong>
             </div>
             <div class="cart-item-controls">
@@ -152,6 +153,7 @@ const copies = {
     selectItem: (name) => `选择 ${name}`,
     styleNo: '款号',
     quantity: '数量',
+    goodsNo: '货号',
     remove: '移除',
     summaryTitle: '订单概述',
     summaryEmpty: '勾选需要下单的商品后，这里会显示订单明细。',
@@ -186,6 +188,7 @@ const copies = {
     selectItem: (name) => `Select ${name}`,
     styleNo: 'Style No.',
     quantity: 'Qty',
+    goodsNo: 'Goods No.',
     remove: 'Remove',
     summaryTitle: 'Order Summary',
     summaryEmpty: 'Select the items you want to check out, and the order details will appear here.',
@@ -315,7 +318,8 @@ function getOrderNickname() {
 
 function getSelectedOrderItems() {
   return selectedCartItems.value.map((item) => ({
-    styleNo: item.code,
+    styleNo: item.styleNo || item.code,
+    goodsNo: item.goodsNo || null,
     quantity: Math.max(1, Number(item.quantity) || 1),
   }))
 }
@@ -326,6 +330,11 @@ function getSelectedOrderSnapshot(nickname, createdAt) {
 
     return {
       code: item.code,
+      styleNo: item.styleNo || item.code,
+      goodsNo: item.goodsNo || '',
+      goodsWeight: item.goodsWeight || '',
+      goldWeight: item.goldWeight || '',
+      sideStoneWeight: item.sideStoneWeight || '',
       rawName: item.rawName || item.name,
       rawType: item.rawType || item.type,
       rawSeries: item.rawSeries || item.series,

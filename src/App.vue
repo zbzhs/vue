@@ -120,6 +120,20 @@
     <main>
       <RouterView />
     </main>
+
+    <button
+      v-show="showBackToTop"
+      class="back-to-top-button"
+      type="button"
+      :aria-label="t('返回顶部', 'Back to top')"
+      @click="scrollToTop"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 5 5.5 11.5" />
+        <path d="M12 5 18.5 11.5" />
+        <path d="M12 6v13" />
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -140,6 +154,7 @@ const router = useRouter()
 const isScrolled = ref(false)
 const isNavHidden = ref(false)
 const lastScrollY = ref(0)
+const showBackToTop = ref(false)
 
 const hasHeroNav = computed(() => route.name === 'home')
 const isHeroTop = computed(() => hasHeroNav.value && !isScrolled.value)
@@ -161,6 +176,7 @@ const navItems = [
 
 function updateNavState() {
   const currentScrollY = window.scrollY
+  showBackToTop.value = currentScrollY >= window.innerHeight
 
   if (isSeriesRoute.value) {
     isScrolled.value = currentScrollY > 12
@@ -213,12 +229,21 @@ function openCart() {
   router.push({ name: 'cart' })
 }
 
+function scrollToTop() {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth',
+  })
+}
+
 onMounted(() => {
   updateNavState()
   window.addEventListener('scroll', updateNavState, { passive: true })
+  window.addEventListener('resize', updateNavState, { passive: true })
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', updateNavState)
+  window.removeEventListener('resize', updateNavState)
 })
 </script>
