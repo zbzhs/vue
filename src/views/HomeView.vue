@@ -77,6 +77,7 @@
       <RouterLink
         v-for="card in copy.series.cards"
         :key="card.key"
+        :id="`series-${card.key}`"
         class="home-series-panel"
         :class="[`home-series-panel-${card.key}`, { 'home-series-panel-reverse': card.imageSide === 'right' }]"
         :to="card.to"

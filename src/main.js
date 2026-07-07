@@ -54,6 +54,13 @@ const router = createRouter({
       return savedPosition
     }
 
+    if (to.hash) {
+      const target = await waitForElement(to.hash)
+      if (target) {
+        return { el: to.hash, top: 96, behavior: 'auto' }
+      }
+    }
+
     const productCode = getRouteQueryValue(to.query, 'product')
     if (to.name === 'products' && productCode) {
       const selector = `[data-product-code="${escapeSelectorValue(productCode)}"]`

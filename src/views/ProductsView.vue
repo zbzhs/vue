@@ -1860,6 +1860,16 @@ function productDetailImageIndex(product, image) {
   return match ? Number(match[1]) : -1
 }
 
+function imageFileNameHasUnderscore(image) {
+  const fileName = String(image || '')
+    .split('?')[0]
+    .replaceAll('\\', '/')
+    .split('/')
+    .pop() || ''
+
+  return fileName.includes('_')
+}
+
 function productDetailImages(product) {
   const detailImages = Array.isArray(product?.detailImages) ? product.detailImages : []
   const styleNo = String(product?.styleNo || product?.code || '').trim()
@@ -1891,12 +1901,8 @@ function uniqueImages(images) {
 
 function productGalleryImages(product) {
   const detailImages = productDetailImages(product)
-  const fallbackImages = [
-    productPrimaryImage(product),
-    productHoverImage(product),
-  ]
 
-  return uniqueImages([...detailImages, ...fallbackImages])
+  return uniqueImages(detailImages.filter(imageFileNameHasUnderscore))
 }
 
 function displayProductCardImage(product) {
@@ -2339,7 +2345,30 @@ function syncProductFromRoute() {
   }
 }
 
-async function closeProduct({ restoreProductPosition = true } = {}) {
+function getSingleRouteQueryValue(key) {
+  const value = route.query[key]
+  return Array.isArray(value) ? value[0] : value
+}
+
+function getCloseProductSeriesRoute() {
+  const fromSeries = getSingleRouteQueryValue('fromSeries')
+  if (!fromSeries) {
+    return null
+  }
+
+  return {
+    name: 'series',
+    params: { slug: fromSeries },
+  }
+}
+
+async function closeProduct({ restoreProductPosition = true, navigateToSource = true } = {}) {
+  const sourceRoute = navigateToSource ? getCloseProductSeriesRoute() : null
+  if (sourceRoute) {
+    await router.push(sourceRoute)
+    return
+  }
+
   const closingProductCode = activeProductCode.value
   activeProductCode.value = ''
   activeDetailImage.value = ''
@@ -2515,7 +2544,7 @@ function addActiveProductToCart() {
     return
   }
 
-  closeProduct({ restoreProductPosition: false })
+  closeProduct({ restoreProductPosition: false, navigateToSource: false })
   router.push({ name: 'cart' })
 }
 
@@ -2592,22 +2621,26 @@ function syncVisibleThumbWindow(index = activeDetailImageIndex.value) {
   detailThumbStartIndex.value = Math.min(detailThumbStartIndex.value, maxStartIndex)
 }
 
+function handleCloseProductDetailEvent() {
+  closeProduct({ navigateToSource: false })
+}
+
 onMounted(() => {
   loadProducts()
   window.addEventListener('open-product-filters', openFilterPanel)
-  window.addEventListener('close-product-detail', closeProduct)
+  window.addEventListener('close-product-detail', handleCloseProductDetailEvent)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('open-product-filters', openFilterPanel)
-  window.removeEventListener('close-product-detail', closeProduct)
+  window.removeEventListener('close-product-detail', handleCloseProductDetailEvent)
   document.body.classList.remove('is-product-detail-open')
 })
 
 watch(
   () => [route.query.series, route.query.q, route.query.type, route.query.product],
   async () => {
-    closeProduct({ restoreProductPosition: false })
+    closeProduct({ restoreProductPosition: false, navigateToSource: false })
     await loadProducts()
   },
 )

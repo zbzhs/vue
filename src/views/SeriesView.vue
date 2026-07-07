@@ -449,16 +449,17 @@ function getShowcaseProductTo(item) {
 
   return {
     name: 'products',
-    query: { product: code },
+    query: {
+      product: code,
+      fromSeries: activeSlug.value,
+    },
   }
 }
 
 function goBack() {
-  if (window.history.length > 1) {
-    router.back()
-    return
-  }
-
-  router.push({ name: 'home' })
+  router.push({
+    name: 'home',
+    hash: `#series-${activeSlug.value}`,
+  })
 }
 </script>
