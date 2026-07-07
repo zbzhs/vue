@@ -359,7 +359,7 @@ const cleanSeriesCards = [
   {
     key: 'pink',
     kicker: {
-      zh: '彩钻系列',
+      zh: '情定永恒',
       en: 'Colored Diamond',
       ja: 'カラーダイヤモンド',
       th: 'เพชรสี',
@@ -450,7 +450,7 @@ const cleanSeriesCards = [
   {
     key: 'marquise',
     kicker: {
-      zh: '马眼切割',
+      zh: '星隅私造',
       en: 'Marquise Cut',
       ja: 'マーキスカット',
       th: 'ทรงมาร์quise',

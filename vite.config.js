@@ -9,13 +9,11 @@ export default defineConfig({
     },
     proxy: {
       '/api': 'http://127.0.0.1:3001',
-      '/local-products': 'http://127.0.0.1:3001',
     },
   },
   preview: {
     proxy: {
       '/api': 'http://127.0.0.1:3001',
-      '/local-products': 'http://127.0.0.1:3001',
     },
   },
 })

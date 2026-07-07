@@ -11,9 +11,9 @@
         <div class="series-jewelry-grid">
           <RouterLink
             v-for="item in visibleShowcase"
-            :key="item.name"
+            :key="item.image"
             class="series-jewelry-card"
-            :to="series.productsTo"
+            :to="getShowcaseProductTo(item)"
           >
             <span>
               <img :src="item.image" :alt="item.name" />
@@ -64,8 +64,6 @@ const { locale } = useLocale()
 const showcasePage = ref(0)
 const dynamicShowcases = ref({})
 
-const localSeriesBase = '/local-products/series'
-
 const seriesFolderBySlug = {
   pink: 'series1',
   prong: 'series2',
@@ -74,62 +72,65 @@ const seriesFolderBySlug = {
   chroma: 'series5',
 }
 
-const productTypeFromName = (name) => {
-  if (name.startsWith('APYE')) return 'EARRINGS'
-  if (name.startsWith('APYFR')) return 'RING'
-  if (name.startsWith('APYN')) return 'NECKLACE'
-  if (name.startsWith('APYP')) return 'PENDANT'
-  return 'JEWELRY'
-}
-
-const localSeriesProduct = (seriesFolder, name, filename) => ({
-  type: productTypeFromName(name),
-  name,
-  image: `${localSeriesBase}/${seriesFolder}/${name}/${filename}`,
-})
-
-const localSeriesRootProduct = (seriesFolder, name, filename) => ({
-  type: productTypeFromName(name),
-  name,
-  image: `${localSeriesBase}/${seriesFolder}/${filename}`,
-})
-
-const seriesShowcases = {
+const seriesShowcaseItems = {
   series1: [
-    localSeriesProduct('series1', 'APYE0218-W-30', '微信图片_20260702155744_3944_2.png'),
-    localSeriesProduct('series1', 'APYE0219-W-50', 'APYE0219-W-50_1.png'),
-    localSeriesProduct('series1', 'APYFR0041-Pt-100', 'APYFR0041-Pt-100_1.png'),
-    localSeriesProduct('series1', 'APYFR0049-Pt-100', 'APYFR0049-Pt-100_1.png'),
-    localSeriesProduct('series1', 'APYFR0058-Pt-100', 'APYFR0058-Pt-100_1.png'),
-    localSeriesProduct('series1', 'APYN0087-Pt-150', 'APYN0087-Pt-150_1.png'),
-    localSeriesProduct('series1', 'APYN0221-W-50', 'APYN0221-W-50_1.png'),
-    localSeriesProduct('series1', 'APYP0007-Pt-200', 'APYP0007-Pt-200_1.png'),
+    'APYE0218-W-30.png',
+    'APYE0219-W-50.png',
+    'APYFR0041-Pt-100.png',
+    'APYFR0049-Pt-100.png',
+    'APYFR0058-Pt-100.png',
+    'APYN0087-Pt-150.png',
+    'APYN0221-W-50.png',
+    'APYP0007-Pt-200.png',
   ],
   series2: [
-    localSeriesProduct('series2', 'APYE0008-W', 'APYE0008-W_1.png'),
-    localSeriesProduct('series2', 'APYE0056-Pt-20', 'APYE0056-Pt-20_1.png'),
-    localSeriesProduct('series2', 'APYFR0092-Pt-15', 'APYFR0092-Pt-15.png'),
-    localSeriesProduct('series2', 'APYFR0204-Pt-100', 'APYFR0204-Pt-100.png'),
-    localSeriesProduct('series2', 'APYN0006-Pt-15', 'APYN0006-Pt-15.png'),
-    localSeriesProduct('series2', 'APYN0027-Pt-30', 'APYN0027-Pt-30.png'),
-    localSeriesProduct('series2', 'APYN0041-W-50', 'APYN0041-W-50.png'),
-    localSeriesProduct('series2', 'APYN0058-W', 'APYN0058-W.png'),
+    'APYE0008-W.png',
+    'APYE0056-Pt-20.png',
+    'APYFR0092-Pt-15.png',
+    'APYFR0204-Pt-100.png',
+    'APYN0006-Pt-15.png',
+    'APYN0027-Pt-30.png',
+    'APYN0041-W-50.png',
+    'APYN0058-W.png',
   ],
   series3: [
-    localSeriesProduct('series3', 'APYE0133-W-100', 'APYE0133-W-100_1.jpg'),
-    localSeriesProduct('series3', 'APYFR0188-Y', 'APYFR0188-Y_1.jpg'),
-    localSeriesProduct('series3', 'APYFR0189-Y', 'APYFR0189-Y_1.jpg'),
-    localSeriesProduct('series3', 'APYFR0270-Y-100', 'APYFR0270-Y-100_1.jpg'),
-    localSeriesProduct('series3', 'APYN0137-W-100', 'APYN0137-W-100_1.jpg'),
-    localSeriesProduct('series3', 'APYP0057-Y-100', 'APYP0057-Y-100_1.jpg'),
+    'APYE0055-Pt-20.png',
+    'APYE0133-W-100.png',
+    'APYFR0188-Y.png',
+    'APYFR0189-Y.jpg',
+    'APYFR0270-Y-100.png',
+    'APYN0086-Pt-200.png',
+    'APYN0137-W-100.png',
+    'APYP0057-Y-100.png',
   ],
   series4: [
-    localSeriesRootProduct('series4', 'APYE0100-Pt-300', 'APYE0100-Pt-300.png'),
-    localSeriesRootProduct('series4', 'APYP0007-Pt-200', 'APYP0007-Pt-200.png'),
-    localSeriesRootProduct('series4', 'APYP0026-Pt-200', 'APYP0026-Pt-200.png'),
-    localSeriesProduct('series4', 'APYFR0136-W-100', 'APYFR0136-W-100_1.jpg'),
+    'APYE0075-Pt-25.png',
+    'APYE0102-W.png',
+    'APYE0158-Pt-50.png',
+    'APYE0187-W-200.png',
+    'APYFR0136-W-100.png',
+    'APYN0096-W.png',
+    'APYN0174-W-200.png',
+    'APYP0007-Pt-200.png',
   ],
-  series5: [],
+  series5: [
+    'APYE0103-Pt.png',
+    'APYFR0234-Y-200.png',
+    'APYFR0304-RW-100.png',
+    'APYFR0309-RW-100.png',
+    'APYN0113-Y-10.png',
+    'APYN0159-RW-200.png',
+    'APYN0251-W.png',
+    'APYP0165-RW-100.png',
+  ],
+}
+
+const seriesShowcases = {
+  series1: buildStaticShowcase('series1'),
+  series2: buildStaticShowcase('series2'),
+  series3: buildStaticShowcase('series3'),
+  series4: buildStaticShowcase('series4'),
+  series5: buildStaticShowcase('series5'),
 }
 
 const seriesItems = {
@@ -299,6 +300,60 @@ const pageCopy = {
 
 const pick = (values, activeLocale) => values?.[activeLocale] || values?.zh || values?.en || ''
 
+function getShowcaseType(styleNo) {
+  if (styleNo.startsWith('APYE')) {
+    return 'EARRINGS'
+  }
+
+  if (styleNo.startsWith('APYFR')) {
+    return 'RING'
+  }
+
+  if (styleNo.startsWith('APYN')) {
+    return 'NECKLACE'
+  }
+
+  if (styleNo.startsWith('APYP')) {
+    return 'PENDANT'
+  }
+
+  return 'JEWELRY'
+}
+
+function getStyleNoFromImageName(imageName) {
+  return String(imageName || '').replace(/\.[^.]+$/, '')
+}
+
+function buildStaticShowcase(folder) {
+  return (seriesShowcaseItems[folder] || []).map((imageName) => {
+    const styleNo = getStyleNoFromImageName(imageName)
+
+    return {
+      code: styleNo,
+      styleNo,
+      type: getShowcaseType(styleNo),
+      name: styleNo,
+      image: `http://img.deringdiam.com/product1/${imageName}`,
+    }
+  })
+}
+
+function mergeShowcaseProducts(staticProducts, dynamicProducts) {
+  const dynamicByCode = new Map(
+    (Array.isArray(dynamicProducts) ? dynamicProducts : [])
+      .filter((item) => item?.code || item?.styleNo || item?.name)
+      .map((item) => [item.code || item.styleNo || item.name, item]),
+  )
+
+  return staticProducts.map((item) => {
+    const dynamicItem = dynamicByCode.get(item.code)
+
+    return dynamicItem?.image
+      ? { ...item, ...dynamicItem, code: item.code, styleNo: item.styleNo, name: item.name }
+      : item
+  })
+}
+
 const activeSlug = computed(() => {
   const slug = String(route.params.slug || '')
   return seriesItems[slug] ? slug : 'pink'
@@ -316,7 +371,7 @@ const series = computed(() => {
 
   return {
     ...item,
-    showcase: dynamicShowcase?.length ? dynamicShowcase : item.showcase,
+    showcase: mergeShowcaseProducts(item.showcase, dynamicShowcase),
     kicker: pick(item.kicker, activeLocale),
     title: pick(item.title, activeLocale),
     text: pick(item.text, activeLocale),
@@ -366,7 +421,10 @@ async function fetchSeriesShowcase(slug) {
       [folder]: products,
     }
   } catch {
-    // Keep the bundled fallback list when the local backend is unavailable.
+    dynamicShowcases.value = {
+      ...dynamicShowcases.value,
+      [folder]: [],
+    }
   }
 }
 
@@ -381,6 +439,18 @@ function setShowcasePage(index) {
   }
 
   showcasePage.value = index
+}
+
+function getShowcaseProductTo(item) {
+  const code = item?.code || item?.styleNo || item?.name
+  if (!code) {
+    return series.value.productsTo
+  }
+
+  return {
+    name: 'products',
+    query: { product: code },
+  }
 }
 
 function goBack() {

@@ -4278,9 +4278,9 @@ p {
 
 .category-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) minmax(560px, 920px);
+  gap: clamp(28px, 5vw, 92px);
+  align-items: center;
   padding: clamp(24px, 3vw, 42px) clamp(28px, 4.2vw, 76px) clamp(28px, 4vw, 48px);
   background: #ffffff;
   border-bottom: 1px solid rgba(36, 33, 29, 0.16);
@@ -4322,9 +4322,10 @@ p {
 }
 
 .category-hero-image {
-  width: 100%;
-  height: min(640px, 64vh);
-  object-fit: contain;
+  justify-self: end;
+  width: min(48vw, 920px);
+  height: clamp(420px, 44vw, 600px);
+  object-fit: cover;
   object-position: center;
   background:
     linear-gradient(180deg, #fcfdff 0%, #f4f6f9 44%, #eef1f5 100%);

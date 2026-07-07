@@ -182,6 +182,9 @@ const specLabelMap = {
 }
 
 const colorMap = {
+  '蓝宝 + white diamond': 'Sapphire + White Diamond',
+  '蓝宝 + 白钻': 'Sapphire + White Diamond',
+  蓝宝: 'Sapphire',
   白钻: 'White Diamond',
   粉钻: 'Pink Diamond',
   黄钻: 'Yellow Diamond',
@@ -194,15 +197,21 @@ const colorMap = {
 }
 
 const shapeMap = {
+  '公主方 + 梯方 + round': 'Princess Cut + Emerald Cut + Round',
+  '公主方 + 梯方 + 圆形': 'Princess Cut + Emerald Cut + Round',
   '打洞水滴形+圆形': 'Drilled Pear + Round',
   '打洞水滴+圆形': 'Drilled Pear + Round',
   公主方形: 'Princess Cut',
+  公主方: 'Princess Cut',
+  梯方: 'Emerald Cut',
   祖母绿形: 'Emerald Cut',
   雷迪恩形: 'Radiant Cut',
+  枕形: 'Cushion Cut',
   椭圆形: 'Oval',
   水滴形: 'Pear',
   马眼形: 'Marquise',
   圆形: 'Round',
+  IV形: 'IV Shape',
   心形: 'Heart',
   异形: 'Fancy Shape',
 }
@@ -303,6 +312,7 @@ const phraseTranslations = {
 }
 
 const englishPhraseAliases = {
+  'sapphire + white diamond': 'Sapphire + White Diamond',
   'lab-grown white diamond': 'Lab-Grown White Diamond',
   'lab-grown pink diamond': 'Lab-Grown Pink Diamond',
   'lab-grown yellow diamond': 'Lab-Grown Yellow Diamond',
@@ -325,17 +335,26 @@ const englishPhraseAliases = {
 }
 
 const textReplacements = [
+  ['公主方 + 梯方 + round', 'Princess Cut + Emerald Cut + Round'],
+  ['公主方 + 梯方 + 圆形', 'Princess Cut + Emerald Cut + Round'],
   ['打洞水滴形+圆形', 'drilled pear and round'],
   ['打洞水滴+圆形', 'drilled pear and round'],
   ['公主方形', 'princess cut'],
+  ['公主方', 'princess cut'],
+  ['梯方', 'emerald cut'],
   ['祖母绿形', 'emerald cut'],
   ['雷迪恩形', 'radiant cut'],
+  ['枕形', 'cushion cut'],
   ['椭圆形', 'oval'],
   ['水滴形', 'pear'],
   ['马眼形', 'marquise'],
   ['圆形', 'round'],
   ['心形', 'heart'],
   ['异形', 'fancy shape'],
+  ['IV形', 'IV shape'],
+  ['蓝宝 + white diamond', 'Sapphire + White Diamond'],
+  ['蓝宝 + 白钻', 'Sapphire + White Diamond'],
+  ['蓝宝', 'sapphire'],
   ['培育白钻', 'lab-grown white diamond'],
   ['培育粉钻', 'lab-grown pink diamond'],
   ['培育黄钻', 'lab-grown yellow diamond'],

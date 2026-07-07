@@ -140,6 +140,7 @@
             :src="displayProductCardImage(product)"
             :alt="product.displayName"
             :style="productImageStyle(product)"
+            @error="hideBrokenProductImage(product)"
           />
         </span>
         <div class="product-info">
@@ -150,7 +151,7 @@
       </button>
     </div>
 
-    <p v-if="!isLoading && !loadError && filteredProducts.length === 0" class="empty-products">
+    <p v-if="!isLoading && !loadError && displayableProducts.length === 0" class="empty-products">
       {{ ui.empty }}
     </p>
 
@@ -191,6 +192,7 @@
             :src="activeDetailImage"
             :alt="activeProduct.displayName"
             :style="{ transform: `scale(${detailImageZoom})` }"
+            @error="handleDetailImageError"
           />
         </button>
       </div>
@@ -964,6 +966,14 @@ const categoryHeroCopy = {
   },
 }
 
+const categoryHeroImages = {
+  ring: '/images/product/rings/1.jpg',
+  bracelet: '/images/product/bracelets/APYB0006-W-30(1).png',
+  necklace: '/images/product/necklaces/03fbdeb5-250b-47c8-86d4-4483c6dfdebe.png',
+  pendant: '/images/product/pendants/1781603252_1ed77c707cf6a9dd4cca69453f13bf3e.png',
+  earrings: '/images/product/earrings/APYE0219_W_50_ref_b3_western_model_4k_1.png',
+}
+
 const breadcrumbCopy = computed(() => breadcrumbCopies[languageAwareLocale.value] || breadcrumbCopies.zh)
 
 const categoryHero = computed(() => {
@@ -976,7 +986,7 @@ const categoryHero = computed(() => {
   const hero = categoryHeroCopy[categoryKey]
 
   return {
-    image: '',
+    image: categoryHeroImages[categoryKey] || '',
     title: hero.title[activeLocale] || hero.title.zh,
     text: hero.text[activeLocale] || hero.text.zh,
     alt: hero.alt[activeLocale] || hero.alt.zh,
@@ -1034,6 +1044,7 @@ const activeProductGoodsLoadError = ref(false)
 const detailImageZoom = ref(1)
 const previewImage = ref('')
 const previewZoom = ref(1)
+const brokenProductImageCodes = ref(new Set())
 
 const filterTypes = computed(() => {
   return [allFilterKey, braceletFilterKey, earringFilterKey, ringFilterKey, necklaceFilterKey, pendantFilterKey]
@@ -1217,10 +1228,15 @@ const filteredProducts = computed(() => {
   })
 })
 
-const visibleProducts = computed(() => filteredProducts.value.slice(0, visibleProductLimit.value))
+const displayableProducts = computed(() => {
+  return filteredProducts.value
+    .filter((product) => displayProductCardImage(product) && !brokenProductImageCodes.value.has(product.code))
+})
+
+const visibleProducts = computed(() => displayableProducts.value.slice(0, visibleProductLimit.value))
 
 const canLoadMoreProducts = computed(() => {
-  return filteredProducts.value.length > visibleProductLimit.value || productsHasMore.value
+  return displayableProducts.value.length > visibleProductLimit.value || productsHasMore.value
 })
 
 const loadMoreLabel = computed(() => {
@@ -1547,8 +1563,7 @@ const activeProductDetailImages = computed(() => {
     return []
   }
 
-  const detailImages = productDetailImages(activeProduct.value)
-  return detailImages.filter((image, index) => detailImages.indexOf(image) === index)
+  return productGalleryImages(activeProduct.value)
 })
 
 const activeProductGalleryImages = computed(() => {
@@ -1809,27 +1824,79 @@ function normalizeStoneColor(value) {
     .replace(/^天然/, '')
 }
 
-function isLocalProductImage(image, folderName) {
+function isProductImageKind(image, folderName) {
   if (!image || typeof image !== 'string' || !folderName) {
     return false
   }
 
   const normalizedImage = image.split('?')[0].replaceAll('\\', '/').toLowerCase()
-  return normalizedImage.includes(`/local-products/${folderName.toLowerCase()}/`)
-    || normalizedImage.includes(`/${folderName.toLowerCase()}/`)
+  const normalizedFolder = folderName.toLowerCase()
+  return normalizedImage.includes(`/${normalizedFolder}/`)
+    || normalizedImage.startsWith(`${normalizedFolder}/`)
 }
 
 function productPrimaryImage(product) {
-  return isLocalProductImage(product?.image, 'product1') ? product.image : ''
+  return isProductImageKind(product?.image, 'product1') ? product.image : ''
 }
 
 function productHoverImage(product) {
-  return isLocalProductImage(product?.alternateImage, 'product2') ? product.alternateImage : ''
+  return isProductImageKind(product?.alternateImage, 'product2') ? product.alternateImage : ''
+}
+
+function productDetailImageIndex(product, image) {
+  const styleNo = String(product?.styleNo || product?.code || '').trim().toLowerCase()
+  const fileName = String(image || '')
+    .split('?')[0]
+    .replaceAll('\\', '/')
+    .split('/')
+    .pop()
+    ?.toLowerCase() || ''
+
+  if (!styleNo || !fileName.startsWith(`${styleNo}_`)) {
+    return -1
+  }
+
+  const match = fileName.match(/_(\d+)\.[^.]+$/)
+  return match ? Number(match[1]) : -1
 }
 
 function productDetailImages(product) {
   const detailImages = Array.isArray(product?.detailImages) ? product.detailImages : []
-  return detailImages.filter((image) => isLocalProductImage(image, 'product_details'))
+  const styleNo = String(product?.styleNo || product?.code || '').trim()
+  const imageByIndex = new Map()
+
+  detailImages
+    .filter((image) => isProductImageKind(image, 'product_details'))
+    .forEach((image) => {
+      const index = productDetailImageIndex(product, image)
+      if (index >= 0 && index <= 3 && !imageByIndex.has(index)) {
+        imageByIndex.set(index, image)
+      }
+    })
+
+  const orderedImages = [0, 1, 2, 3]
+    .map((index) => imageByIndex.get(index))
+    .filter(Boolean)
+
+  if (orderedImages.length || !styleNo) {
+    return orderedImages
+  }
+
+  return [1, 2, 3, 0].map((index) => `http://img.deringdiam.com/product_details/${styleNo}_${index}.png`)
+}
+
+function uniqueImages(images) {
+  return images.filter((image, index) => image && images.indexOf(image) === index)
+}
+
+function productGalleryImages(product) {
+  const detailImages = productDetailImages(product)
+  const fallbackImages = [
+    productPrimaryImage(product),
+    productHoverImage(product),
+  ]
+
+  return uniqueImages([...detailImages, ...fallbackImages])
 }
 
 function displayProductCardImage(product) {
@@ -1841,6 +1908,15 @@ function displayProductCardImage(product) {
   }
 
   return primaryImage
+}
+
+function hideBrokenProductImage(product) {
+  if (!product?.code) {
+    return
+  }
+
+  brokenProductImageCodes.value = new Set([...brokenProductImageCodes.value, product.code])
+  fillProductsToVisibleLimit()
 }
 
 function productImageStyle(product) {
@@ -1918,7 +1994,7 @@ async function fetchAndAppendNextProductsPage() {
 }
 
 async function fillProductsToVisibleLimit() {
-  while (filteredProducts.value.length < visibleProductLimit.value && productsHasMore.value) {
+  while (displayableProducts.value.length < visibleProductLimit.value && productsHasMore.value) {
     const addedCount = await fetchAndAppendNextProductsPage()
     if (!addedCount) {
       break
@@ -1960,7 +2036,7 @@ async function loadMoreProducts() {
 
   visibleProductLimit.value += productsPageSize
 
-  if (filteredProducts.value.length >= visibleProductLimit.value || !productsHasMore.value) {
+  if (displayableProducts.value.length >= visibleProductLimit.value || !productsHasMore.value) {
     return
   }
 
@@ -1980,6 +2056,28 @@ async function fetchProductsPage(page) {
     page: String(page),
     pageSize: String(productsPageSize),
   })
+
+  const routeSearch = Array.isArray(route.query.q) ? route.query.q[0] : route.query.q
+  const routeType = Array.isArray(route.query.type) ? route.query.type[0] : route.query.type
+  const routeSeries = Array.isArray(route.query.series) ? route.query.series[0] : route.query.series
+  const routeProduct = Array.isArray(route.query.product) ? route.query.product[0] : route.query.product
+
+  if (routeSearch) {
+    params.set('q', routeSearch)
+  }
+
+  if (routeType) {
+    params.set('type', routeType)
+  }
+
+  if (routeSeries) {
+    params.set('series', routeSeries)
+  }
+
+  if (routeProduct) {
+    params.set('product', routeProduct)
+  }
+
   const response = await fetch(`/api/products?${params}`)
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`)
@@ -2211,7 +2309,7 @@ async function scrollToProducts() {
 
 function openProduct(product) {
   activeProductCode.value = product.code
-  activeDetailImage.value = productDetailImages(product)[0] || ''
+  activeDetailImage.value = productGalleryImages(product)[0] || ''
   resetDetailImageZoom()
   detailThumbStartIndex.value = 0
   activeDetailDrawer.value = ''
@@ -2219,6 +2317,14 @@ function openProduct(product) {
   selectedGoodsNo.value = ''
   draftSelectedGoodsNo.value = ''
   activeProductGoodsLoadError.value = false
+}
+
+function handleDetailImageError() {
+  const galleryImages = activeProductGalleryImages.value
+  const currentIndex = galleryImages.indexOf(activeDetailImage.value)
+  const nextImage = galleryImages.find((image, index) => index > currentIndex && image !== activeDetailImage.value)
+
+  activeDetailImage.value = nextImage || productPrimaryImage(activeProduct.value) || productHoverImage(activeProduct.value) || ''
 }
 
 function syncProductFromRoute() {
@@ -2499,15 +2605,19 @@ onBeforeUnmount(() => {
 })
 
 watch(
-  () => [route.query.series, route.query.q, route.query.type],
+  () => [route.query.series, route.query.q, route.query.type, route.query.product],
   async () => {
     closeProduct({ restoreProductPosition: false })
-    visibleProductLimit.value = productsPageSize
-    syncSeriesFromRoute()
-    await fillProductsToVisibleLimit()
-    syncProductFromRoute()
+    await loadProducts()
   },
-  { immediate: true },
+)
+
+watch(
+  () => [selectedType.value, selectedEarringSubtype.value, selectedMaterial.value, selectedStoneShape.value, selectedMainStone.value, selectedPrice.value, selectedSeries.value, selectedStoneColor.value, searchQuery.value],
+  async () => {
+    visibleProductLimit.value = productsPageSize
+    await fillProductsToVisibleLimit()
+  },
 )
 
 watch(
