@@ -7,7 +7,7 @@
     </button>
 
     <section class="series-detail-hero" :aria-label="series.title">
-      <div class="series-detail-showcase">
+      <div class="series-detail-showcase" @wheel="handleShowcaseWheel">
         <div class="series-jewelry-grid">
           <RouterLink
             v-for="item in visibleShowcase"
@@ -62,6 +62,7 @@ const route = useRoute()
 const router = useRouter()
 const { locale } = useLocale()
 const showcasePage = ref(0)
+const lastShowcaseWheelAt = ref(0)
 const dynamicShowcases = ref({})
 
 const seriesFolderBySlug = {
@@ -333,7 +334,7 @@ function buildStaticShowcase(folder) {
       styleNo,
       type: getShowcaseType(styleNo),
       name: styleNo,
-      image: `http://img.deringdiam.com/${folder}/${styleNo}/${imageName}`,
+      image: `http://img.deringdiam.com/series/${folder}/${styleNo}/${imageName}`,
     }
   })
 }
@@ -439,6 +440,34 @@ function setShowcasePage(index) {
   }
 
   showcasePage.value = index
+}
+
+function moveShowcasePage(direction) {
+  const pageCount = showcasePages.value.length
+  if (pageCount <= 1) {
+    return
+  }
+
+  showcasePage.value = (activeShowcasePage.value + direction + pageCount) % pageCount
+}
+
+function handleShowcaseWheel(event) {
+  if (!hasShowcasePages.value) {
+    return
+  }
+
+  event.preventDefault()
+  if (Math.abs(event.deltaY) < 8) {
+    return
+  }
+
+  const now = Date.now()
+  if (now - lastShowcaseWheelAt.value < 420) {
+    return
+  }
+
+  lastShowcaseWheelAt.value = now
+  moveShowcasePage(event.deltaY > 0 ? 1 : -1)
 }
 
 function getShowcaseProductTo(item) {

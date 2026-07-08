@@ -401,6 +401,7 @@
                   <em v-if="item.salesPrice">¥{{ item.salesPrice }}</em>
                 </span>
                 <small>
+                  <b v-if="shouldShowHandSize(item.handSize)">{{ activeGoodsSizeLabel }}：{{ item.handSize }}</b>
                   <b>{{ ui.goodsWeight }} {{ item.goodsWeight || '-' }}</b>
                   <b>{{ ui.goldWeight }} {{ item.goldWeight || '-' }}</b>
                   <b>{{ ui.sideStoneWeight }} {{ item.sideStoneWeight || '-' }}</b>
@@ -602,6 +603,8 @@ const uiCopy = {
     goodsPrompt: '请选择同款款号下的具体货号，顾问可按货号进一步核对库存与证书。',
     goodsOptionsAria: '同款货号选择',
     goodsNo: '货号',
+    handSize: '手寸',
+    sizeValue: '尺寸',
     goodsWeight: '货重',
     goldWeight: '金重',
     sideStoneWeight: '辅石重',
@@ -674,6 +677,8 @@ const uiCopy = {
     goodsPrompt: 'Select the exact item number for this style. Our consultant can use it to verify stock and certificate details.',
     goodsOptionsAria: 'Available item number selection',
     goodsNo: 'Item No.',
+    handSize: 'Ring size',
+    sizeValue: 'Size',
     goodsWeight: 'Total weight',
     goldWeight: 'Gold weight',
     sideStoneWeight: 'Side stone weight',
@@ -1322,6 +1327,11 @@ const activeProductDisplayCode = computed(() => {
   return selectedGoodsItem.value?.goodsNo || activeProduct.value?.code || ''
 })
 
+const activeGoodsSizeLabel = computed(() => {
+  const type = activeProduct.value?.type || ''
+  return isNecklaceType(type) ? (ui.value.sizeValue || '尺寸') : (ui.value.handSize || '手寸')
+})
+
 const activeSizeGuide = computed(() => {
   const type = activeProduct.value?.type || ''
   const isEnglish = languageAwareLocale.value === 'en'
@@ -1652,6 +1662,16 @@ function formatPrice(price) {
 function parsePositiveNumber(value) {
   const numericValue = Number(value)
   return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null
+}
+
+function shouldShowHandSize(value) {
+  const text = String(value ?? '').trim()
+  if (!text) {
+    return false
+  }
+
+  const numericValue = Number(text)
+  return !Number.isFinite(numericValue) || numericValue !== 0
 }
 
 function getDefaultGoodsNo(items) {
