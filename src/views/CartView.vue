@@ -316,6 +316,10 @@ function getOrderNickname() {
   return String(currentUser.value?.nickname || '').trim()
 }
 
+function getAuthToken() {
+  return String(currentUser.value?.token || '').trim()
+}
+
 function getSelectedOrderItems() {
   return selectedCartItems.value.map((item) => ({
     styleNo: item.styleNo || item.code,
@@ -417,7 +421,8 @@ async function submitOrder() {
   }
 
   const nickname = getOrderNickname()
-  if (!nickname) {
+  const token = getAuthToken()
+  if (!nickname || !token) {
     setOrderStatus(copy.value.loginRequired, 'error')
     router.push({ name: 'login' })
     return
@@ -434,6 +439,7 @@ async function submitOrder() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         nickname,
