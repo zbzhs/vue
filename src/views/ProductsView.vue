@@ -294,7 +294,10 @@
         </div>
 
         <div class="detail-purchase-row">
-          <strong>{{ formatPrice(activeProductPurchasePrice) }}</strong>
+          <div class="detail-price-copy">
+            <strong>{{ formatPrice(activeProductPurchasePrice) }}</strong>
+            <span v-if="activeProductIsPriceOnRequest">{{ ui.outOfStockConsult }}</span>
+          </div>
           <button class="detail-cart-button" type="button" @click="addActiveProductToCart">
             {{ ui.addToCart }}
           </button>
@@ -575,6 +578,7 @@ const uiCopy = {
     styleNo: '款号',
     all: '全部',
     priceOnRequest: '面议',
+    outOfStockConsult: '暂时缺货，如有需要请咨询我们',
     priceUnder: (value) => `${value} 以下`,
     priceAbove: (value) => `${value} 以上`,
     materialLabel: '材质',
@@ -646,6 +650,7 @@ const uiCopy = {
     styleNo: 'Style No.',
     all: 'All',
     priceOnRequest: 'Price on request',
+    outOfStockConsult: 'Temporarily out of stock. Please contact us if needed.',
     priceUnder: (value) => `Under ${value}`,
     priceAbove: (value) => `Above ${value}`,
     materialLabel: 'Metal',
@@ -713,6 +718,7 @@ const uiCopy = {
     styleNo: '品番',
     all: 'すべて',
     priceOnRequest: '価格はお問い合わせください',
+    outOfStockConsult: '一時的に在庫切れです。必要な場合はお問い合わせください。',
     priceUnder: (value) => `${value} 以下`,
     priceAbove: (value) => `${value} 以上`,
   },
@@ -747,6 +753,7 @@ const uiCopy = {
     styleNo: 'รหัสสินค้า',
     all: 'ทั้งหมด',
     priceOnRequest: 'สอบถามราคา',
+    outOfStockConsult: 'สินค้าหมดชั่วคราว โปรดติดต่อเราหากต้องการ',
     priceUnder: (value) => `ต่ำกว่า ${value}`,
     priceAbove: (value) => `มากกว่า ${value}`,
   },
@@ -781,6 +788,7 @@ const uiCopy = {
     styleNo: '스타일 번호',
     all: '전체',
     priceOnRequest: '가격 문의',
+    outOfStockConsult: '일시 품절입니다. 필요하시면 문의해 주세요.',
     priceUnder: (value) => `${value} 이하`,
     priceAbove: (value) => `${value} 이상`,
   },
@@ -815,6 +823,7 @@ const uiCopy = {
     styleNo: 'Mã kiểu',
     all: 'Tất cả',
     priceOnRequest: 'Liên hệ để biết giá',
+    outOfStockConsult: 'Tạm hết hàng. Vui lòng liên hệ nếu bạn cần.',
     priceUnder: (value) => `Dưới ${value}`,
     priceAbove: (value) => `Trên ${value}`,
   },
@@ -1308,6 +1317,8 @@ const activeProductPurchasePrice = computed(() => {
   return activeProduct.value?.price
 })
 
+const activeProductIsPriceOnRequest = computed(() => parsePositiveNumber(activeProductPurchasePrice.value) === null)
+
 const activeProductDisplayCode = computed(() => {
   return selectedGoodsItem.value?.goodsNo || activeProduct.value?.code || ''
 })
@@ -1554,7 +1565,25 @@ const activeProductCoreSpecs = computed(() => {
   }
 
   return activeProduct.value.displaySpecs.filter((item) => {
-    return coreDetailSpecLabels.has(item.rawLabel) || coreDetailSpecLabels.has(item.label)
+    const isCoreSpec = coreDetailSpecLabels.has(item.rawLabel) || coreDetailSpecLabels.has(item.label)
+    if (!isCoreSpec) {
+      return false
+    }
+
+    const isTotalWeight =
+      item.rawLabel === '总重' ||
+      item.rawLabel === '鎬婚噸' ||
+      item.rawLabel === 'Total Weight' ||
+      item.label === '总重' ||
+      item.label === '鎬婚噸' ||
+      item.label === 'Total Weight'
+
+    if (!isTotalWeight) {
+      return true
+    }
+
+    const numericWeight = parsePositiveNumber(String(item.value || '').replace(/[^0-9.]+/g, ''))
+    return numericWeight !== null
   })
 })
 
