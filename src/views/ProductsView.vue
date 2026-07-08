@@ -315,7 +315,6 @@
         </div>
 
         <p v-if="activeProduct.displaySellingPoint">{{ activeProduct.displaySellingPoint }}</p>
-        <p v-if="activeProduct.displayRemark">{{ activeProduct.displayRemark }}</p>
       </div>
 
       <aside

@@ -333,7 +333,7 @@ function buildStaticShowcase(folder) {
       styleNo,
       type: getShowcaseType(styleNo),
       name: styleNo,
-      image: `http://img.deringdiam.com/product1/${imageName}`,
+      image: `http://img.deringdiam.com/${folder}/${styleNo}/${imageName}`,
     }
   })
 }
