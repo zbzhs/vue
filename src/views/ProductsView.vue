@@ -2269,21 +2269,50 @@ async function applyFilters() {
   await scrollToProducts()
 }
 
+function getSelectedRouteType() {
+  if (draftType.value === allFilterKey) {
+    return undefined
+  }
+
+  if (draftType.value === earringFilterKey && draftEarringSubtype.value !== allFilterKey) {
+    return draftEarringSubtype.value
+  }
+
+  return draftType.value
+}
+
 async function selectFilterOption(moduleId, value) {
   setFilterValue(moduleId, value)
+
+  if (moduleId === 'type' || moduleId === 'earringSubtype') {
+    const nextRouteType = getSelectedRouteType()
+    const nextRouteQuery = nextRouteType ? { type: nextRouteType } : {}
+    searchQuery.value = ''
+    showFilterPanel.value = false
+    visibleProductLimit.value = productsPageSize
+    await router.push({ name: 'products', query: nextRouteQuery })
+    return
+  }
+
   visibleProductLimit.value = productsPageSize
   await fillProductsToVisibleLimit()
 }
 
 function setFilterValue(moduleId, value) {
   if (moduleId === 'type') {
+    clearSecondaryFilters()
+    draftSeries.value = allFilterKey
+    selectedSeries.value = allFilterKey
+    draftPrice.value = allFilterKey
+    selectedPrice.value = allFilterKey
     draftType.value = value
     selectedType.value = value
-    if (value !== earringFilterKey) {
-      draftEarringSubtype.value = allFilterKey
-      selectedEarringSubtype.value = allFilterKey
-    }
   } else if (moduleId === 'earringSubtype') {
+    clearSecondaryFilters()
+    draftSeries.value = allFilterKey
+    selectedSeries.value = allFilterKey
+    draftPrice.value = allFilterKey
+    selectedPrice.value = allFilterKey
     draftType.value = earringFilterKey
     selectedType.value = earringFilterKey
     draftEarringSubtype.value = value
@@ -2348,6 +2377,18 @@ async function resetFilters() {
   selectedSeries.value = allFilterKey
   selectedStoneColor.value = allFilterKey
   visibleProductLimit.value = productsPageSize
+
+  const nextRouteQuery = { ...route.query }
+  const shouldReloadProducts = Boolean(nextRouteQuery.type || nextRouteQuery.series || nextRouteQuery.product)
+  delete nextRouteQuery.type
+  delete nextRouteQuery.series
+  delete nextRouteQuery.product
+
+  if (shouldReloadProducts) {
+    await router.replace({ name: 'products', query: nextRouteQuery })
+    return
+  }
+
   await fillProductsToVisibleLimit()
 }
 
