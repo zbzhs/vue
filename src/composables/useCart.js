@@ -7,7 +7,7 @@ const { currentUser } = useAuth()
 const cartItems = ref(readStoredItems())
 
 function getUserCartIdentity(user = currentUser.value) {
-  return String(user?.id || user?.email || user?.nickname || '').trim()
+  return String(user?.user_id || user?.email || user?.nickname || '').trim()
 }
 
 function getCartStorageKey(user = currentUser.value) {

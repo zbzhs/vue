@@ -22,7 +22,7 @@
           <button class="register-submit" type="submit" :disabled="isLoggingIn">
             {{ isLoggingIn ? copy.loggingIn : copy.submit }}
           </button>
-          <p>{{ copy.noAccount }}<RouterLink to="/register">{{ copy.register }}</RouterLink></p>
+          <p>{{ copy.userAccount }}<RouterLink to="/login">{{ copy.userLogin }}</RouterLink></p>
         </div>
       </form>
     </div>
@@ -30,56 +30,50 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 import { useAuth } from '../composables/useAuth'
 import { useLocale } from '../composables/useLocale'
 
 const router = useRouter()
-const { setCurrentUser } = useAuth()
+const { currentUser, setCurrentUser } = useAuth()
 const { locale } = useLocale()
 
 const copies = {
   zh: {
-    kicker: '登录账号',
+    kicker: '管理员登录页面',
     title: '欢迎回到 DERING',
-    nicknameLabel: '昵称*',
-    nicknamePlaceholder: '请输入昵称',
+    nicknameLabel: '管理员账号*',
+    nicknamePlaceholder: '请输入管理员昵称',
     passwordLabel: '密码*',
     passwordPlaceholder: '请输入密码',
     loggingIn: '登录中...',
     submit: '立即登录',
-    noAccount: '还没有账户？',
-    register: '注册',
-    missingNickname: '请输入昵称',
+    userAccount: '不是管理员？',
+    userLogin: '用户登录',
+    missingNickname: '请输入管理员账号',
     missingPassword: '请输入密码',
-    loginFailed: '登录失败',
+    loginFailed: '管理员账号或密码错误',
     loginSuccess: '登录成功',
-    adminNotAllowed: '用户不存在',
-    notRegistered: '该昵称尚未注册，请先注册',
-    invalidCredentials: '昵称或密码错误',
-    passwordNotSet: '该账号尚未设置密码，请重新注册或联系管理员',
+    noPermission: '该账号没有管理员权限',
   },
   en: {
-    kicker: 'Log In',
+    kicker: 'Administrator Login Page',
     title: 'Welcome Back to DERING',
-    nicknameLabel: 'Nickname*',
-    nicknamePlaceholder: 'Enter your nickname',
+    nicknameLabel: 'Admin account*',
+    nicknamePlaceholder: 'Enter admin nickname',
     passwordLabel: 'Password*',
-    passwordPlaceholder: 'Enter your password',
+    passwordPlaceholder: 'Enter password',
     loggingIn: 'Logging in...',
     submit: 'Log In Now',
-    noAccount: 'No account yet? ',
-    register: 'Register',
-    missingNickname: 'Please enter your nickname',
+    userAccount: 'Not an admin? ',
+    userLogin: 'User login',
+    missingNickname: 'Please enter the admin account',
     missingPassword: 'Please enter your password',
-    loginFailed: 'Login failed',
+    loginFailed: 'Invalid administrator credentials',
     loginSuccess: 'Logged in successfully',
-    adminNotAllowed: 'User does not exist.',
-    notRegistered: 'This nickname is not registered yet. Please register first.',
-    invalidCredentials: 'The nickname or password is incorrect.',
-    passwordNotSet: 'This account does not have a password yet. Please register again or contact support.',
+    noPermission: 'This account does not have administrator access',
   },
 }
 
@@ -104,24 +98,6 @@ function setStatus(message, type = 'info') {
   statusType.value = type
 }
 
-function formatErrorMessage(message, fallback) {
-  const text = String(message || fallback)
-
-  if (text.includes('尚未注册')) {
-    return copy.value.notRegistered
-  }
-
-  if (text.includes('昵称或密码错误')) {
-    return copy.value.invalidCredentials
-  }
-
-  if (text.includes('尚未设置密码')) {
-    return copy.value.passwordNotSet
-  }
-
-  return locale.value === 'en' ? fallback : text
-}
-
 async function submitLogin() {
   if (!form.nickname.trim()) {
     setStatus(copy.value.missingNickname, 'error')
@@ -137,7 +113,7 @@ async function submitLogin() {
   setStatus('')
 
   try {
-    const response = await fetch('/api/login', {
+    const response = await fetch('/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -148,22 +124,28 @@ async function submitLogin() {
     const payload = await response.json().catch(() => ({}))
 
     if (!response.ok || !payload.success) {
-      throw new Error(formatErrorMessage(payload.detail, copy.value.loginFailed))
+      throw new Error(payload.detail || copy.value.loginFailed)
     }
 
-    if (payload.user?.role === 'admin') {
-      throw new Error(copy.value.adminNotAllowed)
+    if (payload.user?.role !== 'admin') {
+      throw new Error(copy.value.noPermission)
     }
 
     setCurrentUser(payload.user)
     setStatus(copy.value.loginSuccess)
     window.setTimeout(() => {
-      router.push({ name: 'home' })
+      router.push({ name: 'adminDashboard' })
     }, 500)
   } catch (error) {
-    setStatus(formatErrorMessage(error instanceof Error ? error.message : '', copy.value.loginFailed), 'error')
+    setStatus(error instanceof Error ? error.message : copy.value.loginFailed, 'error')
   } finally {
     isLoggingIn.value = false
   }
 }
+
+onMounted(() => {
+  if (currentUser.value?.role === 'admin') {
+    router.replace({ name: 'adminDashboard' })
+  }
+})
 </script>

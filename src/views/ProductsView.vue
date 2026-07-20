@@ -79,9 +79,13 @@
     <img v-if="categoryHero.image" class="category-hero-image" :src="categoryHero.image" :alt="categoryHero.alt" />
   </section>
 
-  <section class="product-discovery" :aria-label="ui.discoveryAria">
+  <section
+    class="product-discovery"
+    :class="{ 'product-discovery--loose-stone': isLooseStoneSelected }"
+    :aria-label="ui.discoveryAria"
+  >
     <div class="product-toolbar">
-      <div class="search-panel">
+      <div v-if="!isLooseStoneSelected" class="search-panel">
         <div class="search-main">
           <label class="search-box">
             <input
@@ -114,6 +118,100 @@
           </button>
         </div>
       </div>
+
+      <section v-if="isLooseStoneSelected" class="loose-stone-filter" aria-label="GIA裸钻筛选">
+        <header class="loose-stone-filter-head">
+          <button class="loose-stone-back" type="button" aria-label="返回" @click="resetFilters">
+            <span aria-hidden="true"></span>
+          </button>
+          <h2>GIA裸钻</h2>
+        </header>
+
+        <div class="loose-stone-filter-body">
+          <div
+            v-for="group in looseStoneChoiceGroups"
+            :key="group.id"
+            class="loose-stone-row"
+            :class="{ 'loose-stone-row--shape': group.id === 'shape' }"
+          >
+            <span class="loose-stone-label">{{ group.label }}</span>
+            <div class="loose-stone-options">
+              <button
+                v-for="option in group.options"
+                :key="option.value"
+                type="button"
+                :class="{ active: looseStoneFilters[group.id] === option.value }"
+                @click="selectLooseStoneChoice(group.id, option.value)"
+              >
+                <i
+                  v-if="group.id === 'shape'"
+                  class="loose-stone-shape"
+                  :class="`loose-stone-shape--${option.icon}`"
+                  aria-hidden="true"
+                ></i>
+                <span>{{ option.label }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="loose-stone-row loose-stone-row--range">
+            <span class="loose-stone-label">价格</span>
+            <label>
+              <input v-model.trim="looseStoneFilters.priceMin" inputmode="decimal" placeholder="开始价格" />
+              <span>元</span>
+            </label>
+            <em aria-hidden="true">-</em>
+            <label>
+              <input v-model.trim="looseStoneFilters.priceMax" inputmode="decimal" placeholder="结束价格" />
+              <span>元</span>
+            </label>
+            <button type="button" class="loose-stone-recommend" @click="useRecommendedLooseStonePrice">推荐</button>
+          </div>
+
+          <div class="loose-stone-row">
+            <span class="loose-stone-label">钻重</span>
+            <div class="loose-stone-options">
+              <button
+                v-for="carat in looseStoneCaratPresets"
+                :key="carat.value"
+                type="button"
+                :class="{ active: looseStoneFilters.caratPreset === carat.value }"
+                @click="selectLooseStoneCarat(carat.value)"
+              >
+                {{ carat.label }}
+              </button>
+            </div>
+          </div>
+
+          <div class="loose-stone-row loose-stone-row--range">
+            <span class="loose-stone-label"></span>
+            <label>
+              <input v-model.trim="looseStoneFilters.caratMin" inputmode="decimal" placeholder="开始钻重" />
+              <span>ct</span>
+            </label>
+            <em aria-hidden="true">-</em>
+            <label>
+              <input v-model.trim="looseStoneFilters.caratMax" inputmode="decimal" placeholder="结束钻重" />
+              <span>ct</span>
+            </label>
+          </div>
+
+          <div class="loose-stone-row loose-stone-row--cert-search">
+            <span class="loose-stone-label">搜索</span>
+            <label>
+              <input v-model.trim="looseStoneFilters.certificateNo" placeholder="请输入证书号" />
+            </label>
+          </div>
+        </div>
+
+        <footer class="loose-stone-actions">
+          <button type="button" class="loose-stone-clear" @click="resetLooseStoneFilters">取消全部</button>
+          <button type="button" class="loose-stone-submit" @click="showProducts">
+            <span aria-hidden="true"></span>
+            搜索({{ looseStoneSearchCount }}粒)
+          </button>
+        </footer>
+      </section>
     </div>
   </section>
 
@@ -187,13 +285,17 @@
           @click="openImagePreview(activeDetailImage)"
           @wheel.prevent="handleDetailImageWheel"
         >
-          <img
-            class="detail-main-image"
-            :src="activeDetailImage"
-            :alt="activeProduct.displayName"
-            :style="{ transform: `scale(${detailImageZoom})` }"
-            @error="handleDetailImageError"
-          />
+          <Transition name="detail-main-image-slide" mode="out-in">
+            <span :key="activeDetailImage" class="detail-main-image-frame">
+              <img
+                class="detail-main-image"
+                :src="activeDetailImage"
+                :alt="activeProduct.displayName"
+                :style="{ transform: `scale(${detailImageZoom})` }"
+                @error="handleDetailImageError"
+              />
+            </span>
+          </Transition>
         </button>
       </div>
 
@@ -507,6 +609,7 @@ const ringFilterKey = '戒指'
 const braceletFilterKey = '手链'
 const necklaceFilterKey = '项链'
 const pendantFilterKey = '吊坠'
+const looseStoneFilterKey = '裸石'
 const earringFilterKey = '耳饰'
 const earringDropTypeValues = ['耳吊', '耳坠']
 const earringTypes = ['耳饰', '耳钉', '耳圈', '耳线', ...earringDropTypeValues, '耳扣']
@@ -516,7 +619,54 @@ const earringSubtypeOptions = [
   { value: '耳钉', label: '耳钉' },
   { value: '耳吊', label: '耳吊' },
 ]
+const looseStoneDefaultFilters = {
+  shape: '',
+  color: '',
+  clarity: '',
+  cut: '',
+  symmetry: '',
+  polish: '',
+  fluorescence: '',
+  certificate: '',
+  priceMin: '',
+  priceMax: '',
+  caratPreset: '',
+  caratMin: '',
+  caratMax: '',
+  certificateNo: '',
+}
+const looseStoneChoiceDefinitions = [
+  {
+    id: 'shape',
+    label: '形状',
+    options: [
+      { value: '圆形', label: '圆形', icon: 'round' },
+      { value: '公主方', label: '公主方', icon: 'princess' },
+      { value: '祖母绿', label: '祖母绿', icon: 'emerald' },
+      { value: '雷迪恩形', label: '雷迪恩形', icon: 'radiant' },
+      { value: '椭圆形', label: '椭圆形', icon: 'oval' },
+      { value: '水滴形', label: '水滴形', icon: 'pear' },
+      { value: '菱形', label: '菱形', icon: 'marquise' },
+      { value: '心形', label: '心形', icon: 'heart' },
+      { value: '三角形', label: '三角形', icon: 'triangle' },
+      { value: '垫形', label: '垫形', icon: 'cushion' },
+      { value: '其他形', label: '其他形', icon: 'other' },
+    ],
+  },
+  { id: 'color', label: '颜色', options: ['D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'].map((value) => ({ value, label: value })) },
+  { id: 'clarity', label: '净度', options: ['IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1'].map((value) => ({ value, label: value })) },
+  { id: 'cut', label: '切工', options: ['EX', 'VG', 'GD', 'FR'].map((value) => ({ value, label: value })) },
+  { id: 'symmetry', label: '对称', options: ['EX', 'VG', 'GD', 'FR'].map((value) => ({ value, label: value })) },
+  { id: 'polish', label: '抛光', options: ['EX', 'VG', 'GD', 'FR'].map((value) => ({ value, label: value })) },
+  { id: 'fluorescence', label: '荧光', options: ['None', 'Faint', 'Medium', 'Strong', 'VeryStrong'].map((value) => ({ value, label: value })) },
+  { id: 'certificate', label: '证书', options: ['GIA', 'IGI'].map((value) => ({ value, label: value })) },
+]
+const looseStoneCaratPresets = ['0.3', '0.4', '0.5', '0.6', '0.7'].map((value) => ({
+  value,
+  label: `${value}ct`,
+}))
 const visibleDetailThumbCount = 4
+const detailImageAutoSlideDelay = 3000
 const LAST_CART_PRODUCT_STORAGE_KEY = 'dering-last-cart-product'
 const detailGoodImages = Array.from(
   { length: 9 },
@@ -951,6 +1101,32 @@ const categoryHeroCopy = {
       vi: 'Hinh anh bo suu tap mat day',
     },
   },
+  looseStone: {
+    title: {
+      zh: '裸石',
+      en: 'Loose Stones',
+      ja: 'ルースストーン',
+      th: 'พลอยเปล่า',
+      ko: '나석',
+      vi: 'Kim cuong roi',
+    },
+    text: {
+      zh: '按形状、颜色、净度、切工、证书与钻重快速筛选裸钻，便于进一步确认库存、证书号与定制方案。',
+      en: 'Filter loose diamonds by shape, color, clarity, cut, certificate, and carat weight for stock confirmation and custom projects.',
+      ja: '形状、カラー、クラリティ、カット、鑑定書、カラットでルースダイヤを絞り込めます。',
+      th: 'ค้นหาเพชรร่วงตามรูปทรง สี ความสะอาด การเจียระไน ใบรับรอง และน้ำหนักกะรัต',
+      ko: '형태, 컬러, 클래리티, 컷, 감정서, 캐럿으로 나석을 빠르게 필터링합니다.',
+      vi: 'Loc kim cuong roi theo dang, mau, do tinh khiet, giac cat, chung nhan va trong luong carat.',
+    },
+    alt: {
+      zh: '裸石筛选',
+      en: 'Loose stone filtering',
+      ja: 'ルースストーン検索',
+      th: 'ตัวกรองพลอยเปล่า',
+      ko: '나석 필터',
+      vi: 'Bo loc kim cuong roi',
+    },
+  },
   earrings: {
     title: {
       zh: '耳饰',
@@ -984,6 +1160,7 @@ const categoryHeroImages = {
   bracelet: '/images/product/bracelets/APYB0006-W-30(1).png',
   necklace: '/images/product/necklaces/03fbdeb5-250b-47c8-86d4-4483c6dfdebe.png',
   pendant: '/images/product/pendants/1781603252_1ed77c707cf6a9dd4cca69453f13bf3e.png',
+  looseStone: '',
   earrings: '/images/product/earrings/APYE0219_W_50_ref_b3_western_model_4k_1.png',
 }
 
@@ -991,7 +1168,7 @@ const breadcrumbCopy = computed(() => breadcrumbCopies[languageAwareLocale.value
 
 const categoryHero = computed(() => {
   const categoryKey = getCategoryKeyForType(selectedType.value)
-  if (!categoryKey) {
+  if (!categoryKey || categoryKey === 'looseStone') {
     return null
   }
 
@@ -1031,6 +1208,7 @@ const selectedMaterial = ref(allFilterKey)
 const selectedStoneShape = ref(allFilterKey)
 const selectedMainStone = ref(allFilterKey)
 const selectedStoneColor = ref(allFilterKey)
+const looseStoneFilters = ref({ ...looseStoneDefaultFilters })
 const draftType = ref(allFilterKey)
 const draftEarringSubtype = ref(allFilterKey)
 const draftPrice = ref(allFilterKey)
@@ -1058,10 +1236,22 @@ const detailImageZoom = ref(1)
 const previewImage = ref('')
 const previewZoom = ref(1)
 const brokenProductImageCodes = ref(new Set())
+let detailImageAutoSlideTimer = 0
 
 const filterTypes = computed(() => {
-  return [allFilterKey, braceletFilterKey, earringFilterKey, ringFilterKey, necklaceFilterKey, pendantFilterKey]
+  return [
+    allFilterKey,
+    braceletFilterKey,
+    earringFilterKey,
+    ringFilterKey,
+    necklaceFilterKey,
+    pendantFilterKey,
+    looseStoneFilterKey,
+  ]
 })
+
+const looseStoneChoiceGroups = computed(() => looseStoneChoiceDefinitions)
+const isLooseStoneSelected = computed(() => normalizeCategoryType(selectedType.value) === looseStoneFilterKey)
 
 const filterSeries = computed(() => {
   return [allFilterKey, ...new Set(products.value.map((product) => product.series).filter(Boolean))]
@@ -1227,6 +1417,7 @@ const filteredProducts = computed(() => {
     const price = Number(product.price ?? 0)
     const matchesPrice =
       selectedPrice.value === allFilterKey || (price >= priceRange.min && price <= priceRange.max)
+    const matchesLooseStone = !isLooseStoneSelected.value || isProductMatchingLooseStoneFilters(product)
 
     return (
       matchesType &&
@@ -1236,10 +1427,13 @@ const filteredProducts = computed(() => {
       matchesStoneShape &&
       matchesMainStone &&
       matchesStoneColor &&
-      matchesPrice
+      matchesPrice &&
+      matchesLooseStone
     )
   })
 })
+
+const looseStoneSearchCount = computed(() => filteredProducts.value.length)
 
 const displayableProducts = computed(() => {
   return filteredProducts.value
@@ -1279,7 +1473,7 @@ const loadMoreLoadingLabel = computed(() => {
 })
 
 const activeFilterCount = computed(() => {
-  return [
+  const regularFilterCount = [
     selectedType.value,
     selectedEarringSubtype.value,
     selectedMaterial.value,
@@ -1289,6 +1483,9 @@ const activeFilterCount = computed(() => {
     selectedPrice.value,
     selectedStoneColor.value,
   ].filter((value) => value !== allFilterKey).length
+  const looseStoneFilterCount = Object.values(looseStoneFilters.value).filter(Boolean).length
+
+  return regularFilterCount + looseStoneFilterCount
 })
 
 const activeProduct = computed(() => {
@@ -1723,6 +1920,10 @@ function isPendantType(type) {
   return ['吊坠', '鍚婂潬'].includes(type)
 }
 
+function isLooseStoneType(type) {
+  return ['裸石', 'Loose Stone', 'Loose Stones'].includes(type)
+}
+
 function isEarringType(type) {
   return earringTypes.includes(type)
 }
@@ -1742,6 +1943,10 @@ function getCategoryKeyForType(type) {
 
   if (isPendantType(type)) {
     return 'pendant'
+  }
+
+  if (isLooseStoneType(type)) {
+    return 'looseStone'
   }
 
   if (type === earringFilterKey) {
@@ -1766,6 +1971,10 @@ function normalizeCategoryType(type) {
 
   if (isPendantType(type)) {
     return pendantFilterKey
+  }
+
+  if (isLooseStoneType(type)) {
+    return looseStoneFilterKey
   }
 
   if (type === earringFilterKey) {
@@ -1870,6 +2079,134 @@ function normalizeStoneColor(value) {
   return normalizeFilterValue(value)
     .replace(/^培育/, '')
     .replace(/^天然/, '')
+}
+
+function selectLooseStoneChoice(groupId, value) {
+  looseStoneFilters.value[groupId] = looseStoneFilters.value[groupId] === value ? '' : value
+  visibleProductLimit.value = productsPageSize
+}
+
+function selectLooseStoneCarat(value) {
+  const isSelected = looseStoneFilters.value.caratPreset === value
+  looseStoneFilters.value.caratPreset = isSelected ? '' : value
+  looseStoneFilters.value.caratMin = isSelected ? '' : value
+  looseStoneFilters.value.caratMax = ''
+  visibleProductLimit.value = productsPageSize
+}
+
+function useRecommendedLooseStonePrice() {
+  looseStoneFilters.value.priceMin = ''
+  looseStoneFilters.value.priceMax = ''
+  visibleProductLimit.value = productsPageSize
+}
+
+function resetLooseStoneFilters() {
+  looseStoneFilters.value = { ...looseStoneDefaultFilters }
+  visibleProductLimit.value = productsPageSize
+}
+
+function getLooseStoneSpecValue(product, labels) {
+  const directValue = labels
+    .map((label) => product?.[label])
+    .find((value) => normalizeFilterValue(value))
+
+  return normalizeFilterValue(directValue) || getProductSpecValue(product, labels)
+}
+
+function normalizeLooseStoneComparable(value) {
+  return normalizeFilterValue(value).replace(/\s+/g, '').toLowerCase()
+}
+
+function normalizeLooseStoneFluorescence(value) {
+  const normalizedValue = normalizeLooseStoneComparable(value)
+  const fluorescenceMap = {
+    non: 'none',
+    no: 'none',
+    none: 'none',
+    无: 'none',
+    faint: 'faint',
+    medium: 'medium',
+    strong: 'strong',
+    verystrong: 'verystrong',
+    verystrongblue: 'verystrong',
+  }
+
+  return fluorescenceMap[normalizedValue] || normalizedValue
+}
+
+function getLooseStoneCarat(product) {
+  const rawValue =
+    getLooseStoneSpecValue(product, ['钻重', '主石大小', '主石重量', '克拉', 'Carat', 'carat'])
+    || getLooseStoneSpecValue(product, ['主石'])
+
+  const match = String(rawValue || '').match(/\d+(?:\.\d+)?/)
+  return match ? Number(match[0]) : null
+}
+
+function getLooseStoneCertificateNo(product) {
+  return normalizeFilterValue(
+    product?.certificateNo
+      || product?.certNo
+      || product?.certificate_no
+      || product?.goodsNo
+      || getLooseStoneSpecValue(product, ['证书号', '证书编号', 'GIA证书号', 'IGI证书号']),
+  )
+}
+
+function isProductMatchingLooseStoneFilters(product) {
+  const filters = looseStoneFilters.value
+  const fieldMap = {
+    shape: ['形状', '石形状', '主石形状', '切割形状'],
+    color: ['颜色', '石颜色', '主石颜色', 'Color', 'color'],
+    clarity: ['净度', '主石净度', 'Clarity', 'clarity'],
+    cut: ['切工', '切割', 'Cut', 'cut'],
+    symmetry: ['对称', '对称性', 'Symmetry', 'symmetry'],
+    polish: ['抛光', 'Polish', 'polish'],
+    fluorescence: ['荧光', 'Fluorescence', 'fluorescence'],
+    certificate: ['证书', '证书机构', 'Certificate', 'certificate'],
+  }
+
+  const matchesChoiceFilters = Object.entries(fieldMap).every(([filterKey, labels]) => {
+    const selectedValue = filters[filterKey]
+    if (!selectedValue) {
+      return true
+    }
+
+    const productValue = getLooseStoneSpecValue(product, labels)
+    if (filterKey === 'fluorescence') {
+      return normalizeLooseStoneFluorescence(productValue) === normalizeLooseStoneFluorescence(selectedValue)
+    }
+
+    return normalizeLooseStoneComparable(productValue).includes(normalizeLooseStoneComparable(selectedValue))
+  })
+
+  if (!matchesChoiceFilters) {
+    return false
+  }
+
+  const price = Number(product.price ?? 0)
+  const minPrice = parsePositiveNumber(filters.priceMin)
+  const maxPrice = parsePositiveNumber(filters.priceMax)
+  if ((minPrice !== null && price < minPrice) || (maxPrice !== null && price > maxPrice)) {
+    return false
+  }
+
+  const carat = getLooseStoneCarat(product)
+  const minCarat = parsePositiveNumber(filters.caratMin)
+  const maxCarat = parsePositiveNumber(filters.caratMax)
+  if (minCarat !== null && (carat === null || carat < minCarat)) {
+    return false
+  }
+  if (maxCarat !== null && (carat === null || carat > maxCarat)) {
+    return false
+  }
+
+  const certificateNo = normalizeLooseStoneComparable(filters.certificateNo)
+  if (certificateNo && !normalizeLooseStoneComparable(getLooseStoneCertificateNo(product)).includes(certificateNo)) {
+    return false
+  }
+
+  return true
 }
 
 function isProductImageKind(image, folderName) {
@@ -2073,7 +2410,7 @@ async function loadProducts() {
     productsTotal.value = payload.total
     syncSeriesFromRoute()
     await fillProductsToVisibleLimit()
-    syncProductFromRoute()
+    await syncProductFromRoute()
   } catch (error) {
     console.error('Failed to load products:', error)
     loadError.value = true
@@ -2114,8 +2451,6 @@ async function fetchProductsPage(page) {
   const routeSearch = Array.isArray(route.query.q) ? route.query.q[0] : route.query.q
   const routeType = Array.isArray(route.query.type) ? route.query.type[0] : route.query.type
   const routeSeries = Array.isArray(route.query.series) ? route.query.series[0] : route.query.series
-  const routeProduct = Array.isArray(route.query.product) ? route.query.product[0] : route.query.product
-
   if (routeSearch) {
     params.set('q', routeSearch)
   }
@@ -2126,10 +2461,6 @@ async function fetchProductsPage(page) {
 
   if (routeSeries) {
     params.set('series', routeSeries)
-  }
-
-  if (routeProduct) {
-    params.set('product', routeProduct)
   }
 
   const response = await fetch(`/api/products?${params}`)
@@ -2174,7 +2505,14 @@ function syncSeriesFromRoute() {
     }
 
     const normalizedRouteType = normalizeCategoryType(routeType)
-    const hasGroupedType = [ringFilterKey, braceletFilterKey, necklaceFilterKey, pendantFilterKey, earringFilterKey].includes(normalizedRouteType)
+    const hasGroupedType = [
+      ringFilterKey,
+      braceletFilterKey,
+      necklaceFilterKey,
+      pendantFilterKey,
+      looseStoneFilterKey,
+      earringFilterKey,
+    ].includes(normalizedRouteType)
 
     if (hasGroupedType) {
       selectedType.value = normalizedRouteType
@@ -2227,6 +2565,7 @@ function clearSecondaryFilters() {
   draftMainStone.value = allFilterKey
   selectedStoneColor.value = allFilterKey
   draftStoneColor.value = allFilterKey
+  resetLooseStoneFilters()
 }
 
 function toggleFilterPanel() {
@@ -2376,6 +2715,7 @@ async function resetFilters() {
   selectedPrice.value = allFilterKey
   selectedSeries.value = allFilterKey
   selectedStoneColor.value = allFilterKey
+  resetLooseStoneFilters()
   visibleProductLimit.value = productsPageSize
 
   const nextRouteQuery = { ...route.query }
@@ -2412,6 +2752,7 @@ function openProduct(product) {
   selectedGoodsNo.value = ''
   draftSelectedGoodsNo.value = ''
   activeProductGoodsLoadError.value = false
+  startDetailImageAutoSlide()
 }
 
 function handleDetailImageError() {
@@ -2422,13 +2763,33 @@ function handleDetailImageError() {
   activeDetailImage.value = nextImage || productPrimaryImage(activeProduct.value) || productHoverImage(activeProduct.value) || ''
 }
 
-function syncProductFromRoute() {
+async function findRouteProduct(routeProduct) {
+  let matchedProduct = localizedProducts.value.find((product) => product.code === routeProduct)
+
+  while (!matchedProduct && productsHasMore.value) {
+    const addedCount = await fetchAndAppendNextProductsPage()
+    if (!addedCount) {
+      break
+    }
+
+    matchedProduct = localizedProducts.value.find((product) => product.code === routeProduct)
+  }
+
+  const displayableIndex = displayableProducts.value.findIndex((product) => product.code === routeProduct)
+  if (displayableIndex >= visibleProductLimit.value) {
+    visibleProductLimit.value = Math.ceil((displayableIndex + 1) / productsPageSize) * productsPageSize
+  }
+
+  return matchedProduct
+}
+
+async function syncProductFromRoute() {
   const routeProduct = Array.isArray(route.query.product) ? route.query.product[0] : route.query.product
   if (!routeProduct || !products.value.length) {
     return
   }
 
-  const matchedProduct = localizedProducts.value.find((product) => product.code === routeProduct)
+  const matchedProduct = await findRouteProduct(routeProduct)
   if (matchedProduct) {
     openProduct(matchedProduct)
   }
@@ -2459,6 +2820,7 @@ async function closeProduct({ restoreProductPosition = true, navigateToSource = 
   }
 
   const closingProductCode = activeProductCode.value
+  clearDetailImageAutoSlide()
   activeProductCode.value = ''
   activeDetailImage.value = ''
   resetDetailImageZoom()
@@ -2582,6 +2944,39 @@ function handleDetailImageWheel(event) {
   zoomDetailImage(event.deltaY < 0 ? 0.12 : -0.12)
 }
 
+function clearDetailImageAutoSlide() {
+  if (!detailImageAutoSlideTimer) {
+    return
+  }
+
+  window.clearInterval(detailImageAutoSlideTimer)
+  detailImageAutoSlideTimer = 0
+}
+
+function startDetailImageAutoSlide() {
+  clearDetailImageAutoSlide()
+
+  if (!activeProduct.value || activeProductGalleryImages.value.length <= 1) {
+    return
+  }
+
+  detailImageAutoSlideTimer = window.setInterval(() => {
+    advanceDetailImage()
+  }, detailImageAutoSlideDelay)
+}
+
+async function advanceDetailImage() {
+  const images = activeProductGalleryImages.value
+  if (images.length <= 1) {
+    clearDetailImageAutoSlide()
+    return
+  }
+
+  const currentIndex = images.indexOf(activeDetailImage.value)
+  const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % images.length : 0
+  await selectDetailImage(images[nextIndex], nextIndex, { restartAutoSlide: false })
+}
+
 function buildCartProduct(product, goodsItem) {
   if (!goodsItem?.goodsNo) {
     return product
@@ -2646,11 +3041,19 @@ async function scrollProductCardIntoView(code) {
   productCard?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
-async function selectDetailImage(image, index = activeProductGalleryImages.value.indexOf(image)) {
+async function selectDetailImage(
+  image,
+  index = activeProductGalleryImages.value.indexOf(image),
+  { restartAutoSlide = true } = {},
+) {
   activeDetailImage.value = image
   resetDetailImageZoom()
   syncVisibleThumbWindow(index)
   await scrollActiveThumbIntoView(index)
+
+  if (restartAutoSlide) {
+    startDetailImageAutoSlide()
+  }
 }
 
 function showPreviousDetailThumbs() {
@@ -2721,6 +3124,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  clearDetailImageAutoSlide()
   window.removeEventListener('open-product-filters', openFilterPanel)
   window.removeEventListener('close-product-detail', handleCloseProductDetailEvent)
   document.body.classList.remove('is-product-detail-open')
@@ -2746,6 +3150,7 @@ watch(
   activeProductGalleryImages,
   (images) => {
     if (!images.length) {
+      clearDetailImageAutoSlide()
       activeDetailImage.value = ''
       detailThumbStartIndex.value = 0
       return
@@ -2759,6 +3164,8 @@ watch(
       detailThumbStartIndex.value,
       Math.max(images.length - visibleDetailThumbCount, 0),
     )
+
+    startDetailImageAutoSlide()
   },
   { immediate: true },
 )

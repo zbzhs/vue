@@ -56,7 +56,7 @@
         <article class="contact-channel-card">
           <h3>{{ copy.email.title }}</h3>
           <img class="contact-channel-image" src="/images/contact/qq.jpg" :alt="copy.email.alt" />
-          <p>37261784qq.com</p>
+          <p>37261784@qq.com</p>
         </article>
 
         <article class="contact-channel-card">

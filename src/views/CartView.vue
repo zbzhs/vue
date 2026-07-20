@@ -321,11 +321,22 @@ function getAuthToken() {
 }
 
 function getSelectedOrderItems() {
-  return selectedCartItems.value.map((item) => ({
-    styleNo: item.styleNo || item.code,
-    goodsNo: item.goodsNo || null,
-    quantity: Math.max(1, Number(item.quantity) || 1),
-  }))
+  return selectedCartItems.value.map((item) => {
+    const quantity = Math.max(1, Number(item.quantity) || 1)
+    const price = Number(item.price || 0)
+
+    return {
+      styleNo: item.styleNo || item.code,
+      goodsNo: item.goodsNo || null,
+      quantity,
+      productName: item.rawName || item.name || '',
+      productType: item.rawType || item.type || '',
+      productSeries: item.rawSeries || item.series || '',
+      image: item.image || '',
+      price,
+      lineTotal: price * quantity,
+    }
+  })
 }
 
 function getSelectedOrderSnapshot(nickname, createdAt) {

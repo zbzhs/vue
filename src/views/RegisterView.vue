@@ -230,8 +230,16 @@ function isEmail(value) {
 }
 
 function isPhone(value) {
-  const text = String(value || '').trim()
-  return /^\+?[0-9][0-9\s-]{5,18}[0-9]$/.test(text)
+  const text = String(value || '').trim().replace(/[\s-]/g, '')
+  if (!/^1[3-9]\d{9}$/.test(text)) {
+    return false
+  }
+
+  if (new Set(text).size === 1) {
+    return false
+  }
+
+  return true
 }
 
 function setStatus(message, type = 'info') {
@@ -345,6 +353,8 @@ async function submitRegister() {
     return
   }
 
+  const normalizedPhone = String(form.phone || '').trim().replace(/[\s-]/g, '')
+
   if (!form.password) {
     setStatus(copy.value.missingPassword, 'error')
     return
@@ -371,7 +381,7 @@ async function submitRegister() {
         email: form.email,
         emailCode: form.emailCode,
         nickname: form.nickname,
-        phone: form.phone,
+        phone: normalizedPhone,
         password: form.password,
         title: form.title,
       }),

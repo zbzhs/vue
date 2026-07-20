@@ -10,6 +10,8 @@ const typeMap = {
   耳坠: 'Drop Earrings',
   手链: 'Bracelet',
   吊坠: 'Pendant',
+  裸石: 'Loose Stone',
+  定制: 'Custom',
   未分类: 'Uncategorized',
 }
 
@@ -25,6 +27,8 @@ const typeTranslations = {
     'Drop Earrings': '耳坠',
     Bracelet: '手链',
     Pendant: '吊坠',
+    'Loose Stone': '裸石',
+    Custom: '定制',
     Uncategorized: '未分类',
   },
   en: {
@@ -38,6 +42,8 @@ const typeTranslations = {
     'Drop Earrings': 'Drop Earrings',
     Bracelet: 'Bracelet',
     Pendant: 'Pendant',
+    'Loose Stone': 'Loose Stone',
+    Custom: 'Custom',
     Uncategorized: 'Uncategorized',
   },
   ja: {
@@ -51,6 +57,8 @@ const typeTranslations = {
     'Drop Earrings': 'ドロップ',
     Bracelet: 'ブレスレット',
     Pendant: 'ペンダント',
+    'Loose Stone': 'ルースストーン',
+    Custom: 'カスタム',
     Uncategorized: '未分類',
   },
   th: {
@@ -64,6 +72,8 @@ const typeTranslations = {
     'Drop Earrings': 'ต่างหูระย้า',
     Bracelet: 'สร้อยข้อมือ',
     Pendant: 'จี้',
+    'Loose Stone': 'พลอยเปล่า',
+    Custom: 'สั่งทำ',
     Uncategorized: 'ไม่จัดหมวดหมู่',
   },
   ko: {
@@ -77,6 +87,8 @@ const typeTranslations = {
     'Drop Earrings': '드롭 귀걸이',
     Bracelet: '팔찌',
     Pendant: '펜던트',
+    'Loose Stone': '나석',
+    Custom: '맞춤',
     Uncategorized: '미분류',
   },
   vi: {
@@ -90,6 +102,8 @@ const typeTranslations = {
     'Drop Earrings': 'Hoa tai thả',
     Bracelet: 'Vòng tay',
     Pendant: 'Mặt dây',
+    'Loose Stone': 'Kim cuong roi',
+    Custom: 'Dat rieng',
     Uncategorized: 'Chưa phân loại',
   },
 }

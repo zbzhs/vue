@@ -1,6 +1,13 @@
-<template>
-  <div class="site-shell" :class="{ 'site-shell--hero-page': hasHeroNav }">
+﻿<template>
+  <div
+    class="site-shell"
+    :class="{
+      'site-shell--hero-page': hasHeroNav,
+      'site-shell--navless': !showSiteNav,
+    }"
+  >
     <header
+      v-if="showSiteNav"
       class="nav-bar"
       :class="{
         'nav-bar--hero-top': isHeroTop,
@@ -21,7 +28,14 @@
       </nav>
 
       <div class="nav-actions">
-        <label class="locale-select-wrap" :aria-label="t('语言与货币', 'Language and currency')">
+        <RouterLink
+          v-if="currentUser?.role === 'admin'"
+          class="nav-admin-link"
+          :to="{ name: 'adminDashboard' }"
+        >
+          管理后台
+        </RouterLink>
+        <label class="locale-select-wrap" aria-label="语言与货币">
           <select v-model="localeChoice" class="locale-select">
             <option value="zh">中文 / CNY</option>
             <option value="en">English / USD</option>
@@ -37,9 +51,7 @@
             <span>{{ displayName }}</span>
           </button>
           <div class="nav-user-dropdown">
-            <button type="button" @click="handleLogout">
-              {{ t('退出账号', 'Log out') }}
-            </button>
+            <button type="button" @click="handleLogout">退出账号</button>
           </div>
         </div>
         <RouterLink v-else class="nav-user-name nav-user-name--login" :to="{ name: 'login' }">
@@ -47,7 +59,7 @@
             <i></i>
             <b></b>
           </span>
-          <span>{{ t('登录', 'Login') }}</span>
+          <span>登录</span>
         </RouterLink>
 
         <RouterLink
@@ -125,7 +137,7 @@
       v-show="showBackToTop"
       class="back-to-top-button"
       type="button"
-      :aria-label="t('返回顶部', 'Back to top')"
+      :aria-label="t('杩斿洖椤堕儴', 'Back to top')"
       @click="scrollToTop"
     >
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -156,7 +168,8 @@ const isNavHidden = ref(false)
 const lastScrollY = ref(0)
 const showBackToTop = ref(false)
 
-const hasHeroNav = computed(() => route.name === 'home')
+const showSiteNav = computed(() => !route.meta.hideSiteNav)
+const hasHeroNav = computed(() => showSiteNav.value && (route.name === 'home' || route.meta.heroNav))
 const isHeroTop = computed(() => hasHeroNav.value && !isScrolled.value)
 const isSeriesRoute = computed(() => route.name === 'series')
 const localeChoice = computed({
@@ -167,11 +180,13 @@ const localeChoice = computed({
 })
 
 const navItems = [
-  { key: 'bracelet', type: 'link', label: { zh: '手链', en: 'Bracelets', ja: 'ブレスレット', th: 'สร้อยข้อมือ', ko: '팔찌', vi: 'Vong tay' }, to: { name: 'products', query: { type: '手链' } } },
-  { key: 'earrings', type: 'link', label: { zh: '耳饰', en: 'Earrings', ja: 'イヤーアクセ', th: 'ต่างหู', ko: '귀걸이', vi: 'Hoa tai' }, to: { name: 'products', query: { type: '耳饰' } } },
-  { key: 'ring', type: 'link', label: { zh: '戒指', en: 'Rings', ja: 'リング', th: 'แหวน', ko: '반지', vi: 'Nhan' }, to: { name: 'products', query: { type: '戒指' } } },
-  { key: 'necklace', type: 'link', label: { zh: '项链', en: 'Necklaces', ja: 'ネックレス', th: 'สร้อยคอ', ko: '목걸이', vi: 'Dây chuyền' }, to: { name: 'products', query: { type: '项链' } } },
-  { key: 'pendant', type: 'link', label: { zh: '吊坠', en: 'Pendants', ja: 'ペンダント', th: 'จี้', ko: '펜던트', vi: 'Mặt dây' }, to: { name: 'products', query: { type: '吊坠' } } },
+  { key: 'bracelet', type: 'link', label: { zh: '手链', en: 'Bracelets' }, to: { name: 'products', query: { type: '手链' } } },
+  { key: 'earrings', type: 'link', label: { zh: '耳饰', en: 'Earrings' }, to: { name: 'products', query: { type: '耳饰' } } },
+  { key: 'ring', type: 'link', label: { zh: '戒指', en: 'Rings' }, to: { name: 'products', query: { type: '戒指' } } },
+  { key: 'necklace', type: 'link', label: { zh: '项链', en: 'Necklaces' }, to: { name: 'products', query: { type: '项链' } } },
+  { key: 'pendant', type: 'link', label: { zh: '吊坠', en: 'Pendants' }, to: { name: 'products', query: { type: '吊坠' } } },
+  { key: 'loose-stone', type: 'link', label: { zh: '裸石', en: 'Loose Stones' }, to: { name: 'products', query: { type: '裸石' } } },
+  { key: 'custom', type: 'link', label: { zh: '定制', en: 'Custom' }, to: { name: 'products', query: { type: '定制' } } },
 ]
 
 function updateNavState() {
@@ -247,3 +262,6 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateNavState)
 })
 </script>
+
+
+

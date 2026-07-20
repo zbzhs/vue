@@ -15,8 +15,10 @@ import SearchView from './views/SearchView.vue'
 import PreferencesView from './views/PreferencesView.vue'
 import RegisterView from './views/RegisterView.vue'
 import LoginView from './views/LoginView.vue'
+import AdminLoginView from './views/AdminLoginView.vue'
 import CartView from './views/CartView.vue'
 import OrdersView from './views/OrdersView.vue'
+import AdminView from './views/AdminView.vue'
 import './styles/main.css'
 
 function getRouteQueryValue(query, key) {
@@ -89,8 +91,11 @@ const router = createRouter({
     { path: '/preferences', name: 'preferences', component: PreferencesView },
     { path: '/register', name: 'register', component: RegisterView },
     { path: '/login', name: 'login', component: LoginView },
+    { path: '/deringad', name: 'adminLogin', component: AdminLoginView },
     { path: '/cart', name: 'cart', component: CartView },
     { path: '/orders', name: 'orders', component: OrdersView },
+    { path: '/admin', name: 'admin', component: HomeView, meta: { heroNav: true } },
+    { path: '/admin/dashboard', name: 'adminDashboard', component: AdminView, meta: { hideSiteNav: true } },
   ],
 })
 
