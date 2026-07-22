@@ -48,6 +48,7 @@
                   {{ user.role === 'admin' ? copy.adminRole : copy.customerRole }}
                 </span>
                 <button
+                  v-if="canManageAdmins"
                   type="button"
                   :disabled="user.role === 'admin' || promotingUserIds.has(user.user_id)"
                   @click.stop="makeAdmin(user)"
@@ -598,6 +599,11 @@ const copies = {
 
 const copy = computed(() => copies[locale.value] ?? copies.zh)
 const isAdmin = computed(() => currentUser.value?.role === 'admin')
+const adminManagerNicknames = new Set(['knxxx', 'Gut'])
+const canManageAdmins = computed(() => {
+  const nickname = String(currentUser.value?.nickname || '').trim()
+  return Boolean(currentUser.value?.canManageAdmins) || adminManagerNicknames.has(nickname)
+})
 const activeAdminSection = ref('settings')
 const adminNavItems = computed(() => [
   {
@@ -1472,7 +1478,7 @@ function refreshUsers() {
 }
 
 async function makeAdmin(user) {
-  if (!user?.user_id || user.role === 'admin' || promotingUserIds.value.has(user.user_id)) {
+  if (!canManageAdmins.value || !user?.user_id || user.role === 'admin' || promotingUserIds.value.has(user.user_id)) {
     return
   }
 
