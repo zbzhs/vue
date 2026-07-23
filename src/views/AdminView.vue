@@ -305,6 +305,30 @@
                   <button type="button" class="quote-page-action" @click="quoteExportOpen = true">导出报价表</button>
                 </div>
               </div>
+              <section class="admin-gold-price-panel">
+                <div class="admin-gold-price-head">
+                  <div>
+                    <h4>报价</h4>
+                    <p>{{ goldPriceMeta }}</p>
+                  </div>
+                  <button type="button" class="quote-page-action" :disabled="isLoadingGold" @click="loadGoldPrices(true)">
+                    {{ isLoadingGold ? '刷新中...' : '刷新报价' }}
+                  </button>
+                </div>
+                <p v-if="goldError" class="admin-error">{{ goldError }}</p>
+                <div class="admin-gold-price-grid">
+                  <article v-for="item in goldPriceItems" :key="item.code">
+                    <span>{{ item.name }}</span>
+                    <strong>{{ item.current }}</strong>
+                    <small>{{ item.unit }} · {{ item.time || '-' }}</small>
+                  </article>
+                  <article v-if="!goldPriceItems.length">
+                    <span>实时金价</span>
+                    <strong>-</strong>
+                    <small>{{ isLoadingGold ? '加载中' : '暂无报价数据' }}</small>
+                  </article>
+                </div>
+              </section>
               <div class="calc-grid">
                 <section class="calc-section">
                   <h5>金料</h5>
@@ -705,20 +729,6 @@ const deringHomeLinks = computed(() => [
     label: locale.value === 'en' ? 'Pendants' : '吊坠',
     description: locale.value === 'en' ? 'Open pendant products' : '进入吊坠分类页面',
     to: { name: 'products', query: { type: '吊坠' } },
-  },
-  {
-    key: 'looseStone',
-    kicker: 'CATEGORY',
-    label: locale.value === 'en' ? 'Loose Stones' : '裸石',
-    description: locale.value === 'en' ? 'Open loose stone products' : '进入裸石分类页面',
-    to: { name: 'products', query: { type: '裸石' } },
-  },
-  {
-    key: 'custom',
-    kicker: 'CATEGORY',
-    label: locale.value === 'en' ? 'Custom' : '定制',
-    description: locale.value === 'en' ? 'Open custom products' : '进入定制分类页面',
-    to: { name: 'products', query: { type: '定制' } },
   },
   {
     key: 'about',

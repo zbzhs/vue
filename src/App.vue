@@ -185,8 +185,6 @@ const navItems = [
   { key: 'ring', type: 'link', label: { zh: '戒指', en: 'Rings' }, to: { name: 'products', query: { type: '戒指' } } },
   { key: 'necklace', type: 'link', label: { zh: '项链', en: 'Necklaces' }, to: { name: 'products', query: { type: '项链' } } },
   { key: 'pendant', type: 'link', label: { zh: '吊坠', en: 'Pendants' }, to: { name: 'products', query: { type: '吊坠' } } },
-  { key: 'loose-stone', type: 'link', label: { zh: '裸石', en: 'Loose Stones' }, to: { name: 'products', query: { type: '裸石' } } },
-  { key: 'custom', type: 'link', label: { zh: '定制', en: 'Custom' }, to: { name: 'products', query: { type: '定制' } } },
 ]
 
 function updateNavState() {

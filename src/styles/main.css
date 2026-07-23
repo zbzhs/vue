@@ -7317,6 +7317,35 @@ p {
   opacity: 0.5;
 }
 
+.admin-gold-price-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: #fbfcfd;
+  border: 1px solid rgba(17, 24, 39, 0.1);
+  border-radius: 8px;
+}
+
+.admin-gold-price-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-gold-price-head h4 {
+  margin: 0 0 6px;
+  color: #111827;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.admin-gold-price-head p {
+  margin: 0;
+  color: #516070;
+  font-size: 13px;
+}
+
 .admin-gold-price-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -8458,6 +8487,7 @@ p {
   .calc-grid,
   .quote-total-stack,
   .stone-group,
+  .admin-gold-price-grid,
   .admin-quote-field-groups {
     grid-template-columns: 1fr;
   }
@@ -8506,9 +8536,15 @@ p {
   }
 
   .quote-page-head,
+  .admin-gold-price-head,
   .quote-page-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .admin-gold-price-head button {
+    justify-content: center;
+    width: 100%;
   }
 
   .quote-page-actions button {
