@@ -44,19 +44,19 @@
                   <strong>{{ user.nickname }}</strong>
                   <small>{{ user.user_id }} / {{ user.email }} / {{ user.phone || copy.noPhone }}</small>
                 </span>
-                <span class="admin-user-role" :class="{ active: user.role === 'admin' }">
-                  {{ user.role === 'admin' ? copy.adminRole : copy.customerRole }}
-                </span>
-                <button
-                  v-if="canManageAdmins"
-                  type="button"
-                  :disabled="user.role === 'admin' || promotingUserIds.has(user.user_id)"
-                  @click.stop="makeAdmin(user)"
-                >
-                  {{ user.role === 'admin' ? copy.alreadyAdmin : copy.makeAdmin }}
-                </button>
               </article>
             </div>
+
+            <footer v-if="userTotal" class="admin-pagination admin-user-pagination">
+              <button type="button" :disabled="userPage <= 1 || isLoadingUsers" @click="changeUserPage(userPage - 1)">&lt;</button>
+              <span>{{ userPage }} / {{ userTotalPages }}</span>
+              <select :value="userPage" :disabled="isLoadingUsers" @change="changeUserPage(Number($event.target.value))">
+                <option v-for="pageNumber in userPageNumbers" :key="pageNumber" :value="pageNumber">
+                  {{ pageNumber }}
+                </option>
+              </select>
+              <button type="button" :disabled="userPage >= userTotalPages || isLoadingUsers" @click="changeUserPage(userPage + 1)">&gt;</button>
+            </footer>
 
             <section class="admin-user-insight">
               <div class="admin-section-head">
@@ -88,9 +88,6 @@
                     <strong>{{ selectedUserInsight.user.nickname }}</strong>
                     <small>{{ selectedUserInsight.user.user_id }} / {{ selectedUserInsight.user.email }}</small>
                   </span>
-                  <em :class="{ active: selectedUserInsight.user.role === 'admin' }">
-                    {{ selectedUserInsight.user.role === 'admin' ? copy.adminRole : copy.customerRole }}
-                  </em>
                 </div>
 
                 <div class="admin-user-insight-stats">
@@ -284,7 +281,7 @@
             </section>
           </section>
 
-          <section v-else class="admin-jewelry-tools">
+          <section v-else-if="activeAdminSection === 'tools'" class="admin-jewelry-tools">
             <div v-if="activeJewelryTool === 'menu'" class="admin-section-head">
               <div><p>{{ copy.toolsKicker }}</p><h2>{{ copy.toolsTitle }}</h2></div>
             </div>
@@ -447,6 +444,28 @@
               </div>
             </section>
           </section>
+
+          <section v-else-if="activeAdminSection === 'invites'" class="admin-invite-page">
+            <div class="admin-section-head">
+              <div>
+                <p>{{ copy.inviteKicker }}</p>
+                <h2>{{ copy.inviteTitle }}</h2>
+              </div>
+              <button class="admin-refresh" type="button" :disabled="isCreatingInvite" @click="createInviteLink">
+                {{ isCreatingInvite ? copy.inviteCreating : copy.inviteCreate }}
+              </button>
+            </div>
+            <p class="admin-empty">{{ copy.inviteBody }}</p>
+            <p v-if="inviteError" class="admin-error">{{ inviteError }}</p>
+            <div v-if="adminInviteUrl" class="admin-invite-result">
+              <label>
+                <span>{{ copy.inviteLink }}</span>
+                <input :value="adminInviteUrl" readonly @focus="$event.target.select()" />
+              </label>
+              <button type="button" @click="copyInviteLink">{{ copy.inviteCopy }}</button>
+              <small>{{ copy.inviteExpires }} {{ adminInviteExpiresAt || '-' }}</small>
+            </div>
+          </section>
         </div>
       </section>
     </div>
@@ -495,10 +514,6 @@ const copies = {
     userTitle: '用户管理',
     userSearchPlaceholder: '搜索昵称、邮箱或手机号',
     searchUsers: '搜索用户',
-    adminRole: '管理员',
-    customerRole: '普通用户',
-    makeAdmin: '设为管理员',
-    alreadyAdmin: '已是管理员',
     userRequestFailed: '用户列表加载失败',
     chartKicker: 'ORDER ANALYTICS',
     chartTitle: '每日下单趋势',
@@ -508,6 +523,17 @@ const copies = {
     statsRequestFailed: '订单统计加载失败',
     toolsKicker: 'JEWELRY TOOLS',
     toolsTitle: '珠宝工具',
+    inviteKicker: 'ADMIN INVITE',
+    inviteTitle: '管理员邀请',
+    inviteBody: '生成一次性邀请链接，对方填写邮箱、用户名、密码并验证邮箱后成为普通管理员。',
+    inviteCreate: '生成邀请链接',
+    inviteCreating: '生成中...',
+    inviteLink: '邀请链接',
+    inviteCopy: '复制链接',
+    inviteCopied: '已复制邀请链接',
+    inviteCopyFailed: '复制失败，请手动复制',
+    inviteExpires: '有效期至',
+    inviteRequestFailed: '邀请链接生成失败',
     toolsPlaceholderTitle: '珠宝工具页面',
     toolsPlaceholderBody: '后续可以在这里添加尺寸换算、证书查询、价格计算等工具。',
     searchLabel: '搜索订单',
@@ -557,10 +583,6 @@ const copies = {
     userTitle: 'User Management',
     userSearchPlaceholder: 'Search nickname, email, or phone',
     searchUsers: 'Search users',
-    adminRole: 'Admin',
-    customerRole: 'Customer',
-    makeAdmin: 'Make admin',
-    alreadyAdmin: 'Already admin',
     userRequestFailed: 'Failed to load users',
     chartKicker: 'ORDER ANALYTICS',
     chartTitle: 'Daily Order Trend',
@@ -570,6 +592,17 @@ const copies = {
     statsRequestFailed: 'Failed to load order statistics',
     toolsKicker: 'JEWELRY TOOLS',
     toolsTitle: 'Jewelry Tools',
+    inviteKicker: 'ADMIN INVITE',
+    inviteTitle: 'Admin Invitation',
+    inviteBody: 'Create a one-time link. The invitee verifies email and registers as a regular administrator.',
+    inviteCreate: 'Create invite link',
+    inviteCreating: 'Creating...',
+    inviteLink: 'Invite link',
+    inviteCopy: 'Copy link',
+    inviteCopied: 'Invite link copied',
+    inviteCopyFailed: 'Copy failed. Please copy manually.',
+    inviteExpires: 'Expires at',
+    inviteRequestFailed: 'Failed to create invite link',
     toolsPlaceholderTitle: 'Jewelry tools page',
     toolsPlaceholderBody: 'Add sizing, certificate lookup, price calculation, and other tools here later.',
     searchLabel: 'Search orders',
@@ -598,11 +631,9 @@ const copies = {
 }
 
 const copy = computed(() => copies[locale.value] ?? copies.zh)
-const isAdmin = computed(() => currentUser.value?.role === 'admin')
-const adminManagerNicknames = new Set(['knxxx', 'Gut'])
+const isAdmin = computed(() => currentUser.value?.accountType === 'admin')
 const canManageAdmins = computed(() => {
-  const nickname = String(currentUser.value?.nickname || '').trim()
-  return Boolean(currentUser.value?.canManageAdmins) || adminManagerNicknames.has(nickname)
+  return Boolean(currentUser.value?.canManageAdmins)
 })
 const activeAdminSection = ref('settings')
 const adminNavItems = computed(() => [
@@ -618,6 +649,12 @@ const adminNavItems = computed(() => [
     key: 'tools',
     label: locale.value === 'en' ? 'Jewelry Tools' : '珠宝工具',
   },
+  ...(canManageAdmins.value
+    ? [{
+      key: 'invites',
+      label: locale.value === 'en' ? 'Admin Invitation' : '管理员邀请',
+    }]
+    : []),
 ])
 const deringHomeLinks = computed(() => [
   {
@@ -782,6 +819,9 @@ const hoveredChartIndex = ref(null)
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
+const userPage = ref(1)
+const userTotal = ref(0)
+const userPageSize = 5
 const activeJewelryTool = ref('menu')
 const goldPrices = ref(null)
 const goldError = ref('')
@@ -793,6 +833,10 @@ const isLoadingDiamond = ref(false)
 const quoteExportOpen = ref(false)
 const quoteExportError = ref('')
 const isExportingQuote = ref(false)
+const adminInviteUrl = ref('')
+const adminInviteExpiresAt = ref('')
+const inviteError = ref('')
+const isCreatingInvite = ref(false)
 const quickCalculatorOpen = ref(false)
 const quickCalculatorExpression = ref('0')
 const quickCalculatorError = ref('')
@@ -859,8 +903,9 @@ const quoteExportGroups = [
 ]
 const selectedQuoteExportFields = ref(quoteExportFields.filter((field) => field.checked).map((field) => field.key))
 const expandedOrderIds = ref(new Set())
-const promotingUserIds = ref(new Set())
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
+const userTotalPages = computed(() => Math.max(1, Math.ceil(userTotal.value / userPageSize)))
+const userPageNumbers = computed(() => Array.from({ length: userTotalPages.value }, (_, index) => index + 1))
 const selectedMetalOption = computed(() => metalOptions.find((option) => option.value === quoteForm.metalMaterial) || metalOptions[0])
 const goldPriceItems = computed(() => goldPrices.value?.prices || [])
 const goldPriceMeta = computed(() => {
@@ -1396,7 +1441,10 @@ async function loadUsers() {
   isLoadingUsers.value = true
   usersError.value = ''
   try {
-    const params = new URLSearchParams()
+    const params = new URLSearchParams({
+      page: String(userPage.value),
+      pageSize: String(userPageSize),
+    })
     if (userSearchQuery.value) {
       params.set('q', userSearchQuery.value)
     }
@@ -1408,6 +1456,7 @@ async function loadUsers() {
       throw new Error(payload.detail || copy.value.userRequestFailed)
     }
     users.value = payload.users || []
+    userTotal.value = Number(payload.total || 0)
     syncSelectedUserInsight()
   } catch (error) {
     usersError.value = error instanceof Error ? error.message : copy.value.userRequestFailed
@@ -1474,37 +1523,54 @@ function refreshOrders() {
 }
 
 function refreshUsers() {
+  userPage.value = 1
   loadUsers()
 }
 
-async function makeAdmin(user) {
-  if (!canManageAdmins.value || !user?.user_id || user.role === 'admin' || promotingUserIds.value.has(user.user_id)) {
+function changeUserPage(nextPage) {
+  userPage.value = Math.min(Math.max(Number(nextPage) || 1, 1), userTotalPages.value)
+  loadUsers()
+}
+
+async function createInviteLink() {
+  if (!canManageAdmins.value || !getToken()) {
     return
   }
 
-  const next = new Set(promotingUserIds.value)
-  next.add(user.user_id)
-  promotingUserIds.value = next
-  usersError.value = ''
+  isCreatingInvite.value = true
+  inviteError.value = ''
   try {
-    const response = await fetch(`/api/admin/users/${user.user_id}/make-admin`, {
+    const response = await fetch('/api/admin/invitations', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${getToken()}` },
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ baseUrl: window.location.origin }),
     })
     const payload = await parseJson(response)
     if (!response.ok || !payload.success) {
-      throw new Error(payload.detail || copy.value.userRequestFailed)
+      throw new Error(payload.detail || copy.value.inviteRequestFailed)
     }
-    users.value = users.value.map((entry) => (entry.user_id === user.user_id ? payload.user : entry))
-    if (selectedUserId.value === user.user_id) {
-      loadSelectedUserInsight()
-    }
+    adminInviteUrl.value = payload.invitation?.inviteUrl || ''
+    adminInviteExpiresAt.value = payload.invitation?.expiresAt || ''
   } catch (error) {
-    usersError.value = error instanceof Error ? error.message : copy.value.userRequestFailed
+    inviteError.value = error instanceof Error ? error.message : copy.value.inviteRequestFailed
   } finally {
-    const after = new Set(promotingUserIds.value)
-    after.delete(user.user_id)
-    promotingUserIds.value = after
+    isCreatingInvite.value = false
+  }
+}
+
+async function copyInviteLink() {
+  if (!adminInviteUrl.value) {
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(adminInviteUrl.value)
+    inviteError.value = copy.value.inviteCopied
+  } catch {
+    inviteError.value = copy.value.inviteCopyFailed
   }
 }
 

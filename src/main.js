@@ -16,9 +16,12 @@ import PreferencesView from './views/PreferencesView.vue'
 import RegisterView from './views/RegisterView.vue'
 import LoginView from './views/LoginView.vue'
 import AdminLoginView from './views/AdminLoginView.vue'
+import AdminInviteRegisterView from './views/AdminInviteRegisterView.vue'
 import CartView from './views/CartView.vue'
 import OrdersView from './views/OrdersView.vue'
 import AdminView from './views/AdminView.vue'
+import NotFoundView from './views/NotFoundView.vue'
+import { useAuth } from './composables/useAuth'
 import './styles/main.css'
 
 function getRouteQueryValue(query, key) {
@@ -92,11 +95,37 @@ const router = createRouter({
     { path: '/register', name: 'register', component: RegisterView },
     { path: '/login', name: 'login', component: LoginView },
     { path: '/deringad', name: 'adminLogin', component: AdminLoginView },
+    { path: '/admin/invite/:token', name: 'adminInviteRegister', component: AdminInviteRegisterView },
     { path: '/cart', name: 'cart', component: CartView },
     { path: '/orders', name: 'orders', component: OrdersView },
     { path: '/admin', name: 'admin', component: HomeView, meta: { heroNav: true } },
-    { path: '/admin/dashboard', name: 'adminDashboard', component: AdminView, meta: { hideSiteNav: true } },
+    { path: '/admin/dashboard', name: 'adminDashboard', component: AdminView, meta: { hideSiteNav: true, requiresAdmin: true } },
+    { path: '/404', name: 'notFound', component: NotFoundView },
+    { path: '/:pathMatch(.*)*', name: 'catchAll', component: NotFoundView },
   ],
+})
+
+router.beforeEach((to) => {
+  const { currentUser } = useAuth()
+  const accountType = currentUser.value?.accountType
+
+  if (to.name === 'adminLogin' && accountType === 'user') {
+    return { name: 'notFound' }
+  }
+
+  if (!to.meta.requiresAdmin) {
+    return true
+  }
+
+  if (accountType === 'admin') {
+    return true
+  }
+
+  if (accountType === 'user') {
+    return { name: 'notFound' }
+  }
+
+  return { name: 'adminLogin' }
 })
 
 createApp(App).use(router).mount('#app')

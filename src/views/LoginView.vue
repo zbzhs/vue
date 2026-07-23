@@ -44,41 +44,41 @@ const copies = {
   zh: {
     kicker: '登录账号',
     title: '欢迎回到 DERING',
-    nicknameLabel: '昵称*',
-    nicknamePlaceholder: '请输入昵称',
+    nicknameLabel: '邮箱或用户名*',
+    nicknamePlaceholder: '请输入邮箱或用户名',
     passwordLabel: '密码*',
     passwordPlaceholder: '请输入密码',
     loggingIn: '登录中...',
     submit: '立即登录',
     noAccount: '还没有账户？',
     register: '注册',
-    missingNickname: '请输入昵称',
+    missingNickname: '请输入邮箱或用户名',
     missingPassword: '请输入密码',
     loginFailed: '登录失败',
     loginSuccess: '登录成功',
     adminNotAllowed: '用户不存在',
-    notRegistered: '该昵称尚未注册，请先注册',
-    invalidCredentials: '昵称或密码错误',
+    notRegistered: '该邮箱或用户名尚未注册，请先注册',
+    invalidCredentials: '邮箱、用户名或密码错误',
     passwordNotSet: '该账号尚未设置密码，请重新注册或联系管理员',
   },
   en: {
     kicker: 'Log In',
     title: 'Welcome Back to DERING',
-    nicknameLabel: 'Nickname*',
-    nicknamePlaceholder: 'Enter your nickname',
+    nicknameLabel: 'Email or username*',
+    nicknamePlaceholder: 'Enter email or username',
     passwordLabel: 'Password*',
     passwordPlaceholder: 'Enter your password',
     loggingIn: 'Logging in...',
     submit: 'Log In Now',
     noAccount: 'No account yet? ',
     register: 'Register',
-    missingNickname: 'Please enter your nickname',
+    missingNickname: 'Please enter your email or username',
     missingPassword: 'Please enter your password',
     loginFailed: 'Login failed',
     loginSuccess: 'Logged in successfully',
     adminNotAllowed: 'User does not exist.',
-    notRegistered: 'This nickname is not registered yet. Please register first.',
-    invalidCredentials: 'The nickname or password is incorrect.',
+    notRegistered: 'This email or username is not registered yet. Please register first.',
+    invalidCredentials: 'The email, username, or password is incorrect.',
     passwordNotSet: 'This account does not have a password yet. Please register again or contact support.',
   },
 }
@@ -149,10 +149,6 @@ async function submitLogin() {
 
     if (!response.ok || !payload.success) {
       throw new Error(formatErrorMessage(payload.detail, copy.value.loginFailed))
-    }
-
-    if (payload.user?.role === 'admin') {
-      throw new Error(copy.value.adminNotAllowed)
     }
 
     setCurrentUser(payload.user)

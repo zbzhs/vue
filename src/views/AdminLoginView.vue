@@ -44,32 +44,32 @@ const copies = {
   zh: {
     kicker: '管理员登录页面',
     title: '欢迎回到 DERING',
-    nicknameLabel: '管理员账号*',
-    nicknamePlaceholder: '请输入管理员昵称',
+    nicknameLabel: '管理员邮箱或用户名*',
+    nicknamePlaceholder: '请输入管理员邮箱或用户名',
     passwordLabel: '密码*',
     passwordPlaceholder: '请输入密码',
     loggingIn: '登录中...',
     submit: '立即登录',
     userAccount: '不是管理员？',
     userLogin: '用户登录',
-    missingNickname: '请输入管理员账号',
+    missingNickname: '请输入管理员邮箱或用户名',
     missingPassword: '请输入密码',
-    loginFailed: '管理员账号或密码错误',
+    loginFailed: '管理员邮箱、用户名或密码错误',
     loginSuccess: '登录成功',
     noPermission: '该账号没有管理员权限',
   },
   en: {
     kicker: 'Administrator Login Page',
     title: 'Welcome Back to DERING',
-    nicknameLabel: 'Admin account*',
-    nicknamePlaceholder: 'Enter admin nickname',
+    nicknameLabel: 'Admin email or username*',
+    nicknamePlaceholder: 'Enter admin email or username',
     passwordLabel: 'Password*',
     passwordPlaceholder: 'Enter password',
     loggingIn: 'Logging in...',
     submit: 'Log In Now',
     userAccount: 'Not an admin? ',
     userLogin: 'User login',
-    missingNickname: 'Please enter the admin account',
+    missingNickname: 'Please enter the admin email or username',
     missingPassword: 'Please enter your password',
     loginFailed: 'Invalid administrator credentials',
     loginSuccess: 'Logged in successfully',
@@ -127,7 +127,7 @@ async function submitLogin() {
       throw new Error(payload.detail || copy.value.loginFailed)
     }
 
-    if (payload.user?.role !== 'admin') {
+    if (payload.user?.accountType !== 'admin') {
       throw new Error(copy.value.noPermission)
     }
 
@@ -144,7 +144,7 @@ async function submitLogin() {
 }
 
 onMounted(() => {
-  if (currentUser.value?.role === 'admin') {
+  if (currentUser.value?.accountType === 'admin') {
     router.replace({ name: 'adminDashboard' })
   }
 })

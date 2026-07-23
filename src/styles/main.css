@@ -1068,6 +1068,42 @@ body.is-product-detail-open .back-to-top-button {
   background: #f5f5f5;
 }
 
+.not-found-page {
+  display: grid;
+  min-height: calc(100vh - var(--nav-height));
+  padding: 72px 24px;
+  place-items: center;
+  background: #f5f5f5;
+}
+
+.not-found-shell {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 520px);
+  color: #111111;
+  text-align: center;
+}
+
+.not-found-shell p {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.14em;
+}
+
+.not-found-shell h1 {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 52px);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.not-found-shell a {
+  justify-self: center;
+  color: #111111;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
 .register-shell {
   width: min(100%, 560px);
   margin: 0 auto;
@@ -7143,6 +7179,67 @@ p {
   color: #656b72;
   font-size: 14px;
   line-height: 1.6;
+}
+
+.admin-invite-panel,
+.admin-invite-page {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.admin-invite-page {
+  margin-top: 0;
+}
+
+.admin-invite-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 12px;
+  align-items: end;
+  padding: 16px 18px;
+  background: #ffffff;
+  border: 1px solid rgba(27, 29, 32, 0.1);
+  border-radius: 8px;
+}
+
+.admin-invite-result label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-invite-result label span,
+.admin-invite-result small {
+  color: #656b72;
+  font-size: 13px;
+}
+
+.admin-invite-result input {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  color: #1b1d20;
+  background: #fbfbfb;
+  border: 1px solid rgba(27, 29, 32, 0.12);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.admin-invite-result button {
+  min-height: 38px;
+  padding: 0 14px;
+  color: #ffffff;
+  background: #1b1d20;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.admin-invite-result small {
+  grid-column: 1 / -1;
 }
 
 .admin-quote-tool,

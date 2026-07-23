@@ -29,7 +29,7 @@
 
       <div class="nav-actions">
         <RouterLink
-          v-if="currentUser?.role === 'admin'"
+          v-if="currentUser?.accountType === 'admin'"
           class="nav-admin-link"
           :to="{ name: 'adminDashboard' }"
         >

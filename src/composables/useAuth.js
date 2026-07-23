@@ -12,7 +12,12 @@ function readStoredUser() {
 
   try {
     const stored = window.localStorage.getItem(AUTH_STORAGE_KEY)
-    return stored ? JSON.parse(stored) : null
+    const user = stored ? JSON.parse(stored) : null
+    if (user && !user.accountType) {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY)
+      return null
+    }
+    return user
   } catch {
     window.localStorage.removeItem(AUTH_STORAGE_KEY)
     return null
