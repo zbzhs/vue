@@ -554,7 +554,7 @@ const uiCopy = {
   zh: {
     heroKicker: 'Products',
     heroTitle: '产品展示',
-    heroSummary: '戒指、项链、耳饰、手链与高级定制系列，全部改为数据库真实商品数据展示。',
+    heroSummary: '戒指、项链、耳饰、手链与吊坠系列，全部改为数据库真实商品数据展示。',
     filterMenuAria: '产品筛选菜单',
     close: '关闭',
     searchProducts: '搜索产品',
@@ -621,14 +621,14 @@ const uiCopy = {
     noSizeGuide: '当前品类暂无尺寸指南，请联系客服确认尺寸。',
     wechatQrAlt: '微信二维码',
     contactPhone: '联系电话',
-    contactBody: '可通过电话或扫码添加微信咨询尺寸、库存、定制与售后服务。',
+    contactBody: '可通过电话或扫码添加微信咨询尺寸、库存与售后服务。',
     qualityBody1: '每件 DERING 作品均配有国检证书，可用于核验钻石、金属材质与作品信息。',
     qualityBody2: '如需查看证书信息或确认检测细节，可联系顾问协助核对。',
   },
   en: {
     heroKicker: 'Products',
     heroTitle: 'Product Showcase',
-    heroSummary: 'Rings, necklaces, earrings, bracelets, and bespoke lines are now displayed with live database-backed product data.',
+    heroSummary: 'Rings, necklaces, earrings, bracelets, and pendants are now displayed with live database-backed product data.',
     filterMenuAria: 'Product filter menu',
     close: 'Close',
     searchProducts: 'Search products',
@@ -695,7 +695,7 @@ const uiCopy = {
     noSizeGuide: 'No size guide is available for this category. Please contact us to confirm sizing.',
     wechatQrAlt: 'WeChat QR code',
     contactPhone: 'Phone',
-    contactBody: 'Call us or scan the QR code to ask about sizing, stock, customization, and after-sales service.',
+    contactBody: 'Call us or scan the QR code to ask about sizing, stock, and after-sales service.',
     qualityBody1: 'Every DERING piece includes a national inspection certificate for verifying diamond, metal, and product details.',
     qualityBody2: 'Contact our consultant if you need certificate information or help checking inspection details.',
   },
@@ -1039,7 +1039,6 @@ const selectedMaterial = ref(allFilterKey)
 const selectedStoneShape = ref(allFilterKey)
 const selectedMainStone = ref(allFilterKey)
 const selectedStoneColor = ref(allFilterKey)
-const looseStoneFilters = ref({ ...looseStoneDefaultFilters })
 const draftType = ref(allFilterKey)
 const draftEarringSubtype = ref(allFilterKey)
 const draftPrice = ref(allFilterKey)
@@ -1224,6 +1223,10 @@ const filteredProducts = computed(() => {
   const priceRange = priceRanges.value.find((range) => range.id === selectedPrice.value) ?? priceRanges.value[0]
 
   return searchedProducts.value.filter((product) => {
+    if (isDisabledProductType(product.type)) {
+      return false
+    }
+
     const matchesType =
       selectedType.value === allFilterKey ||
       isProductMatchingSelectedType(product.type, selectedType.value)
@@ -1895,134 +1898,6 @@ function normalizeStoneColor(value) {
     .replace(/^天然/, '')
 }
 
-function selectLooseStoneChoice(groupId, value) {
-  looseStoneFilters.value[groupId] = looseStoneFilters.value[groupId] === value ? '' : value
-  visibleProductLimit.value = productsPageSize
-}
-
-function selectLooseStoneCarat(value) {
-  const isSelected = looseStoneFilters.value.caratPreset === value
-  looseStoneFilters.value.caratPreset = isSelected ? '' : value
-  looseStoneFilters.value.caratMin = isSelected ? '' : value
-  looseStoneFilters.value.caratMax = ''
-  visibleProductLimit.value = productsPageSize
-}
-
-function useRecommendedLooseStonePrice() {
-  looseStoneFilters.value.priceMin = ''
-  looseStoneFilters.value.priceMax = ''
-  visibleProductLimit.value = productsPageSize
-}
-
-function resetLooseStoneFilters() {
-  looseStoneFilters.value = { ...looseStoneDefaultFilters }
-  visibleProductLimit.value = productsPageSize
-}
-
-function getLooseStoneSpecValue(product, labels) {
-  const directValue = labels
-    .map((label) => product?.[label])
-    .find((value) => normalizeFilterValue(value))
-
-  return normalizeFilterValue(directValue) || getProductSpecValue(product, labels)
-}
-
-function normalizeLooseStoneComparable(value) {
-  return normalizeFilterValue(value).replace(/\s+/g, '').toLowerCase()
-}
-
-function normalizeLooseStoneFluorescence(value) {
-  const normalizedValue = normalizeLooseStoneComparable(value)
-  const fluorescenceMap = {
-    non: 'none',
-    no: 'none',
-    none: 'none',
-    无: 'none',
-    faint: 'faint',
-    medium: 'medium',
-    strong: 'strong',
-    verystrong: 'verystrong',
-    verystrongblue: 'verystrong',
-  }
-
-  return fluorescenceMap[normalizedValue] || normalizedValue
-}
-
-function getLooseStoneCarat(product) {
-  const rawValue =
-    getLooseStoneSpecValue(product, ['钻重', '主石大小', '主石重量', '克拉', 'Carat', 'carat'])
-    || getLooseStoneSpecValue(product, ['主石'])
-
-  const match = String(rawValue || '').match(/\d+(?:\.\d+)?/)
-  return match ? Number(match[0]) : null
-}
-
-function getLooseStoneCertificateNo(product) {
-  return normalizeFilterValue(
-    product?.certificateNo
-      || product?.certNo
-      || product?.certificate_no
-      || product?.goodsNo
-      || getLooseStoneSpecValue(product, ['证书号', '证书编号', 'GIA证书号', 'IGI证书号']),
-  )
-}
-
-function isProductMatchingLooseStoneFilters(product) {
-  const filters = looseStoneFilters.value
-  const fieldMap = {
-    shape: ['形状', '石形状', '主石形状', '切割形状'],
-    color: ['颜色', '石颜色', '主石颜色', 'Color', 'color'],
-    clarity: ['净度', '主石净度', 'Clarity', 'clarity'],
-    cut: ['切工', '切割', 'Cut', 'cut'],
-    symmetry: ['对称', '对称性', 'Symmetry', 'symmetry'],
-    polish: ['抛光', 'Polish', 'polish'],
-    fluorescence: ['荧光', 'Fluorescence', 'fluorescence'],
-    certificate: ['证书', '证书机构', 'Certificate', 'certificate'],
-  }
-
-  const matchesChoiceFilters = Object.entries(fieldMap).every(([filterKey, labels]) => {
-    const selectedValue = filters[filterKey]
-    if (!selectedValue) {
-      return true
-    }
-
-    const productValue = getLooseStoneSpecValue(product, labels)
-    if (filterKey === 'fluorescence') {
-      return normalizeLooseStoneFluorescence(productValue) === normalizeLooseStoneFluorescence(selectedValue)
-    }
-
-    return normalizeLooseStoneComparable(productValue).includes(normalizeLooseStoneComparable(selectedValue))
-  })
-
-  if (!matchesChoiceFilters) {
-    return false
-  }
-
-  const price = Number(product.price ?? 0)
-  const minPrice = parsePositiveNumber(filters.priceMin)
-  const maxPrice = parsePositiveNumber(filters.priceMax)
-  if ((minPrice !== null && price < minPrice) || (maxPrice !== null && price > maxPrice)) {
-    return false
-  }
-
-  const carat = getLooseStoneCarat(product)
-  const minCarat = parsePositiveNumber(filters.caratMin)
-  const maxCarat = parsePositiveNumber(filters.caratMax)
-  if (minCarat !== null && (carat === null || carat < minCarat)) {
-    return false
-  }
-  if (maxCarat !== null && (carat === null || carat > maxCarat)) {
-    return false
-  }
-
-  const certificateNo = normalizeLooseStoneComparable(filters.certificateNo)
-  if (certificateNo && !normalizeLooseStoneComparable(getLooseStoneCertificateNo(product)).includes(certificateNo)) {
-    return false
-  }
-
-  return true
-}
-
 function isProductImageKind(image, folderName) {
   if (!image || typeof image !== 'string' || !folderName) {
     return false
@@ -2269,7 +2144,7 @@ async function fetchProductsPage(page) {
     params.set('q', routeSearch)
   }
 
-  if (routeType) {
+  if (routeType && !isDisabledProductType(routeType)) {
     params.set('type', routeType)
   }
 
@@ -2304,6 +2179,20 @@ function syncSeriesFromRoute() {
   }
 
   if (routeType) {
+    if (isDisabledProductType(routeType)) {
+      selectedType.value = allFilterKey
+      draftType.value = allFilterKey
+      selectedSeries.value = allFilterKey
+      draftSeries.value = allFilterKey
+      selectedPrice.value = allFilterKey
+      draftPrice.value = allFilterKey
+      clearSecondaryFilters()
+      const nextRouteQuery = { ...route.query }
+      delete nextRouteQuery.type
+      router.replace({ name: 'products', query: nextRouteQuery })
+      return
+    }
+
     const routeEarringSubtype = normalizeEarringSubtype(routeType)
     if (routeEarringSubtype) {
       selectedType.value = earringFilterKey
@@ -2324,7 +2213,6 @@ function syncSeriesFromRoute() {
       braceletFilterKey,
       necklaceFilterKey,
       pendantFilterKey,
-      looseStoneFilterKey,
       earringFilterKey,
     ].includes(normalizedRouteType)
 
@@ -2379,7 +2267,6 @@ function clearSecondaryFilters() {
   draftMainStone.value = allFilterKey
   selectedStoneColor.value = allFilterKey
   draftStoneColor.value = allFilterKey
-  resetLooseStoneFilters()
 }
 
 function toggleFilterPanel() {
@@ -2529,7 +2416,6 @@ async function resetFilters() {
   selectedPrice.value = allFilterKey
   selectedSeries.value = allFilterKey
   selectedStoneColor.value = allFilterKey
-  resetLooseStoneFilters()
   visibleProductLimit.value = productsPageSize
 
   const nextRouteQuery = { ...route.query }
