@@ -1,6 +1,10 @@
 <template>
-  <section class="register-page">
+  <section class="register-page" :class="{ 'selection-auth-page': isSelectionEntry }">
     <div class="register-shell">
+      <RouterLink v-if="isSelectionEntry" class="selection-auth-brand" :to="selectionAuthBrandTo">
+        <img src="/logo/logo.png" alt="DERING" />
+        <span>SELECTION</span>
+      </RouterLink>
       <p class="register-kicker">{{ copy.kicker }}</p>
       <h1>{{ copy.title }}</h1>
 
@@ -62,7 +66,7 @@
           <button class="register-submit" type="submit" :disabled="isRegistering">
             {{ isRegistering ? copy.registering : copy.submit }}
           </button>
-          <p>{{ copy.hasAccount }}<RouterLink to="/login">{{ copy.login }}</RouterLink></p>
+          <p>{{ copy.hasAccount }}<RouterLink :to="loginTo">{{ copy.login }}</RouterLink></p>
         </div>
       </form>
     </div>
@@ -71,13 +75,15 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useAuth } from '../composables/useAuth'
 import { useLocale } from '../composables/useLocale'
+import { startSelectionOnboarding } from '../composables/useSelectionProfile'
 
 const router = useRouter()
-const { setCurrentUser } = useAuth()
+const route = useRoute()
+const { setCurrentUser, setSelectionUser } = useAuth()
 const { locale } = useLocale()
 
 const copies = {
@@ -177,7 +183,34 @@ const copies = {
   },
 }
 
-const copy = computed(() => copies[locale.value] ?? copies.zh)
+const isSelectionEntry = computed(() => Boolean(route.meta.selectionLayout))
+const isTalentRegister = computed(() => route.name === 'talentRegister')
+const selectionAuthBrandTo = computed(() => ({ name: isTalentRegister.value ? 'talentLogin' : 'selectionLogin' }))
+const selectionRegisterRedirectName = computed(() => route.meta.selectionRegisterRedirect || 'selectionPicks')
+const copy = computed(() => {
+  const base = copies[locale.value] ?? copies.zh
+  if (!isSelectionEntry.value) return base
+  if (isTalentRegister.value) {
+    return {
+      ...base,
+      kicker: locale.value === 'en' ? 'Talent Account' : '达人账号',
+      title: locale.value === 'en' ? 'Create your talent account' : '注册达人选品账号',
+    }
+  }
+
+  return {
+    ...base,
+    kicker: locale.value === 'en' ? 'Selection System' : '选品系统',
+    title: locale.value === 'en' ? 'Create your curation profile' : '创建你的选品档案',
+  }
+})
+const loginTo = computed(() => {
+  if (isTalentRegister.value) {
+    return { name: 'talentLogin' }
+  }
+
+  return { name: isSelectionEntry.value ? 'selectionLogin' : 'login' }
+})
 const titleOptions = computed(() =>
   ['女士', '先生', '其他'].map((value) => ({
     value,
@@ -374,7 +407,7 @@ async function submitRegister() {
   setStatus('')
 
   try {
-    const response = await fetch('/api/register', {
+    const response = await fetch(isSelectionEntry.value ? '/api/selection/register' : '/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -392,7 +425,14 @@ async function submitRegister() {
       throw new Error(formatErrorMessage(payload.detail, copy.value.registerFailed))
     }
 
-    setCurrentUser(payload.user)
+    if (isSelectionEntry.value) {
+      setSelectionUser(payload.user)
+    } else {
+      setCurrentUser(payload.user)
+    }
+    if (isSelectionEntry.value) {
+      startSelectionOnboarding(payload.user)
+    }
     setStatus(copy.value.registerSuccess)
     form.email = ''
     form.captcha = ''
@@ -404,7 +444,7 @@ async function submitRegister() {
     hasSentCode.value = false
     refreshCaptcha()
     window.setTimeout(() => {
-      router.push({ name: 'home' })
+      router.push({ name: isSelectionEntry.value ? selectionRegisterRedirectName.value : 'home' })
     }, 500)
   } catch (error) {
     setStatus(formatErrorMessage(error instanceof Error ? error.message : '', copy.value.registerFailed), 'error')

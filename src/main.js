@@ -20,6 +20,11 @@ import AdminInviteRegisterView from './views/AdminInviteRegisterView.vue'
 import CartView from './views/CartView.vue'
 import OrdersView from './views/OrdersView.vue'
 import AdminView from './views/AdminView.vue'
+import LiveFollowView from './views/LiveFollowView.vue'
+import SelectionView from './views/SelectionView.vue'
+import SelectionEntryView from './views/SelectionEntryView.vue'
+import SelectionAllView from './views/SelectionAllView.vue'
+import SelectionPicksView from './views/SelectionPicksView.vue'
 import NotFoundView from './views/NotFoundView.vue'
 import { useAuth } from './composables/useAuth'
 import './styles/main.css'
@@ -100,17 +105,66 @@ const router = createRouter({
     { path: '/orders', name: 'orders', component: OrdersView },
     { path: '/admin', name: 'admin', component: HomeView, meta: { heroNav: true } },
     { path: '/admin/dashboard', name: 'adminDashboard', component: AdminView, meta: { hideSiteNav: true, requiresAdmin: true } },
+    {
+      path: '/controllogin',
+      name: 'controlLogin',
+      component: LoginView,
+      meta: {
+        hideSiteNav: true,
+        liveOpsLogin: true,
+        liveOpsLoginRedirect: 'liveFollow',
+      },
+    },
+    { path: '/live-follow', name: 'liveFollow', component: LiveFollowView, meta: { hideSiteNav: true, liveOpsRequiresAuth: true } },
+    {
+      path: '/talentlogin',
+      alias: ['/talent/login', '/tselectalentlogin', '/talenlogin'],
+      name: 'talentLogin',
+      component: LoginView,
+      meta: {
+        hideSiteNav: true,
+        selectionLayout: true,
+        selectionLoginRedirect: 'selectionPicks',
+      },
+    },
+    {
+      path: '/talentregister',
+      alias: '/talent/register',
+      name: 'talentRegister',
+      component: RegisterView,
+      meta: {
+        hideSiteNav: true,
+        selectionLayout: true,
+        selectionRegisterRedirect: 'selectionPicks',
+      },
+    },
+    { path: '/selection/login', name: 'selectionLogin', component: LoginView, meta: { hideSiteNav: true, selectionLayout: true, selectionGuestOnly: true } },
+    { path: '/selection/register', name: 'selectionRegister', component: RegisterView, meta: { hideSiteNav: true, selectionLayout: true, selectionGuestOnly: true } },
+    { path: '/selection/entry', name: 'selectionEntry', component: SelectionEntryView, meta: { hideSiteNav: true, selectionLayout: true, selectionRequiresAuth: true } },
+    { path: '/selection', name: 'selection', component: SelectionView, meta: { hideSiteNav: true, selectionLayout: true, selectionRequiresAuth: true } },
+    { path: '/selection/all', name: 'selectionAll', component: SelectionAllView, meta: { heroNav: true, selectionLayout: true, selectionRequiresAuth: true, hideNavActions: true } },
+    { path: '/selection/picks', name: 'selectionPicks', component: SelectionPicksView, meta: { selectionLayout: true, selectionRequiresAuth: true, hideNavActions: true } },
     { path: '/404', name: 'notFound', component: NotFoundView },
     { path: '/:pathMatch(.*)*', name: 'catchAll', component: NotFoundView },
   ],
 })
 
 router.beforeEach((to) => {
-  const { currentUser } = useAuth()
+  const { currentUser, selectionUser, liveOpsUser } = useAuth()
   const accountType = currentUser.value?.accountType
+  const selectionAccountType = selectionUser.value?.accountType
+  const liveOpsAccountType = liveOpsUser.value?.accountType
 
-  if (to.name === 'adminLogin' && accountType === 'user') {
-    return { name: 'notFound' }
+  if (to.meta.selectionRequiresAuth && selectionAccountType !== 'talent') {
+    return { name: 'selectionLogin' }
+  }
+
+  if (to.meta.selectionGuestOnly && selectionAccountType === 'talent') {
+    return { name: to.meta.selectionGuestRedirect || 'selectionEntry' }
+  }
+
+  if (to.meta.liveOpsRequiresAuth && !['control', 'anchor', '中控', '主播'].includes(liveOpsAccountType)) {
+    return { name: 'controlLogin' }
   }
 
   if (!to.meta.requiresAdmin) {
@@ -121,7 +175,7 @@ router.beforeEach((to) => {
     return true
   }
 
-  if (accountType === 'user') {
+  if (accountType) {
     return { name: 'notFound' }
   }
 

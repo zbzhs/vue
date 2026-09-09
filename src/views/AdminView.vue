@@ -281,6 +281,92 @@
             </section>
           </section>
 
+          <section v-else-if="activeAdminSection === 'influencers'" class="admin-user-management">
+            <div class="admin-section-head">
+              <div>
+                <p>{{ copy.influencerKicker }}</p>
+                <h2>{{ copy.influencerTitle }}</h2>
+              </div>
+              <div class="admin-user-search-row">
+                <input
+                  v-model.trim="influencerSearchQuery"
+                  :placeholder="copy.influencerSearchPlaceholder"
+                  @keydown.enter.prevent="refreshInfluencers"
+                />
+                <button type="button" :disabled="isLoadingInfluencers" @click="refreshInfluencers">
+                  {{ isLoadingInfluencers ? copy.loading : copy.searchInfluencers }}
+                </button>
+              </div>
+            </div>
+
+            <p v-if="influencersError" class="admin-error">{{ influencersError }}</p>
+            <p v-else-if="!isLoadingInfluencers && !influencers.length" class="admin-empty">{{ copy.emptyInfluencers }}</p>
+
+            <div v-else class="admin-user-list">
+              <article
+                v-for="influencer in influencers"
+                :key="influencer.user_id"
+                class="admin-user-row"
+              >
+                <span>
+                  <strong>{{ influencer.nickname }}</strong>
+                  <small>{{ influencer.user_id }} / {{ influencer.email || copy.noEmail }} / {{ influencer.phone || copy.noPhone }}</small>
+                </span>
+                <div class="admin-talent-discount">
+                  <label>
+                    <span>价格折扣</span>
+                    <input
+                      :value="talentDiscountInputs[influencer.user_id] ?? discountRateToFold(influencer.discountRate)"
+                      type="number"
+                      min="0.1"
+                      max="10"
+                      step="0.1"
+                      @input="talentDiscountInputs[influencer.user_id] = $event.target.value"
+                    />
+                    <em>折</em>
+                  </label>
+                  <button
+                    type="button"
+                    :disabled="savingTalentDiscountIds.has(influencer.user_id)"
+                    @click="saveTalentDiscount(influencer)"
+                  >
+                    {{ savingTalentDiscountIds.has(influencer.user_id) ? copy.loading : '保存' }}
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="isLoadingTalentPicks && selectedTalentPickUserId === influencer.user_id"
+                    @click="openTalentPicks(influencer)"
+                  >
+                    {{ isLoadingTalentPicks && selectedTalentPickUserId === influencer.user_id ? copy.loading : '查看选品' }}
+                  </button>
+                  <button
+                    type="button"
+                    :disabled="isLoadingTalentPicks && selectedTalentPickUserId === influencer.user_id"
+                    @click="exportTalentPicks(influencer)"
+                  >
+                    导出表格
+                  </button>
+                  <small>{{ influencer.createdAt || '-' }}</small>
+                </div>
+              </article>
+            </div>
+
+            <footer v-if="influencerTotal" class="admin-pagination admin-user-pagination">
+              <button type="button" :disabled="influencerPage <= 1 || isLoadingInfluencers" @click="changeInfluencerPage(influencerPage - 1)">&lt;</button>
+              <span>{{ influencerPage }} / {{ influencerTotalPages }}</span>
+              <select :value="influencerPage" :disabled="isLoadingInfluencers" @change="changeInfluencerPage(Number($event.target.value))">
+                <option v-for="pageNumber in influencerPageNumbers" :key="pageNumber" :value="pageNumber">
+                  {{ pageNumber }}
+                </option>
+              </select>
+              <button type="button" :disabled="influencerPage >= influencerTotalPages || isLoadingInfluencers" @click="changeInfluencerPage(influencerPage + 1)">&gt;</button>
+            </footer>
+          </section>
+
+          <AdminLiveFollow v-else-if="activeAdminSection === 'liveFollow'" :token="getToken()" :account="currentUser" />
+
+          <AdminProductTools v-else-if="activeAdminSection === 'productTools'" :token="getToken()" />
+
           <section v-else-if="activeAdminSection === 'tools'" class="admin-jewelry-tools">
             <div v-if="activeJewelryTool === 'menu'" class="admin-section-head">
               <div><p>{{ copy.toolsKicker }}</p><h2>{{ copy.toolsTitle }}</h2></div>
@@ -493,6 +579,51 @@
         </div>
       </section>
     </div>
+
+    <Teleport to="body">
+      <div v-if="selectedTalentForPicks" class="admin-modal-backdrop" @click.self="closeTalentPicks">
+        <section class="admin-talent-picks-modal" role="dialog" aria-modal="true" aria-label="达人选品详情">
+          <header class="admin-talent-picks-head">
+            <div>
+              <p>TALENT PICKS</p>
+              <h2>{{ selectedTalentForPicks.nickname }} 的选品</h2>
+              <span>{{ selectedTalentForPicks.user_id }} / {{ selectedTalentForPicks.email || copy.noEmail }}</span>
+            </div>
+            <div>
+              <button type="button" :disabled="!selectedTalentPicks.length" @click="downloadTalentPicksCsv(selectedTalentForPicks, selectedTalentPicks)">
+                导出Excel表格
+              </button>
+              <button type="button" @click="closeTalentPicks">关闭</button>
+            </div>
+          </header>
+
+          <p v-if="talentPicksError" class="admin-error">{{ talentPicksError }}</p>
+          <p v-else-if="isLoadingTalentPicks" class="admin-empty">{{ copy.loading }}</p>
+          <p v-else-if="!selectedTalentPicks.length" class="admin-empty">这个达人还没有选择商品</p>
+          <div v-else class="admin-talent-picks-table">
+            <div class="admin-talent-picks-row admin-talent-picks-row--head">
+              <span>选择日期</span>
+              <span>商品</span>
+              <span>款号</span>
+              <span>品类</span>
+              <span>系列</span>
+              <span>价格</span>
+            </div>
+            <div v-for="item in selectedTalentPicks" :key="`${item.code}-${item.pickedAt}`" class="admin-talent-picks-row">
+              <span>{{ formatTalentPickDate(item) }}</span>
+              <span class="admin-product-cell">
+                <img v-if="item.image" :src="item.image" :alt="item.name" />
+                <span><strong>{{ item.name || item.code }}</strong><small>{{ item.code }}</small></span>
+              </span>
+              <span>{{ item.styleNo || item.code }}</span>
+              <span>{{ item.type || '-' }}</span>
+              <span>{{ item.series || '-' }}</span>
+              <strong>{{ formatPrice(item.price) }}</strong>
+            </div>
+          </div>
+        </section>
+      </div>
+    </Teleport>
   </section>
   <section v-else class="admin-page">
     <div class="admin-shell">
@@ -506,6 +637,8 @@
 <script setup>
 import { computed, reactive, onMounted, ref } from 'vue'
 
+import AdminLiveFollow from '../components/AdminLiveFollow.vue'
+import AdminProductTools from '../components/AdminProductTools.vue'
 import { useAuth } from '../composables/useAuth'
 import { useLocale } from '../composables/useLocale'
 import { formatCurrencyFromCny } from '../utils/currency'
@@ -539,6 +672,15 @@ const copies = {
     userSearchPlaceholder: '搜索昵称、邮箱或手机号',
     searchUsers: '搜索用户',
     userRequestFailed: '用户列表加载失败',
+    influencerKicker: 'TALENT ADMIN',
+    influencerTitle: '达人管理',
+    influencerBody: '这里管理达人选货系统的账号，达人只能进入选货推荐与全部商品，不进入管理员后台。',
+    influencerSearchPlaceholder: '搜索达人昵称、邮箱或手机号',
+    searchInfluencers: '搜索达人',
+    influencerRequestFailed: '达人账号加载失败',
+    emptyInfluencers: '暂无达人账号',
+    liveFollowKicker: 'LIVE FOLLOW-UP',
+    liveFollowTitle: '直播跟进',
     chartKicker: 'ORDER ANALYTICS',
     chartTitle: '每日下单趋势',
     chartAria: '每日下单商品数量和下单用户数量折线图',
@@ -608,6 +750,15 @@ const copies = {
     userSearchPlaceholder: 'Search nickname, email, or phone',
     searchUsers: 'Search users',
     userRequestFailed: 'Failed to load users',
+    influencerKicker: 'TALENT ADMIN',
+    influencerTitle: 'Talent Management',
+    influencerBody: 'Manage accounts for the selection system. Talent accounts can access recommendations and all products, not the admin console.',
+    influencerSearchPlaceholder: 'Search talent nickname, email, or phone',
+    searchInfluencers: 'Search talent',
+    influencerRequestFailed: 'Failed to load talent accounts',
+    emptyInfluencers: 'No talent accounts',
+    liveFollowKicker: 'LIVE FOLLOW-UP',
+    liveFollowTitle: 'Live Follow-up',
     chartKicker: 'ORDER ANALYTICS',
     chartTitle: 'Daily Order Trend',
     chartAria: 'Line chart of daily ordered item quantity and ordering user count',
@@ -669,6 +820,20 @@ const adminNavItems = computed(() => [
     key: 'orders',
     label: locale.value === 'en' ? 'User Order Details' : '用户订单详情',
   },
+  {
+    key: 'influencers',
+    label: locale.value === 'en' ? 'Talent Management' : '达人管理',
+  },
+  {
+    key: 'liveFollow',
+    label: locale.value === 'en' ? 'Live Follow-up' : '直播跟进',
+  },
+  ...(canManageAdmins.value
+    ? [{
+      key: 'productTools',
+      label: locale.value === 'en' ? 'Product Tools' : '商品工具',
+    }]
+    : []),
   {
     key: 'tools',
     label: locale.value === 'en' ? 'Jewelry Tools' : '珠宝工具',
@@ -810,6 +975,7 @@ const deringHomeLinks = computed(() => [
 ])
 const orders = ref([])
 const users = ref([])
+const influencers = ref([])
 const selectedUserId = ref('')
 const selectedUserInsight = ref(null)
 const loginInsightMode = ref('recent')
@@ -817,14 +983,17 @@ const orderInsightMode = ref('recent')
 const dailyStats = ref([])
 const isLoading = ref(false)
 const isLoadingUsers = ref(false)
+const isLoadingInfluencers = ref(false)
 const isLoadingUserInsight = ref(false)
 const isLoadingStats = ref(false)
 const loadError = ref('')
 const usersError = ref('')
+const influencersError = ref('')
 const userInsightError = ref('')
 const statsError = ref('')
 const searchQuery = ref('')
 const userSearchQuery = ref('')
+const influencerSearchQuery = ref('')
 const hoveredChartIndex = ref(null)
 const page = ref(1)
 const total = ref(0)
@@ -832,6 +1001,9 @@ const pageSize = 20
 const userPage = ref(1)
 const userTotal = ref(0)
 const userPageSize = 5
+const influencerPage = ref(1)
+const influencerTotal = ref(0)
+const influencerPageSize = 10
 const activeJewelryTool = ref('menu')
 const goldPrices = ref(null)
 const goldError = ref('')
@@ -847,6 +1019,13 @@ const adminInviteUrl = ref('')
 const adminInviteExpiresAt = ref('')
 const inviteError = ref('')
 const isCreatingInvite = ref(false)
+const talentDiscountInputs = reactive({})
+const savingTalentDiscountIds = ref(new Set())
+const selectedTalentForPicks = ref(null)
+const selectedTalentPickUserId = ref('')
+const selectedTalentPicks = ref([])
+const isLoadingTalentPicks = ref(false)
+const talentPicksError = ref('')
 const quickCalculatorOpen = ref(false)
 const quickCalculatorExpression = ref('0')
 const quickCalculatorError = ref('')
@@ -916,6 +1095,8 @@ const expandedOrderIds = ref(new Set())
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 const userTotalPages = computed(() => Math.max(1, Math.ceil(userTotal.value / userPageSize)))
 const userPageNumbers = computed(() => Array.from({ length: userTotalPages.value }, (_, index) => index + 1))
+const influencerTotalPages = computed(() => Math.max(1, Math.ceil(influencerTotal.value / influencerPageSize)))
+const influencerPageNumbers = computed(() => Array.from({ length: influencerTotalPages.value }, (_, index) => index + 1))
 const selectedMetalOption = computed(() => metalOptions.find((option) => option.value === quoteForm.metalMaterial) || metalOptions[0])
 const goldPriceItems = computed(() => goldPrices.value?.prices || [])
 const goldPriceMeta = computed(() => {
@@ -1058,6 +1239,24 @@ function getToken() {
 
 function formatPrice(value) {
   return formatCurrencyFromCny(Number(value || 0), currencyRegion.value)
+}
+
+function discountRateToFold(rate) {
+  const numericRate = Number(rate)
+  if (!Number.isFinite(numericRate) || numericRate <= 0) {
+    return '10'
+  }
+
+  return Number((numericRate * 10).toFixed(2)).toString()
+}
+
+function discountFoldToRate(fold) {
+  const numericFold = Number(fold)
+  if (!Number.isFinite(numericFold) || numericFold <= 0 || numericFold > 10) {
+    return null
+  }
+
+  return Number((numericFold / 10).toFixed(4))
 }
 
 function statusLabel(status) {
@@ -1380,6 +1579,10 @@ function selectAdminSection(section) {
     loadOrderStats()
   }
 
+  if (section === 'influencers' && !influencers.value.length) {
+    loadInfluencers()
+  }
+
   if (section === 'tools' && activeJewelryTool.value === 'quote') {
     loadGoldPrices()
   }
@@ -1475,6 +1678,240 @@ async function loadUsers() {
   }
 }
 
+async function loadInfluencers() {
+  if (!isAdmin.value || !getToken()) {
+    return
+  }
+
+  isLoadingInfluencers.value = true
+  influencersError.value = ''
+  try {
+    const params = new URLSearchParams({
+      page: String(influencerPage.value),
+      pageSize: String(influencerPageSize),
+    })
+    if (influencerSearchQuery.value) {
+      params.set('q', influencerSearchQuery.value)
+    }
+    const response = await fetch(`/api/admin/talents?${params}`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    })
+    const payload = await parseJson(response)
+    if (!response.ok || !payload.success) {
+      throw new Error(payload.detail || copy.value.influencerRequestFailed)
+    }
+    influencers.value = payload.users || []
+    influencerTotal.value = Number(payload.total || 0)
+    influencers.value.forEach((talent) => {
+      talentDiscountInputs[talent.user_id] = discountRateToFold(talent.discountRate)
+    })
+  } catch (error) {
+    influencersError.value = error instanceof Error ? error.message : copy.value.influencerRequestFailed
+  } finally {
+    isLoadingInfluencers.value = false
+  }
+}
+
+async function saveTalentDiscount(talent) {
+  const talentId = talent?.user_id
+  if (!talentId || !getToken()) {
+    return
+  }
+
+  const discountRate = discountFoldToRate(talentDiscountInputs[talentId])
+  if (discountRate === null) {
+    influencersError.value = '折扣请输入 0.1 到 10 之间的数字'
+    return
+  }
+
+  savingTalentDiscountIds.value = new Set([...savingTalentDiscountIds.value, talentId])
+  influencersError.value = ''
+  try {
+    const response = await fetch(`/api/admin/talents/${encodeURIComponent(talentId)}/discount`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${getToken()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ discountRate }),
+    })
+    const payload = await parseJson(response)
+    if (!response.ok || !payload.success) {
+      throw new Error(payload.detail || '达人折扣保存失败')
+    }
+    const updatedTalent = payload.talent
+    influencers.value = influencers.value.map((item) => (
+      item.user_id === talentId ? { ...item, ...updatedTalent } : item
+    ))
+    talentDiscountInputs[talentId] = discountRateToFold(updatedTalent?.discountRate)
+  } catch (error) {
+    influencersError.value = error instanceof Error ? error.message : '达人折扣保存失败'
+  } finally {
+    const nextSavingIds = new Set(savingTalentDiscountIds.value)
+    nextSavingIds.delete(talentId)
+    savingTalentDiscountIds.value = nextSavingIds
+  }
+}
+
+async function loadTalentPicks(talent) {
+  const talentId = talent?.user_id
+  if (!talentId || !getToken()) {
+    return []
+  }
+
+  selectedTalentPickUserId.value = talentId
+  isLoadingTalentPicks.value = true
+  talentPicksError.value = ''
+  try {
+    await importLocalTalentPicks(talent)
+    const response = await fetch(`/api/admin/talents/${encodeURIComponent(talentId)}/picks`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    })
+    const payload = await parseJson(response)
+    if (!response.ok || !payload.success) {
+      throw new Error(payload.detail || '达人选品加载失败')
+    }
+    selectedTalentPicks.value = Array.isArray(payload.items) ? payload.items : []
+    return selectedTalentPicks.value
+  } catch (error) {
+    talentPicksError.value = error instanceof Error ? error.message : '达人选品加载失败'
+    selectedTalentPicks.value = []
+    return []
+  } finally {
+    isLoadingTalentPicks.value = false
+  }
+}
+
+function getLocalTalentPickKeys(talent) {
+  if (typeof window === 'undefined') {
+    return []
+  }
+
+  return [talent?.user_id, talent?.email, talent?.nickname]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .map((identity) => `dering-selection-picks:${encodeURIComponent(identity)}`)
+}
+
+function readLocalTalentPicks(talent) {
+  if (typeof window === 'undefined') {
+    return []
+  }
+
+  const picksByCode = new Map()
+  for (const storageKey of getLocalTalentPickKeys(talent)) {
+    try {
+      const stored = window.localStorage.getItem(storageKey)
+      const items = stored ? JSON.parse(stored) : []
+      if (!Array.isArray(items)) {
+        continue
+      }
+      for (const item of items) {
+        if (item?.code) {
+          picksByCode.set(item.code, item)
+        }
+      }
+    } catch {
+      // Ignore broken local cache records.
+    }
+  }
+
+  return Array.from(picksByCode.values())
+}
+
+async function importLocalTalentPicks(talent) {
+  const talentId = talent?.user_id
+  const localPicks = readLocalTalentPicks(talent)
+  if (!talentId || !localPicks.length || !getToken()) {
+    return []
+  }
+
+  const response = await fetch(`/api/admin/talents/${encodeURIComponent(talentId)}/picks/import`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ items: localPicks }),
+  })
+  const payload = await parseJson(response)
+  if (!response.ok || !payload.success) {
+    throw new Error(payload.detail || '本地选品同步到数据库失败')
+  }
+
+  return Array.isArray(payload.items) ? payload.items : []
+}
+
+async function openTalentPicks(talent) {
+  selectedTalentForPicks.value = talent
+  selectedTalentPicks.value = []
+  await loadTalentPicks(talent)
+}
+
+function closeTalentPicks() {
+  selectedTalentForPicks.value = null
+  selectedTalentPickUserId.value = ''
+  selectedTalentPicks.value = []
+  talentPicksError.value = ''
+}
+
+function csvCell(value) {
+  return `"${String(value ?? '').replace(/"/g, '""')}"`
+}
+
+function downloadCsv(filename, rows) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const csvContent = rows.map((row) => row.map(csvCell).join(',')).join('\r\n')
+  const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
+function formatTalentPickDate(item) {
+  const rawDate = String(item?.pickedDate || item?.pickedAt || '').trim()
+  const matchedDate = rawDate.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (!matchedDate) {
+    return rawDate || '-'
+  }
+
+  return `${Number(matchedDate[1])}年${Number(matchedDate[2])}月${Number(matchedDate[3])}日`
+}
+
+function downloadTalentPicksCsv(talent, picks) {
+  const safeName = String(talent?.nickname || talent?.user_id || '达人').replace(/[\\/:*?"<>|]/g, '-')
+  const rows = [
+    ['达人昵称', '达人ID', '邮箱', '手机号', '选择日期', '商品名称', '款号', '商品编号', '品类', '系列', '价格'],
+    ...picks.map((item) => [
+      talent?.nickname || '',
+      talent?.user_id || '',
+      talent?.email || '',
+      talent?.phone || '',
+      formatTalentPickDate(item),
+      item.name || '',
+      item.styleNo || item.code || '',
+      item.code || '',
+      item.type || '',
+      item.series || '',
+      item.price || 0,
+    ]),
+  ]
+  downloadCsv(`${safeName}-选品记录.csv`, rows)
+}
+
+async function exportTalentPicks(talent) {
+  const picks = await loadTalentPicks(talent)
+  downloadTalentPicksCsv(talent, picks)
+}
+
 function syncSelectedUserInsight() {
   if (!users.value.length) {
     selectedUserId.value = ''
@@ -1537,9 +1974,19 @@ function refreshUsers() {
   loadUsers()
 }
 
+function refreshInfluencers() {
+  influencerPage.value = 1
+  loadInfluencers()
+}
+
 function changeUserPage(nextPage) {
   userPage.value = Math.min(Math.max(Number(nextPage) || 1, 1), userTotalPages.value)
   loadUsers()
+}
+
+function changeInfluencerPage(nextPage) {
+  influencerPage.value = Math.min(Math.max(Number(nextPage) || 1, 1), influencerTotalPages.value)
+  loadInfluencers()
 }
 
 async function createInviteLink() {

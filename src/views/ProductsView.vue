@@ -65,9 +65,9 @@
   <section v-if="categoryHero" class="category-hero" :aria-label="categoryHero.title">
     <div class="category-hero-copy">
       <nav class="category-breadcrumb" :aria-label="breadcrumbCopy.aria">
-        <RouterLink to="/">{{ breadcrumbCopy.home }}</RouterLink>
+        <RouterLink :to="productsHomeTo">{{ breadcrumbCopy.home }}</RouterLink>
         <span aria-hidden="true">></span>
-        <RouterLink :to="{ name: 'products' }">{{ breadcrumbCopy.products }}</RouterLink>
+        <RouterLink :to="productsListTo">{{ breadcrumbCopy.products }}</RouterLink>
         <span aria-hidden="true">></span>
         <span>{{ categoryHero.title }}</span>
       </nav>
@@ -107,7 +107,15 @@
             @mouseleave="clearHoveredProduct(product.code)"
             @click="chooseRecommendation(product)"
           >
-            <img :src="displayProductCardImage(product)" :alt="product.displayName" />
+            <img
+              v-if="displayProductCardImage(product)"
+              :src="displayProductCardImage(product)"
+              :alt="product.displayName"
+              @error="hideBrokenProductImage(product)"
+            />
+            <span v-else class="recommend-image-placeholder">
+              {{ product.code }}
+            </span>
             <span>
               <strong>{{ product.displayName }}</strong>
               <small>
@@ -145,6 +153,10 @@
             :style="productImageStyle(product)"
             @error="hideBrokenProductImage(product)"
           />
+          <span v-else class="product-image-placeholder">
+            <strong>暂无图片</strong>
+            <small>{{ product.code }}</small>
+          </span>
         </span>
         <div class="product-info">
           <h2>{{ product.displayName }}</h2>
@@ -165,7 +177,7 @@
     </div>
   </section>
 
-  <KnowledgeFooter footer-class="home-footer product-page-footer" />
+  <KnowledgeFooter v-if="!isSelectionContext" footer-class="home-footer product-page-footer" />
 
   <div v-if="activeProduct" class="product-detail-backdrop" @click.self="closeProduct">
     <article
@@ -202,6 +214,10 @@
             </span>
           </Transition>
         </button>
+        <span v-else class="detail-image-placeholder">
+          <strong>暂无图片</strong>
+          <small>{{ activeProduct.code }}</small>
+        </span>
       </div>
 
       <div class="detail-copy">
@@ -306,9 +322,18 @@
             <span v-if="activeProductIsPriceOnRequest">{{ ui.outOfStockConsult }}</span>
           </div>
           <button class="detail-cart-button" type="button" @click="addActiveProductToCart">
-            {{ ui.addToCart }}
+            {{ activeProductActionLabel }}
           </button>
         </div>
+
+        <button
+          v-if="canEditProducts"
+          class="admin-product-edit-entry"
+          type="button"
+          @click="openProductEditor"
+        >
+          编辑价格和参数
+        </button>
 
         <div class="detail-after-purchase">
           <button
@@ -470,6 +495,116 @@
   </div>
 
   <Teleport to="body">
+    <div
+      v-if="isProductEditorOpen && activeProduct"
+      class="admin-product-editor-backdrop"
+      @pointerdown.self="handleProductEditorBackdropPointerDown"
+      @pointerup.self="handleProductEditorBackdropPointerUp"
+      @click.self.prevent
+    >
+      <section
+        class="admin-product-editor-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="编辑商品价格和参数"
+        @pointerdown.stop="cancelProductEditorBackdropPointer"
+        @pointerup.stop
+        @click.stop
+      >
+        <header class="admin-product-editor-head">
+          <div>
+            <span>超级管理员编辑</span>
+            <h3>价格和参数</h3>
+          </div>
+          <button class="admin-product-editor-close" type="button" aria-label="关闭" @click="closeProductEditor">
+            &times;
+          </button>
+        </header>
+
+        <form class="admin-product-editor-form" @submit.prevent="saveProductEditor">
+          <label>
+            <span>展示价格</span>
+            <input v-model="productEditorForm.labelPrice" type="number" min="0" step="0.01" />
+          </label>
+          <label>
+            <span>达播价</span>
+            <input v-model="productEditorForm.livePrice" type="number" min="0" step="0.01" />
+          </label>
+          <label>
+            <span>产品名称</span>
+            <input v-model="productEditorForm.name" />
+          </label>
+          <label>
+            <span>品类</span>
+            <input v-model="productEditorForm.type" />
+          </label>
+          <label>
+            <span>系列</span>
+            <input v-model="productEditorForm.series" />
+          </label>
+          <label>
+            <span>金属材质</span>
+            <input v-model="productEditorForm.material" />
+          </label>
+          <label>
+            <span>总重</span>
+            <input v-model="productEditorForm.totalWeight" type="number" min="0" step="0.01" />
+          </label>
+          <label>
+            <span>石颜色</span>
+            <input v-model="productEditorForm.stoneColor" />
+          </label>
+          <label>
+            <span>石形状</span>
+            <input v-model="productEditorForm.stoneShape" />
+          </label>
+          <label>
+            <span>主石</span>
+            <input v-model="productEditorForm.mainStone" />
+          </label>
+          <label>
+            <span>副石</span>
+            <input v-model="productEditorForm.sideStone" />
+          </label>
+          <label>
+            <span>尺寸说明</span>
+            <input v-model="productEditorForm.sizeDesc" />
+          </label>
+          <label>
+            <span>库存</span>
+            <input v-model="productEditorForm.inventory" type="number" min="0" step="1" />
+          </label>
+          <label>
+            <span>未出货数</span>
+            <input v-model="productEditorForm.unshippedQty" type="number" min="0" step="1" />
+          </label>
+          <label>
+            <span>佣金%</span>
+            <input v-model="productEditorForm.commission" type="number" min="0" step="0.01" />
+          </label>
+          <label class="admin-product-editor-wide">
+            <span>口播卖点</span>
+            <textarea v-model="productEditorForm.sellingPoint"></textarea>
+          </label>
+          <label class="admin-product-editor-wide">
+            <span>备注</span>
+            <textarea v-model="productEditorForm.remark"></textarea>
+          </label>
+          <p v-if="productEditorStatus" class="admin-product-editor-status" :class="{ error: productEditorStatusType === 'error' }">
+            {{ productEditorStatus }}
+          </p>
+          <div class="admin-product-editor-actions">
+            <button type="button" @click="resetProductEditorForm">重置</button>
+            <button type="submit" :disabled="isSavingProductEditor">
+              {{ isSavingProductEditor ? '保存中...' : '保存到数据库' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </Teleport>
+
+  <Teleport to="body">
     <div v-if="previewImage" class="image-preview-backdrop" @click.self="closeImagePreview">
       <article class="image-preview" role="dialog" aria-modal="true" :aria-label="ui.previewImage || ui.closeDetail">
         <div class="image-preview-tools">
@@ -497,6 +632,7 @@ import KnowledgeFooter from '../components/KnowledgeFooter.vue'
 import { useAuth } from '../composables/useAuth'
 import { useCart } from '../composables/useCart'
 import { useLocale } from '../composables/useLocale'
+import { useSelectionPicks } from '../composables/useSelectionPicks'
 import { formatCurrencyFromCny } from '../utils/currency'
 import {
   localizeFilterValue,
@@ -547,8 +683,17 @@ const hiddenDetailTexts = new Set(['送胶耳堵', 'Complimentary silicone backs
 const route = useRoute()
 const router = useRouter()
 const { locale, currencyRegion } = useLocale()
-const { currentUser } = useAuth()
+const { currentUser, selectionUser, refreshSelectionUser } = useAuth()
 const { addCartItem } = useCart()
+const { addSelectionPick, isSelectionPickSelected } = useSelectionPicks()
+const isSelectionContext = computed(() => Boolean(route.meta.selectionLayout) || route.query.from === 'selection')
+const productsListRouteName = computed(() => (isSelectionContext.value ? 'selectionAll' : 'products'))
+const productsHomeTo = computed(() => (isSelectionContext.value ? { name: 'selectionAll' } : { name: 'home' }))
+const productsListTo = computed(() => ({ name: productsListRouteName.value }))
+const selectionDiscountRate = computed(() => {
+  const rate = Number(selectionUser.value?.discountRate)
+  return Number.isFinite(rate) && rate > 0 ? rate : 1
+})
 
 const uiCopy = {
   zh: {
@@ -583,6 +728,8 @@ const uiCopy = {
     prevImage: '上一张图片',
     nextImage: '下一张图片',
     addToCart: '加入购物车',
+    selectProduct: '选品',
+    selectedProduct: '已选品',
     styleNo: '款号',
     all: '全部',
     priceOnRequest: '面议',
@@ -657,6 +804,8 @@ const uiCopy = {
     prevImage: 'Previous image',
     nextImage: 'Next image',
     addToCart: 'Add to Bag',
+    selectProduct: 'Select',
+    selectedProduct: 'Selected',
     styleNo: 'Style No.',
     all: 'All',
     priceOnRequest: 'Price on request',
@@ -1066,6 +1215,12 @@ const detailImageZoom = ref(1)
 const previewImage = ref('')
 const previewZoom = ref(1)
 const brokenProductImageCodes = ref(new Set())
+const isProductEditorOpen = ref(false)
+const isSavingProductEditor = ref(false)
+const productEditorBackdropPointerStarted = ref(false)
+const productEditorStatus = ref('')
+const productEditorStatusType = ref('info')
+const productEditorForm = ref({})
 let detailImageAutoSlideTimer = 0
 
 const filterTypes = computed(() => {
@@ -1263,13 +1418,16 @@ const filteredProducts = computed(() => {
 
 const displayableProducts = computed(() => {
   return filteredProducts.value
-    .filter((product) => displayProductCardImage(product) && !brokenProductImageCodes.value.has(product.code))
 })
 
 const visibleProducts = computed(() => displayableProducts.value.slice(0, visibleProductLimit.value))
 
 const canLoadMoreProducts = computed(() => {
   return displayableProducts.value.length > visibleProductLimit.value || productsHasMore.value
+})
+
+const canEditProducts = computed(() => {
+  return !isSelectionContext.value && Boolean(currentUser.value?.canManageAdmins)
 })
 
 const loadMoreLabel = computed(() => {
@@ -1315,6 +1473,22 @@ const activeFilterCount = computed(() => {
 
 const activeProduct = computed(() => {
   return localizedProducts.value.find((product) => product.code === activeProductCode.value) ?? null
+})
+
+const isActiveProductPicked = computed(() => {
+  return Boolean(activeProduct.value?.code && isSelectionPickSelected(activeProduct.value.code))
+})
+
+const activeProductActionLabel = computed(() => {
+  if (!isSelectionContext.value) {
+    return ui.value.addToCart
+  }
+
+  if (isActiveProductPicked.value) {
+    return ui.value.selectedProduct || uiCopy.zh.selectedProduct
+  }
+
+  return ui.value.selectProduct || uiCopy.zh.selectProduct
 })
 
 const activeProductGoodsOptions = computed(() => {
@@ -1678,7 +1852,120 @@ function formatPrice(price) {
     return ui.value.priceOnRequest
   }
 
-  return formatCurrencyFromCny(numericPrice, currencyRegion.value)
+  const displayPrice = isSelectionContext.value ? numericPrice * selectionDiscountRate.value : numericPrice
+  return formatCurrencyFromCny(displayPrice, currencyRegion.value)
+}
+
+function getProductEditorPayload(product) {
+  if (!product) {
+    return {}
+  }
+
+  return {
+    labelPrice: product.labelPrice ?? product.price ?? '',
+    livePrice: product.livePrice ?? '',
+    name: product.name ?? '',
+    type: product.type ?? '',
+    series: product.series ?? '',
+    material: product.material ?? '',
+    totalWeight: product.totalWeight ?? '',
+    stoneColor: product.stoneColor ?? '',
+    stoneShape: product.stoneShape ?? '',
+    mainStone: product.mainStone ?? '',
+    sideStone: product.sideStone ?? '',
+    sizeDesc: product.sizeDesc ?? '',
+    inventory: product.inventory ?? '',
+    unshippedQty: product.unshippedQty ?? '',
+    commission: product.commission ?? '',
+    sellingPoint: product.sellingPoint ?? '',
+    remark: product.remark ?? '',
+  }
+}
+
+function resetProductEditorForm() {
+  productEditorForm.value = getProductEditorPayload(activeProduct.value)
+  productEditorStatus.value = ''
+  productEditorStatusType.value = 'info'
+}
+
+function openProductEditor() {
+  resetProductEditorForm()
+  productEditorBackdropPointerStarted.value = false
+  isProductEditorOpen.value = true
+}
+
+function closeProductEditor() {
+  if (isSavingProductEditor.value) {
+    return
+  }
+
+  isProductEditorOpen.value = false
+  productEditorBackdropPointerStarted.value = false
+}
+
+function handleProductEditorBackdropPointerDown() {
+  productEditorBackdropPointerStarted.value = true
+}
+
+function handleProductEditorBackdropPointerUp() {
+  if (!productEditorBackdropPointerStarted.value) {
+    return
+  }
+
+  closeProductEditor()
+  productEditorBackdropPointerStarted.value = false
+}
+
+function cancelProductEditorBackdropPointer() {
+  productEditorBackdropPointerStarted.value = false
+}
+
+function getAdminToken() {
+  return String(currentUser.value?.token || '').trim()
+}
+
+function replaceProductInList(product) {
+  if (!product?.code) {
+    return
+  }
+
+  products.value = products.value.map((item) => (
+    item.code === product.code || item.styleNo === product.styleNo ? product : item
+  ))
+}
+
+async function saveProductEditor() {
+  if (!activeProduct.value || !canEditProducts.value || !getAdminToken()) {
+    return
+  }
+
+  isSavingProductEditor.value = true
+  productEditorStatus.value = ''
+  productEditorStatusType.value = 'info'
+
+  try {
+    const response = await fetch(`/api/admin/products/${encodeURIComponent(activeProduct.value.styleNo || activeProduct.value.code)}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${getAdminToken()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(productEditorForm.value),
+    })
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok || !payload.success) {
+      throw new Error(payload.detail || '保存失败')
+    }
+
+    replaceProductInList(payload.product)
+    productEditorForm.value = getProductEditorPayload(payload.product)
+    productEditorStatus.value = '已保存到数据库'
+  } catch (error) {
+    productEditorStatus.value = error instanceof Error ? error.message : '保存失败'
+    productEditorStatusType.value = 'error'
+  } finally {
+    isSavingProductEditor.value = false
+  }
 }
 
 function parsePositiveNumber(value) {
@@ -1962,11 +2249,7 @@ function productDetailImages(product) {
     .map((index) => imageByIndex.get(index))
     .filter(Boolean)
 
-  if (orderedImages.length || !styleNo) {
-    return orderedImages
-  }
-
-  return [1, 2, 3, 0].map((index) => `http://img.deringdiam.com/product_details/${styleNo}_${index}.png`)
+  return orderedImages
 }
 
 function uniqueImages(images) {
@@ -1980,6 +2263,10 @@ function productGalleryImages(product) {
 }
 
 function displayProductCardImage(product) {
+  if (product?.code && brokenProductImageCodes.value.has(product.code)) {
+    return ''
+  }
+
   const primaryImage = productPrimaryImage(product)
   const hoverImage = productHoverImage(product)
 
@@ -2189,7 +2476,7 @@ function syncSeriesFromRoute() {
       clearSecondaryFilters()
       const nextRouteQuery = { ...route.query }
       delete nextRouteQuery.type
-      router.replace({ name: 'products', query: nextRouteQuery })
+      router.replace({ name: productsListRouteName.value, query: nextRouteQuery })
       return
     }
 
@@ -2330,7 +2617,7 @@ async function selectFilterOption(moduleId, value) {
     searchQuery.value = ''
     showFilterPanel.value = false
     visibleProductLimit.value = productsPageSize
-    await router.push({ name: 'products', query: nextRouteQuery })
+    await router.push({ name: productsListRouteName.value, query: nextRouteQuery })
     return
   }
 
@@ -2425,7 +2712,7 @@ async function resetFilters() {
   delete nextRouteQuery.product
 
   if (shouldReloadProducts) {
-    await router.replace({ name: 'products', query: nextRouteQuery })
+    await router.replace({ name: productsListRouteName.value, query: nextRouteQuery })
     return
   }
 
@@ -2443,6 +2730,10 @@ async function scrollToProducts() {
 }
 
 function openProduct(product) {
+  isProductEditorOpen.value = false
+  productEditorStatus.value = ''
+  productEditorStatusType.value = 'info'
+  productEditorForm.value = getProductEditorPayload(product)
   activeProductCode.value = product.code
   activeDetailImage.value = productGalleryImages(product)[0] || ''
   resetDetailImageZoom()
@@ -2512,13 +2803,23 @@ function getCloseProductSeriesRoute() {
   }
 }
 
-async function closeProduct({ restoreProductPosition = true, navigateToSource = true } = {}) {
-  const sourceRoute = navigateToSource ? getCloseProductSeriesRoute() : null
-  if (sourceRoute) {
-    await router.push(sourceRoute)
-    return
+function getCloseProductSourceRoute() {
+  const from = getSingleRouteQueryValue('from')
+  if (from === 'selection') {
+    return { name: 'selection' }
   }
 
+  if (isSelectionContext.value && getSingleRouteQueryValue('product')) {
+    const nextQuery = { ...route.query }
+    delete nextQuery.product
+    delete nextQuery.from
+    return { name: 'selectionAll', query: nextQuery }
+  }
+
+  return getCloseProductSeriesRoute()
+}
+
+async function clearActiveProductDetail({ restoreProductPosition = true } = {}) {
   const closingProductCode = activeProductCode.value
   clearDetailImageAutoSlide()
   activeProductCode.value = ''
@@ -2530,11 +2831,26 @@ async function closeProduct({ restoreProductPosition = true, navigateToSource = 
   selectedGoodsNo.value = ''
   draftSelectedGoodsNo.value = ''
   activeProductGoodsLoadError.value = false
+  isProductEditorOpen.value = false
+  productEditorStatus.value = ''
+  productEditorStatusType.value = 'info'
+  productEditorForm.value = {}
   closeImagePreview()
 
   if (restoreProductPosition && closingProductCode) {
     await scrollProductCardIntoView(closingProductCode)
   }
+}
+
+async function closeProduct({ restoreProductPosition = true, navigateToSource = true } = {}) {
+  const sourceRoute = navigateToSource ? getCloseProductSourceRoute() : null
+  if (sourceRoute) {
+    await clearActiveProductDetail({ restoreProductPosition: false })
+    await router.push(sourceRoute)
+    return
+  }
+
+  await clearActiveProductDetail({ restoreProductPosition })
 }
 
 async function openDetailDrawer(drawer) {
@@ -2697,8 +3013,23 @@ function buildCartProduct(product, goodsItem) {
   }
 }
 
-function addActiveProductToCart() {
+async function addActiveProductToCart() {
   if (!activeProduct.value) {
+    return
+  }
+
+  if (isSelectionContext.value) {
+    if (!selectionUser.value) {
+      router.push({ name: 'selectionLogin' })
+      return
+    }
+
+    if (isActiveProductPicked.value) {
+      router.push({ name: 'selectionPicks' })
+      return
+    }
+
+    await addSelectionPick(activeProduct.value)
     return
   }
 
@@ -2817,7 +3148,10 @@ function handleCloseProductDetailEvent() {
   closeProduct({ navigateToSource: false })
 }
 
-onMounted(() => {
+onMounted(async () => {
+  if (isSelectionContext.value) {
+    await refreshSelectionUser()
+  }
   loadProducts()
   window.addEventListener('open-product-filters', openFilterPanel)
   window.addEventListener('close-product-detail', handleCloseProductDetailEvent)

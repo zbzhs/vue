@@ -96,17 +96,20 @@
       </RouterLink>
     </section>
 
-    <KnowledgeFooter footer-class="home-footer" />
+    <KnowledgeFooter v-if="!isSelectionContext" footer-class="home-footer" />
   </div>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import KnowledgeFooter from '../components/KnowledgeFooter.vue'
 import { useLocale } from '../composables/useLocale'
 
 const { locale } = useLocale()
+const route = useRoute()
+const isSelectionContext = computed(() => Boolean(route.meta.selectionLayout) || route.query.from === 'selection')
 
 const heroBackgroundModules = import.meta.glob('/public/images/home/background*', {
   eager: true,
@@ -702,21 +705,27 @@ function heroSlideMark(slide) {
   }
 }
 
-const localizeSeriesCard = (card, activeLocale) => ({
-  ...card,
-  kicker: pickLocaleValue(card.kicker, activeLocale),
-  title: pickLocaleValue(card.title, activeLocale),
-  text: pickLocaleValue(card.text, activeLocale),
-  alt: pickLocaleValue(card.alt, activeLocale),
-  ariaLabel: pickLocaleValue(card.ariaLabel, activeLocale),
-  to: {
-    ...card.to,
-    query: {
-      ...(card.to.query || {}),
-      entry: 'cover',
-    },
-  },
-})
+const localizeSeriesCard = (card, activeLocale, selectionContext) => {
+  const localizedTitle = pickLocaleValue(card.title, activeLocale)
+
+  return {
+    ...card,
+    kicker: pickLocaleValue(card.kicker, activeLocale),
+    title: localizedTitle,
+    text: pickLocaleValue(card.text, activeLocale),
+    alt: pickLocaleValue(card.alt, activeLocale),
+    ariaLabel: pickLocaleValue(card.ariaLabel, activeLocale),
+    to: selectionContext
+      ? { name: 'selectionAll', query: { series: localizedTitle } }
+      : {
+          ...card.to,
+          query: {
+            ...(card.to.query || {}),
+            entry: 'cover',
+          },
+        },
+  }
+}
 
 const copy = computed(() => {
   const activeLocale = cleanHomeCopy[locale.value] ? locale.value : 'zh'
@@ -725,7 +734,7 @@ const copy = computed(() => {
     ...cleanHomeCopy[activeLocale],
     series: {
       ...cleanHomeCopy[activeLocale].series,
-      cards: cleanSeriesCards.map((card) => localizeSeriesCard(card, activeLocale)),
+      cards: cleanSeriesCards.map((card) => localizeSeriesCard(card, activeLocale, isSelectionContext.value)),
     },
   }
 })
