@@ -8,12 +8,17 @@
             v-for="item in adminNavItems"
             :key="item.key"
             type="button"
+            :aria-label="item.label"
             :class="{ active: activeAdminSection === item.key }"
             @click="selectAdminSection(item.key)"
           >
-            {{ item.label }}
+            <span class="admin-nav-label-full">{{ item.label }}</span>
+            <span class="admin-nav-label-short" aria-hidden="true">{{ item.shortLabel }}</span>
           </button>
-          <RouterLink class="admin-sidebar-link" :to="{ name: 'admin' }">DERING主页</RouterLink>
+          <RouterLink class="admin-sidebar-link" :to="{ name: 'admin' }" aria-label="DERING主页">
+            <span class="admin-nav-label-full">DERING主页</span>
+            <span class="admin-nav-label-short" aria-hidden="true">主页</span>
+          </RouterLink>
         </aside>
 
         <div class="admin-content">
@@ -49,7 +54,7 @@
 
             <footer v-if="userTotal" class="admin-pagination admin-user-pagination">
               <button type="button" :disabled="userPage <= 1 || isLoadingUsers" @click="changeUserPage(userPage - 1)">&lt;</button>
-              <span>{{ userPage }} / {{ userTotalPages }}</span>
+              <span>{{ userPage }}/{{ userTotalPages }}</span>
               <select :value="userPage" :disabled="isLoadingUsers" @change="changeUserPage(Number($event.target.value))">
                 <option v-for="pageNumber in userPageNumbers" :key="pageNumber" :value="pageNumber">
                   {{ pageNumber }}
@@ -314,7 +319,8 @@
                 </span>
                 <div class="admin-talent-discount">
                   <label>
-                    <span>价格折扣</span>
+                    <span class="admin-talent-label-full">价格折扣</span>
+                    <span class="admin-talent-label-short" aria-hidden="true">折扣</span>
                     <input
                       :value="talentDiscountInputs[influencer.user_id] ?? discountRateToFold(influencer.discountRate)"
                       type="number"
@@ -330,30 +336,33 @@
                     :disabled="savingTalentDiscountIds.has(influencer.user_id)"
                     @click="saveTalentDiscount(influencer)"
                   >
-                    {{ savingTalentDiscountIds.has(influencer.user_id) ? copy.loading : '保存' }}
+                    <span class="admin-talent-label-full">{{ savingTalentDiscountIds.has(influencer.user_id) ? copy.loading : '保存' }}</span>
+                    <span class="admin-talent-label-short" aria-hidden="true">{{ savingTalentDiscountIds.has(influencer.user_id) ? '...' : '保存' }}</span>
                   </button>
                   <button
                     type="button"
                     :disabled="isLoadingTalentPicks && selectedTalentPickUserId === influencer.user_id"
                     @click="openTalentPicks(influencer)"
                   >
-                    {{ isLoadingTalentPicks && selectedTalentPickUserId === influencer.user_id ? copy.loading : '查看选品' }}
+                    <span class="admin-talent-label-full">{{ isLoadingTalentPicks && selectedTalentPickUserId === influencer.user_id ? copy.loading : '查看选品' }}</span>
+                    <span class="admin-talent-label-short" aria-hidden="true">{{ isLoadingTalentPicks && selectedTalentPickUserId === influencer.user_id ? '...' : '选品' }}</span>
                   </button>
                   <button
                     type="button"
                     :disabled="isLoadingTalentPicks && selectedTalentPickUserId === influencer.user_id"
                     @click="exportTalentPicks(influencer)"
                   >
-                    导出表格
+                    <span class="admin-talent-label-full">导出表格</span>
+                    <span class="admin-talent-label-short" aria-hidden="true">导出</span>
                   </button>
-                  <small>{{ influencer.createdAt || '-' }}</small>
+                  <small class="admin-talent-created-at">{{ influencer.createdAt || '-' }}</small>
                 </div>
               </article>
             </div>
 
             <footer v-if="influencerTotal" class="admin-pagination admin-user-pagination">
               <button type="button" :disabled="influencerPage <= 1 || isLoadingInfluencers" @click="changeInfluencerPage(influencerPage - 1)">&lt;</button>
-              <span>{{ influencerPage }} / {{ influencerTotalPages }}</span>
+              <span>{{ influencerPage }}/{{ influencerTotalPages }}</span>
               <select :value="influencerPage" :disabled="isLoadingInfluencers" @change="changeInfluencerPage(Number($event.target.value))">
                 <option v-for="pageNumber in influencerPageNumbers" :key="pageNumber" :value="pageNumber">
                   {{ pageNumber }}
@@ -532,8 +541,7 @@
             </section>
             <section v-else class="admin-diamond-size-tool">
               <div class="admin-tool-subhead">
-                <div><h3>钻石尺寸</h3><p>{{ diamondSizeMeta }}</p></div>
-                <button type="button" :disabled="isLoadingDiamond" @click="loadDiamondSizes(true)">{{ isLoadingDiamond ? copy.loading : '刷新尺寸' }}</button>
+                <div><h3>钻石尺寸</h3><p>数据来源：珠宝CDB</p></div>
               </div>
               <p v-if="diamondError" class="admin-error">{{ diamondError }}</p>
               <div class="admin-diamond-tabs">
@@ -815,33 +823,40 @@ const adminNavItems = computed(() => [
   {
     key: 'settings',
     label: locale.value === 'en' ? 'Permissions' : '权限设置',
+    shortLabel: locale.value === 'en' ? 'Perm' : '权限',
   },
   {
     key: 'orders',
     label: locale.value === 'en' ? 'User Order Details' : '用户订单详情',
+    shortLabel: locale.value === 'en' ? 'Orders' : '订单',
   },
   {
     key: 'influencers',
     label: locale.value === 'en' ? 'Talent Management' : '达人管理',
+    shortLabel: locale.value === 'en' ? 'Talent' : '达人',
   },
   {
     key: 'liveFollow',
     label: locale.value === 'en' ? 'Live Follow-up' : '直播跟进',
+    shortLabel: locale.value === 'en' ? 'Live' : '直播',
   },
   ...(canManageAdmins.value
     ? [{
       key: 'productTools',
       label: locale.value === 'en' ? 'Product Tools' : '商品工具',
+      shortLabel: locale.value === 'en' ? 'Product' : '商品',
     }]
     : []),
   {
     key: 'tools',
     label: locale.value === 'en' ? 'Jewelry Tools' : '珠宝工具',
+    shortLabel: locale.value === 'en' ? 'Jewelry' : '珠宝',
   },
   ...(canManageAdmins.value
     ? [{
       key: 'invites',
       label: locale.value === 'en' ? 'Admin Invitation' : '管理员邀请',
+      shortLabel: locale.value === 'en' ? 'Invite' : '邀请',
     }]
     : []),
 ])
@@ -1156,13 +1171,6 @@ const quoteTotals = computed(() => {
 })
 const diamondShapes = computed(() => diamondSizes.value?.shapes || [])
 const activeDiamondShapeRows = computed(() => diamondShapes.value[diamondSizeIndex.value]?.rows || [])
-const diamondSizeMeta = computed(() => {
-  if (!diamondSizes.value) {
-    return '数据来源：等待加载'
-  }
-  const savedAt = diamondSizes.value.savedAt ? formatToolDate(diamondSizes.value.savedAt) : '-'
-  return `数据来源：${diamondSizes.value.originalSource || diamondSizes.value.source || '-'} / 保存：${savedAt}`
-})
 const displayedUserLogins = computed(() => {
   const login = selectedUserInsight.value?.login
   if (!login) {

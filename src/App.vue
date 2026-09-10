@@ -81,21 +81,23 @@
           <img src="/logo/logo.png" alt="DERING" />
         </RouterLink>
 
-        <nav class="nav-category-row" aria-label="Product categories">
-          <template v-for="item in navItems" :key="item.key">
-            <RouterLink class="nav-category-link" :to="item.to" @click="closeProductDetail">
-              {{ item.label[locale] }}
-            </RouterLink>
-          </template>
-        </nav>
+        <div class="nav-secondary-row">
+          <nav class="nav-category-row" aria-label="Product categories">
+            <template v-for="item in navItems" :key="item.key">
+              <RouterLink class="nav-category-link" :to="item.to" @click="closeProductDetail">
+                {{ item.label[locale] }}
+              </RouterLink>
+            </template>
+          </nav>
 
-        <div v-if="showNavActions" class="nav-actions">
+          <div v-if="showNavActions" class="nav-actions">
           <RouterLink
             v-if="currentUser?.accountType === 'admin'"
             class="nav-admin-link"
             :to="{ name: 'adminDashboard' }"
           >
-            管理后台
+            <span class="nav-admin-label-full">管理后台</span>
+            <span class="nav-admin-label-short" aria-hidden="true">后台</span>
           </RouterLink>
           <label class="locale-select-wrap" aria-label="语言与货币">
             <select v-model="localeChoice" class="locale-select">
@@ -167,6 +169,7 @@
             <span class="nav-cart-bag" aria-hidden="true"></span>
             <span v-if="cartCount > 0" class="nav-cart-badge">{{ cartCount }}</span>
           </RouterLink>
+          </div>
         </div>
 
         <button

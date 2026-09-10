@@ -127,7 +127,8 @@
                 :disabled="!canSelectSlot(counter, slot)"
                 @click="selectSlot(counter, slot)"
               >
-                {{ slotLabel(counter, slot) }}
+                <span class="live-slot-time-mobile">{{ slot.start }}-{{ slot.end }}</span>
+                <span class="live-slot-status">{{ slotLabel(counter, slot) }}</span>
               </button>
             </div>
           </div>
@@ -251,21 +252,23 @@
                 <strong>上传直播数据截图</strong>
                 <span>识别结果只会填入下方表单，不会自动提交。</span>
               </div>
-              <label class="live-image-picker">
-                <input type="file" accept="image/png,image/jpeg,image/webp" @change="handleLiveImageChange" />
-                <span>{{ liveImageName || '选择图片' }}</span>
-              </label>
+              <div class="live-image-import-actions">
+                <label class="live-image-picker">
+                  <input type="file" accept="image/png,image/jpeg,image/webp" @change="handleLiveImageChange" />
+                  <span>{{ liveImageName || '选择图片' }}</span>
+                </label>
+                <button
+                  class="live-dark-button"
+                  type="button"
+                  :disabled="!liveImageDataUrl || isRecognizing"
+                  @click="recognizeLiveImage"
+                >
+                  {{ isRecognizing ? '正在识别...' : '识别并填入' }}
+                </button>
+              </div>
               <div v-if="liveImagePreview" class="live-image-preview">
                 <img :src="liveImagePreview" alt="待识别的直播数据截图" />
               </div>
-              <button
-                class="live-dark-button"
-                type="button"
-                :disabled="!liveImageDataUrl || isRecognizing"
-                @click="recognizeLiveImage"
-              >
-                {{ isRecognizing ? '正在识别...' : '识别并填入' }}
-              </button>
               <p v-if="liveImageStatus" class="live-image-status">{{ liveImageStatus }}</p>
             </div>
 
