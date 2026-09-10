@@ -12889,22 +12889,58 @@ p {
   }
 
   .admin-sidebar {
-    position: static;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: auto;
-    padding: 14px;
-    border: 1px solid rgba(27, 29, 32, 0.12);
-    border-radius: 6px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: calc(100% + 28px);
+    margin-left: -14px;
+    padding: 10px 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: rgba(251, 250, 248, 0.96);
+    border: 0;
+    border-bottom: 1px solid rgba(27, 29, 32, 0.1);
+    border-radius: 0;
+    box-shadow: 0 8px 22px rgba(31, 34, 38, 0.06);
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    backdrop-filter: blur(12px);
+  }
+
+  .admin-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-sidebar::before {
+    display: none;
   }
 
   .admin-sidebar p {
-    grid-column: 1 / -1;
+    display: none;
   }
 
   .admin-sidebar button,
   .admin-sidebar-link {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 38px;
+    padding: 0 14px;
     justify-content: center;
+    border-radius: 4px;
+    font-size: 13px;
     text-align: center;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
+  .admin-sidebar button.active {
+    color: #ffffff;
+    background: #1b1d20;
+    border-color: #1b1d20;
+    box-shadow: none;
   }
 
   .admin-section-head {

@@ -38,8 +38,6 @@
             <h2>主播主页</h2>
           </div>
 
-          <strong class="live-dashboard-pill">{{ talents.length }} 位主播</strong>
-
           <div v-if="!talents.length" class="live-dashboard-empty live-dashboard-empty--small">
             暂无主播账号，请联系系统管理员配置。
           </div>
@@ -74,8 +72,6 @@
             <span>TODAY LIVE</span>
             <h3>今日直播场次</h3>
           </div>
-
-          <strong class="live-dashboard-pill">{{ todayReservations.length }} 场</strong>
 
           <div v-if="!todayReservations.length" class="live-dashboard-empty">
             今天暂无已预约的直播场次
