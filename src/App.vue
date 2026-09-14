@@ -200,10 +200,10 @@
     </main>
 
     <button
-      v-show="showBackToTop && !isSelectionContext"
+      v-show="showBackToTop"
       class="back-to-top-button"
       type="button"
-      :aria-label="t('杩斿洖椤堕儴', 'Back to top')"
+      :aria-label="t('返回顶部', 'Back to top')"
       @click="scrollToTop"
     >
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

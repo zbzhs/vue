@@ -35,34 +35,50 @@
       <template v-if="activeTab === 'home'">
         <section class="live-dashboard-section live-dashboard-section--hero">
           <div class="live-dashboard-title">
-            <h2>主播主页</h2>
+            <span>LIVE ROOM STATUS</span>
+            <h2>直播间状态</h2>
           </div>
 
-          <div v-if="!talents.length" class="live-dashboard-empty live-dashboard-empty--small">
-            暂无主播账号，请联系系统管理员配置。
-          </div>
-          <div v-else class="live-talent-grid">
-            <article v-for="talent in talentCards" :key="talent.userId" class="live-talent-card">
-              <div class="live-talent-card-head">
-                <span class="live-talent-avatar">{{ talentInitial(talent) }}</span>
+          <div class="live-counter-status-grid">
+            <article
+              v-for="counter in counterStatusCards"
+              :key="counter.id"
+              class="live-counter-status-card"
+              :class="counter.isOccupied ? 'is-occupied' : 'is-free'"
+            >
+              <header class="live-counter-status-head">
                 <div>
-                  <h3>{{ talent.nickname || '未命名主播' }}</h3>
-                  <p>{{ talent.userId }}</p>
+                  <small>柜台</small>
+                  <h3>{{ counterLabel(counter) }}</h3>
                 </div>
-                <span class="live-talent-state" :class="`is-${talent.state}`">{{ talent.stateLabel }}</span>
+                <span>{{ counter.isOccupied ? '占用中' : '空闲' }}</span>
+              </header>
+
+              <div v-if="counter.currentReservation" class="live-counter-current">
+                <small>当前直播</small>
+                <strong>{{ counter.currentReservation.talentName || '未命名主播' }}</strong>
+                <time>
+                  {{ shortTime(counter.currentReservation.startTime) }}-{{ shortTime(counter.currentReservation.endTime) }}
+                </time>
               </div>
-              <div class="live-talent-card-meta">
-                <span><small>历史场次</small><strong>{{ talent.sessionCount }}</strong></span>
-                <span><small>累计观看 UV</small><strong>{{ numberText(talent.viewers) }}</strong></span>
-                <span><small>最近平均在线</small><strong>{{ numberText(talent.avgOnline) }}</strong></span>
-                <span><small>累计新增粉丝</small><strong>{{ numberText(talent.newFollowers) }}</strong></span>
-                <span><small>支付订单</small><strong>{{ numberText(talent.paymentOrders) }}</strong></span>
-                <span><small>支付金额</small><strong>{{ compactMoney(talent.paymentAmount) }}</strong></span>
+              <div v-else class="live-counter-current is-empty">
+                <small>当前状态</small>
+                <strong>柜台空闲</strong>
+                <span v-if="counter.nextReservation" class="live-counter-next">
+                  下一场 {{ shortTime(counter.nextReservation.startTime) }}
+                  {{ counter.nextReservation.talentName || '未命名主播' }}
+                </span>
+                <span v-else>今天暂无后续预约</span>
               </div>
-              <div class="live-talent-card-footer">
-                <span>{{ talent.latestSessionText }}</span>
-                <button v-if="talent.sessionCount" type="button" @click="openTalentSessions(talent)">查看场次</button>
-              </div>
+
+              <footer class="live-counter-daily-sales">
+                <small>今日柜台成交额</small>
+                <strong>{{ sessionMoney(counter.paymentTotalAmount) }}</strong>
+                <span>
+                  已录入 {{ numberText(counter.sessionCount) }} 场
+                  · 支付订单 {{ numberText(counter.paymentOrders) }} 笔
+                </span>
+              </footer>
             </article>
           </div>
         </section>
@@ -199,13 +215,18 @@
               v-else
               :key="item.rowKey"
               class="live-reservation-row"
+              :class="{ 'is-missed-check-in': isMissedCheckIn(item) }"
             >
               <span>{{ reservationCounterLabel(item) }}</span>
               <span>{{ item.talentName }}</span>
               <span>{{ reservationDateTime(item.liveDate, item.startTime) }}</span>
               <span>{{ reservationDateTime(item.liveDate, item.endTime) }}</span>
               <span>{{ reservationCode(item) }}</span>
-              <span><i class="live-status-pill" :class="`is-${item.status}`">{{ statusLabel(item.status) }}</i></span>
+              <span>
+                <i class="live-status-pill" :class="[`is-${item.status}`, { 'is-overdue': isMissedCheckIn(item) }]">
+                  {{ isMissedCheckIn(item) ? '未签到（已超时）' : statusLabel(item.status) }}
+                </i>
+              </span>
               <span class="live-reservation-actions">
                 <button
                   class="is-checkin"
@@ -219,6 +240,7 @@
             </div>
           </div>
         </section>
+
       </section>
 
       <section v-else-if="activeTab === 'entry'" class="live-entry-page">
@@ -315,7 +337,7 @@
               <label><span>互动人数</span><input v-model.number="liveEntryForm.interactionCount" type="number" min="0" /></label>
               <label><span>支付人数</span><input v-model.number="liveEntryForm.paidUsers" type="number" min="0" /></label>
               <label><span>支付订单数</span><input v-model.number="liveEntryForm.paymentOrders" type="number" min="0" /></label>
-              <label><span>支付总金额</span><input v-model.number="liveEntryForm.paymentTotalAmount" type="number" min="0" step="0.01" /></label>
+              <label><span>本段成交额（支付总金额）</span><input v-model.number="liveEntryForm.paymentTotalAmount" type="number" min="0" step="0.01" /></label>
               <label><span>退款订单数</span><input v-model.number="liveEntryForm.refundOrders" type="number" min="0" /></label>
               <label><span>新增粉丝</span><input v-model.number="liveEntryForm.newFollowers" type="number" min="0" /></label>
               <label><span>预约人数</span><input v-model.number="liveEntryForm.reservationCount" type="number" min="0" /></label>
@@ -377,7 +399,7 @@
           </div>
           <label v-if="analysisTalentOptions.length" class="live-analysis-talent-filter">
             <span>主播</span>
-            <select :value="activeAnalysisTalentId" @change="selectedAnalysisTalentId = $event.target.value">
+            <select :value="activeAnalysisTalentId" @change="selectAnalysisTalent">
               <option v-for="item in analysisTalentOptions" :key="item.userId" :value="item.userId">
                 {{ item.name }}
               </option>
@@ -517,6 +539,68 @@
             </div>
           </section>
         </div>
+
+        <section class="live-analysis-panel live-booking-calendar-panel">
+          <div class="live-booking-calendar-head">
+            <div>
+              <h3>{{ activeAnalysisTalentName }}月度预约</h3>
+              <span>{{ analysisMonthLabel }}</span>
+            </div>
+            <label>
+              <span>月份</span>
+              <input v-model="selectedAnalysisMonth" type="month" @change="loadAnalysisReservations" />
+            </label>
+          </div>
+
+          <div class="live-booking-calendar-summary">
+            <span><small>预约天数</small><strong>{{ analysisBookingStats.days }}</strong><em>天</em></span>
+            <span><small>预约场次</small><strong>{{ analysisBookingStats.sessions }}</strong><em>场</em></span>
+            <p><i class="is-booked"></i> 已预约 <i class="is-empty"></i> 未预约</p>
+          </div>
+
+          <div v-if="isLoadingAnalysisReservations" class="live-booking-calendar-loading">正在加载月度预约...</div>
+          <template v-else>
+            <div class="live-booking-calendar-weekdays" aria-hidden="true">
+              <span v-for="weekday in calendarWeekdays" :key="weekday">{{ weekday }}</span>
+            </div>
+            <div class="live-booking-calendar-grid">
+              <span v-for="blank in analysisCalendarBlankDays" :key="`blank-${blank}`" class="is-blank"></span>
+              <button
+                v-for="day in analysisCalendarDays"
+                :key="day.date"
+                type="button"
+                :class="{
+                  'is-booked': day.hasReservation,
+                  'is-empty': !day.hasReservation,
+                  'is-selected': selectedAnalysisDate === day.date,
+                  'is-today': day.date === today,
+                }"
+                @click="selectedAnalysisDate = day.date"
+              >
+                <strong>{{ day.day }}</strong>
+                <small>{{ day.hasReservation ? `${day.sessionCount}场` : '未预约' }}</small>
+              </button>
+            </div>
+
+            <div class="live-booking-day-detail">
+              <header>
+                <div>
+                  <small>所选日期</small>
+                  <h4>{{ selectedAnalysisDate || '请选择日期' }}</h4>
+                </div>
+                <strong>{{ selectedAnalysisDayReservations.length }} 场预约</strong>
+              </header>
+              <p v-if="!selectedAnalysisDayReservations.length">当天没有预约</p>
+              <div v-else class="live-booking-day-list">
+                <article v-for="item in selectedAnalysisDayReservations" :key="item.rowKey">
+                  <time>{{ shortTime(item.startTime) }}-{{ shortTime(item.endTime) }}</time>
+                  <strong>{{ reservationCounterLabel(item) }}</strong>
+                  <span>{{ statusLabel(item.status) }}</span>
+                </article>
+              </div>
+            </div>
+          </template>
+        </section>
       </section>
 
       <section v-else-if="activeTab === 'sessions'" class="live-session-data-page">
@@ -699,7 +783,7 @@ const props = defineProps({
 const emit = defineEmits(['logout'])
 
 const tabs = [
-  { key: 'home', label: '主播首页', kicker: 'DAILI TALENT' },
+  { key: 'home', label: '直播间状态', kicker: 'LIVE ROOM STATUS' },
   { key: 'schedule', label: '预约管理', kicker: 'RESERVATION' },
   { key: 'entry', label: '直播数据录入', kicker: 'LIVE DATA' },
   { key: 'sessions', label: '场次数据', kicker: 'SESSION DATA' },
@@ -734,6 +818,7 @@ const counters = ref([])
 const reservations = ref([])
 const entryReservations = ref([])
 const sessions = ref([])
+const counterDailyTotals = ref([])
 const hasLoaded = ref(false)
 const isLoading = ref(false)
 const isSaving = ref(false)
@@ -750,6 +835,10 @@ const notice = ref('')
 const noticeType = ref('success')
 const expandedSessionId = ref(null)
 const selectedAnalysisTalentId = ref('')
+const selectedAnalysisMonth = ref(today.slice(0, 7))
+const selectedAnalysisDate = ref(today)
+const analysisReservations = ref([])
+const isLoadingAnalysisReservations = ref(false)
 const currentTimestamp = ref(Date.now())
 let clockTimer = null
 const reservationForm = reactive({ talentUserId: '', notes: '' })
@@ -807,12 +896,43 @@ const activeCounters = computed(() => {
 const todayReservations = computed(() => reservations.value
   .filter((item) => String(item.status) !== 'cancelled')
   .sort((a, b) => shortTime(a.startTime).localeCompare(shortTime(b.startTime)) || Number(a.id) - Number(b.id)))
+const counterStatusCards = computed(() => activeCounters.value.map((counter) => {
+  const counterReservations = visibleReservations.value
+    .filter((item) => Number(item.counterId) === Number(counter.id))
+    .filter((item) => ['scheduled', 'live'].includes(String(item.status)))
+    .sort((a, b) => reservationStartTimestamp(a) - reservationStartTimestamp(b))
+  const currentReservation = counterReservations.find((item) => (
+    currentTimestamp.value >= reservationStartTimestamp(item)
+    && currentTimestamp.value < reservationEndTimestamp(item)
+  )) || null
+  const nextReservation = counterReservations.find((item) => (
+    reservationStartTimestamp(item) > currentTimestamp.value
+  )) || null
+  const totals = counterDailyTotals.value.find((item) => Number(item.counterId) === Number(counter.id)) || {}
+
+  return {
+    ...counter,
+    isOccupied: Boolean(currentReservation),
+    currentReservation,
+    nextReservation,
+    sessionCount: Number(totals.sessionCount || 0),
+    paymentOrders: Number(totals.paymentOrders || 0),
+    paymentTotalAmount: Number(totals.paymentTotalAmount || 0),
+  }
+}))
 const talentCards = computed(() => talents.value.map((talent) => {
   const talentReservations = todayReservations.value.filter((item) => String(item.talentUserId) === String(talent.userId))
   const talentSessions = visibleSessions.value.filter((item) => String(item.talentUserId) === String(talent.userId))
   const latestSession = talentSessions[0] || null
-  const current = talentReservations.find((item) => item.status === 'live')
-  const next = talentReservations.find((item) => item.status === 'scheduled')
+  const current = talentReservations.find((item) => (
+    item.status === 'live'
+    && currentTimestamp.value >= reservationStartTimestamp(item)
+    && currentTimestamp.value < reservationEndTimestamp(item)
+  ))
+  const next = talentReservations.find((item) => (
+    ['scheduled', 'live'].includes(item.status)
+    && currentTimestamp.value < reservationEndTimestamp(item)
+  ))
   const viewers = talentSessions.reduce((total, item) => total + Number(item.viewers || 0), 0)
   const newFollowers = talentSessions.reduce((total, item) => total + Number(item.newFollowers || 0), 0)
   const paymentOrders = talentSessions.reduce((total, item) => total + Number(item.paymentOrders || 0), 0)
@@ -866,6 +986,12 @@ const visibleSessions = computed(() => {
 })
 const analysisTalentOptions = computed(() => {
   const options = new Map()
+  talents.value
+    .filter((item) => operatorRoleLabel.value !== '主播' || String(item.userId) === currentLiveUserId.value)
+    .forEach((item) => {
+      const userId = String(item.userId || '').trim()
+      if (userId) options.set(userId, { userId, name: item.nickname || '未命名主播' })
+    })
   visibleSessions.value.forEach((item) => {
     const userId = String(item.talentUserId || '').trim()
     if (userId && !options.has(userId)) {
@@ -887,6 +1013,50 @@ const analysisSessions = computed(() => {
   if (!activeAnalysisTalentId.value) return []
   return visibleSessions.value.filter((item) => String(item.talentUserId || '').trim() === activeAnalysisTalentId.value)
 })
+const calendarWeekdays = ['一', '二', '三', '四', '五', '六', '日']
+const analysisMonthlyReservations = computed(() => mergeMonthlyReservations(
+  analysisReservations.value
+    .filter((item) => String(item.status) !== 'cancelled')
+    .filter((item) => String(item.talentUserId) === activeAnalysisTalentId.value)
+    .filter((item) => String(item.liveDate).slice(0, 7) === selectedAnalysisMonth.value),
+))
+const analysisReservationsByDate = computed(() => {
+  const grouped = new Map()
+  analysisMonthlyReservations.value.forEach((item) => {
+    const dateKey = String(item.liveDate).slice(0, 10)
+    const values = grouped.get(dateKey) || []
+    values.push(item)
+    grouped.set(dateKey, values)
+  })
+  return grouped
+})
+const analysisMonthLabel = computed(() => {
+  const [year, month] = selectedAnalysisMonth.value.split('-').map(Number)
+  return Number.isFinite(year) && Number.isFinite(month) ? `${year}年${month}月` : ''
+})
+const analysisCalendarBlankDays = computed(() => {
+  const [year, month] = selectedAnalysisMonth.value.split('-').map(Number)
+  if (!year || !month) return 0
+  return (new Date(year, month - 1, 1).getDay() + 6) % 7
+})
+const analysisCalendarDays = computed(() => {
+  const [year, month] = selectedAnalysisMonth.value.split('-').map(Number)
+  if (!year || !month) return []
+  const daysInMonth = new Date(year, month, 0).getDate()
+  return Array.from({ length: daysInMonth }, (_, index) => {
+    const day = index + 1
+    const date = `${selectedAnalysisMonth.value}-${String(day).padStart(2, '0')}`
+    const reservationsForDay = analysisReservationsByDate.value.get(date) || []
+    return { date, day, hasReservation: reservationsForDay.length > 0, sessionCount: reservationsForDay.length }
+  })
+})
+const analysisBookingStats = computed(() => ({
+  days: analysisReservationsByDate.value.size,
+  sessions: analysisMonthlyReservations.value.length,
+}))
+const selectedAnalysisDayReservations = computed(() => (
+  analysisReservationsByDate.value.get(selectedAnalysisDate.value) || []
+).slice().sort((a, b) => shortTime(a.startTime).localeCompare(shortTime(b.startTime))))
 const analysisSalesDays = computed(() => {
   const days = Array.from({ length: 14 }, (_, index) => {
     const date = shiftDate(today, index - 13)
@@ -1235,6 +1405,64 @@ function shortTime(value) {
   return String(value || '').slice(0, 5)
 }
 
+function mergeMonthlyReservations(items) {
+  const sorted = [...items].sort((a, b) => (
+    String(a.liveDate).localeCompare(String(b.liveDate))
+    || Number(a.counterId) - Number(b.counterId)
+    || String(a.talentUserId).localeCompare(String(b.talentUserId))
+    || shortTime(a.startTime).localeCompare(shortTime(b.startTime))
+    || Number(a.id) - Number(b.id)
+  ))
+  const groups = []
+  sorted.forEach((item) => {
+    const last = groups[groups.length - 1]
+    const canMerge = last
+      && String(last.liveDate) === String(item.liveDate)
+      && Number(last.counterId) === Number(item.counterId)
+      && String(last.talentUserId) === String(item.talentUserId)
+      && String(last.status) === String(item.status)
+      && shortTime(last.endTime) === shortTime(item.startTime)
+    if (canMerge) {
+      last.endTime = item.endTime
+      last.ids.push(item.id)
+      last.rowKey = last.ids.join('-')
+    } else {
+      groups.push({ ...item, ids: [item.id], rowKey: String(item.id) })
+    }
+  })
+  return groups
+}
+
+function selectDefaultAnalysisDate() {
+  const monthDates = [...analysisReservationsByDate.value.keys()].sort()
+  selectedAnalysisDate.value = today.startsWith(`${selectedAnalysisMonth.value}-`)
+    ? today
+    : monthDates[0] || `${selectedAnalysisMonth.value}-01`
+}
+
+function selectAnalysisTalent(event) {
+  selectedAnalysisTalentId.value = event.target.value
+  selectDefaultAnalysisDate()
+}
+
+async function loadAnalysisReservations() {
+  const [year, month] = selectedAnalysisMonth.value.split('-').map(Number)
+  if (!year || !month) return
+  const firstDate = `${selectedAnalysisMonth.value}-01`
+  const lastDate = `${selectedAnalysisMonth.value}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`
+  isLoadingAnalysisReservations.value = true
+  try {
+    const payload = await api(`/reservations?dateFrom=${encodeURIComponent(firstDate)}&dateTo=${encodeURIComponent(lastDate)}`)
+    analysisReservations.value = Array.isArray(payload.items) ? payload.items : []
+    selectDefaultAnalysisDate()
+  } catch (error) {
+    analysisReservations.value = []
+    showNotice(error instanceof Error ? error.message : '月度预约加载失败', 'error')
+  } finally {
+    isLoadingAnalysisReservations.value = false
+  }
+}
+
 function numberText(value) {
   return Number(value || 0).toLocaleString('zh-CN')
 }
@@ -1302,16 +1530,35 @@ function reservationStartTimestamp(item) {
   return new Date(year, month - 1, day, hours, minutes).getTime()
 }
 
+function reservationEndTimestamp(item) {
+  const date = String(item?.liveDate || selectedDate.value).slice(0, 10)
+  const time = shortTime(item?.endTime)
+  const [year, month, day] = date.split('-').map(Number)
+  const [hours, minutes] = time.split(':').map(Number)
+  return new Date(year, month - 1, day, hours, minutes).getTime()
+}
+
 function checkInOpensAt(item) {
   return reservationStartTimestamp(item) - 30 * 60 * 1000
 }
 
+function checkInClosesAt(item) {
+  return reservationStartTimestamp(item) + 30 * 60 * 1000
+}
+
+function isMissedCheckIn(item) {
+  return item?.status === 'scheduled' && currentTimestamp.value > checkInClosesAt(item)
+}
+
 function canCheckInReservation(item) {
-  return item?.status === 'scheduled' && currentTimestamp.value >= checkInOpensAt(item)
+  return item?.status === 'scheduled'
+    && currentTimestamp.value >= checkInOpensAt(item)
+    && currentTimestamp.value <= checkInClosesAt(item)
 }
 
 function checkInButtonTitle(item) {
   if (item?.status !== 'scheduled') return statusLabel(item?.status)
+  if (isMissedCheckIn(item)) return '已超过签到时间，无法签到'
   if (canCheckInReservation(item)) return '可以签到'
   const opensAt = new Date(checkInOpensAt(item))
   const date = `${opensAt.getFullYear()}-${String(opensAt.getMonth() + 1).padStart(2, '0')}-${String(opensAt.getDate()).padStart(2, '0')}`
@@ -1517,6 +1764,7 @@ async function loadWorkspace() {
       Array.isArray(payload.entryReservations) ? payload.entryReservations : reservations.value,
     )
     sessions.value = Array.isArray(payload.sessions) ? payload.sessions : []
+    counterDailyTotals.value = Array.isArray(payload.counterDailyTotals) ? payload.counterDailyTotals : []
     if (liveEntryForm.reservationId && !availableEntryReservations.value.some((item) => String(item.id) === String(liveEntryForm.reservationId))) {
       liveEntryForm.reservationId = ''
     }
@@ -1534,8 +1782,16 @@ function openTab(tab) {
     return
   }
   activeTab.value = tab
+  if (tab === 'home') {
+    selectedDate.value = localDate()
+    loadWorkspace()
+    return
+  }
   if (tab === 'accounts') {
     loadAccounts()
+  }
+  if (tab === 'analysis') {
+    loadAnalysisReservations()
   }
   if ((tab === 'schedule' || tab === 'entry' || tab === 'sessions') && !hasLoaded.value) {
     loadWorkspace()
@@ -1701,6 +1957,7 @@ function checkInReservation(item) {
 }
 
 function cancelReservation(item) {
+  if (!window.confirm('是否取消预约')) return
   updateReservationGroupStatus(item, 'cancelled', '预约已取消')
 }
 

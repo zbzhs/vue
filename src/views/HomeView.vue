@@ -135,6 +135,7 @@ if (!heroSlides.length) {
 }
 
 const activeSlide = ref(0)
+const homepageSeriesConfig = ref({})
 let autoplayTimer = null
 
 const stopAutoplay = () => {
@@ -162,6 +163,7 @@ const setActiveSlide = (index) => {
 
 onMounted(() => {
   startAutoplay()
+  fetchHomepageSeries()
 })
 
 onBeforeUnmount(() => {
@@ -662,6 +664,30 @@ const cleanHomeCopy = {
 
 const pickLocaleValue = (values, activeLocale) => values?.[activeLocale] || values?.zh || ''
 
+async function fetchHomepageSeries() {
+  try {
+    const response = await fetch('/api/homepage-series', { cache: 'no-store' })
+    if (!response.ok) return
+    const payload = await response.json()
+    homepageSeriesConfig.value = Object.fromEntries(
+      (Array.isArray(payload.items) ? payload.items : []).map((item) => [item.slug, item]),
+    )
+  } catch {
+    homepageSeriesConfig.value = {}
+  }
+}
+
+const configuredSeriesCards = computed(() => cleanSeriesCards.map((card) => {
+  const config = homepageSeriesConfig.value[card.key]
+  if (!config) return card
+  return {
+    ...card,
+    kicker: { ...card.kicker, zh: config.kicker || card.kicker.zh },
+    title: { ...card.title, zh: config.title || card.title.zh },
+    text: { ...card.text, zh: config.description || card.text.zh },
+  }
+}))
+
 function heroSlideMark(slide) {
   if (slide.includes('background4')) {
     return {
@@ -734,7 +760,7 @@ const copy = computed(() => {
     ...cleanHomeCopy[activeLocale],
     series: {
       ...cleanHomeCopy[activeLocale].series,
-      cards: cleanSeriesCards.map((card) => localizeSeriesCard(card, activeLocale, isSelectionContext.value)),
+      cards: configuredSeriesCards.value.map((card) => localizeSeriesCard(card, activeLocale, isSelectionContext.value)),
     },
   }
 })

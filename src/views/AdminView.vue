@@ -377,10 +377,10 @@
           <AdminProductTools v-else-if="activeAdminSection === 'productTools'" :token="getToken()" />
 
           <section v-else-if="activeAdminSection === 'tools'" class="admin-jewelry-tools">
-            <div v-if="activeJewelryTool === 'menu'" class="admin-section-head">
+            <div v-if="activeJewelryTool === 'menu'" class="admin-section-head product-tool-menu-head">
               <div><p>{{ copy.toolsKicker }}</p><h2>{{ copy.toolsTitle }}</h2></div>
             </div>
-            <div v-if="activeJewelryTool === 'menu'" class="admin-tool-entry-grid">
+            <div v-if="activeJewelryTool === 'menu'" class="admin-tool-entry-grid admin-jewelry-tool-entry-grid">
               <button type="button" class="admin-tool-entry" @click="openJewelryTool('quote')">
                 <span>报价计算</span>
                 <small>金料、主石、副石、工费和利润一页计算</small>
@@ -542,6 +542,7 @@
             <section v-else class="admin-diamond-size-tool">
               <div class="admin-tool-subhead">
                 <div><h3>钻石尺寸</h3><p>数据来源：珠宝CDB</p></div>
+                <button type="button" class="quote-page-action" @click="openJewelryTool('menu')">返回珠宝工具</button>
               </div>
               <p v-if="diamondError" class="admin-error">{{ diamondError }}</p>
               <div class="admin-diamond-tabs">

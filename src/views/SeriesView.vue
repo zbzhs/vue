@@ -64,6 +64,7 @@ const { locale } = useLocale()
 const showcasePage = ref(0)
 const lastShowcaseWheelAt = ref(0)
 const dynamicShowcases = ref({})
+const homepageSeriesConfig = ref({})
 
 const seriesFolderBySlug = {
   pink: 'series1',
@@ -369,13 +370,17 @@ const series = computed(() => {
   const item = seriesItems[activeSlug.value]
   const folder = seriesFolderBySlug[activeSlug.value]
   const dynamicShowcase = folder ? dynamicShowcases.value[folder] : null
+  const config = homepageSeriesConfig.value[activeSlug.value]
+  const hasDynamicShowcase = folder
+    ? Object.prototype.hasOwnProperty.call(dynamicShowcases.value, folder)
+    : false
 
   return {
     ...item,
-    showcase: mergeShowcaseProducts(item.showcase, dynamicShowcase),
-    kicker: pick(item.kicker, activeLocale),
-    title: pick(item.title, activeLocale),
-    text: pick(item.text, activeLocale),
+    showcase: hasDynamicShowcase ? dynamicShowcase : item.showcase,
+    kicker: activeLocale === 'zh' && config?.kicker ? config.kicker : pick(item.kicker, activeLocale),
+    title: activeLocale === 'zh' && config?.title ? config.title : pick(item.title, activeLocale),
+    text: activeLocale === 'zh' && config?.description ? config.description : pick(item.text, activeLocale),
     alt: pick(item.alt, activeLocale),
   }
 })
@@ -429,8 +434,22 @@ async function fetchSeriesShowcase(slug) {
   }
 }
 
+async function fetchHomepageSeries() {
+  try {
+    const response = await fetch('/api/homepage-series', { cache: 'no-store' })
+    if (!response.ok) return
+    const payload = await response.json()
+    homepageSeriesConfig.value = Object.fromEntries(
+      (Array.isArray(payload.items) ? payload.items : []).map((item) => [item.slug, item]),
+    )
+  } catch {
+    homepageSeriesConfig.value = {}
+  }
+}
+
 watch(activeSlug, (slug) => {
   showcasePage.value = 0
+  fetchHomepageSeries()
   fetchSeriesShowcase(slug)
 }, { immediate: true })
 
