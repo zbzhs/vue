@@ -57,6 +57,7 @@
               <div v-if="counter.currentReservation" class="live-counter-current">
                 <small>当前直播</small>
                 <strong>{{ counter.currentReservation.talentName || '未命名主播' }}</strong>
+                <span>中控：{{ counter.currentReservation.controlName || '未分配' }}</span>
                 <time>
                   {{ shortTime(counter.currentReservation.startTime) }}-{{ shortTime(counter.currentReservation.endTime) }}
                 </time>
@@ -96,6 +97,7 @@
             <article v-for="item in todayReservations" :key="item.id" class="live-today-live-row">
               <time>{{ shortTime(item.startTime) }}–{{ shortTime(item.endTime) }}</time>
               <strong>{{ item.talentName || '未命名主播' }}</strong>
+              <span>中控：{{ item.controlName || '未分配' }}</span>
               <span>{{ item.counterName || reservationCounterLabel(item) }}</span>
               <span class="live-status-pill" :class="`is-${item.status}`">{{ statusLabel(item.status) }}</span>
               <button type="button" @click="openTab('schedule')">查看预约</button>
@@ -140,7 +142,7 @@
                 type="button"
                 class="live-slot"
                 :class="slotClass(counter, slot)"
-                :disabled="!canSelectSlot(counter, slot)"
+                :disabled="operatorRoleLabel === '中控' || !canSelectSlot(counter, slot)"
                 @click="selectSlot(counter, slot)"
               >
                 <span class="live-slot-time-mobile">{{ slot.start }}-{{ slot.end }}</span>
@@ -175,6 +177,15 @@
                 </select>
               </label>
               <label>
+                <span>跟播中控</span>
+                <select v-model="reservationForm.controlUserId">
+                  <option value="">无</option>
+                  <option v-for="item in controls" :key="item.userId" :value="item.userId">
+                    {{ controlOptionLabel(item) }}
+                  </option>
+                </select>
+              </label>
+              <label>
                 <span>备注</span>
                 <input v-model.trim="reservationForm.notes" placeholder="可填写直播主题或备注" />
               </label>
@@ -198,11 +209,13 @@
           <div class="live-reservation-table">
             <div class="live-reservation-row live-reservation-row--head">
               <span>柜台</span>
-              <span>姓名</span>
+              <span>主播</span>
+              <span>中控</span>
               <span>开始时间</span>
               <span>结束时间</span>
               <span>预约码</span>
-              <span>签到状态</span>
+              <span>主播签到</span>
+              <span>中控签到</span>
               <span>操作</span>
             </div>
 
@@ -215,10 +228,11 @@
               v-else
               :key="item.rowKey"
               class="live-reservation-row"
-              :class="{ 'is-missed-check-in': isMissedCheckIn(item) }"
+              :class="{ 'is-missed-check-in': isMissedCheckIn(item) || isControlMissedCheckIn(item) }"
             >
               <span>{{ reservationCounterLabel(item) }}</span>
               <span>{{ item.talentName }}</span>
+              <span>{{ item.controlName || '未分配' }}</span>
               <span>{{ reservationDateTime(item.liveDate, item.startTime) }}</span>
               <span>{{ reservationDateTime(item.liveDate, item.endTime) }}</span>
               <span>{{ reservationCode(item) }}</span>
@@ -227,15 +241,29 @@
                   {{ isMissedCheckIn(item) ? '未签到（已超时）' : statusLabel(item.status) }}
                 </i>
               </span>
+              <span>
+                <i class="live-status-pill" :class="item.controlCheckedInAt ? 'is-live' : (isControlMissedCheckIn(item) ? 'is-overdue' : 'is-scheduled')">
+                  {{ !item.controlUserId ? '未分配' : (item.controlCheckedInAt ? '已签到' : (isControlMissedCheckIn(item) ? '未签到（已超时）' : '未签到')) }}
+                </i>
+              </span>
               <span class="live-reservation-actions">
                 <button
+                  v-if="operatorRoleLabel !== '中控'"
                   class="is-checkin"
                   type="button"
                   :disabled="!canCheckInReservation(item)"
                   :title="checkInButtonTitle(item)"
                   @click="checkInReservation(item)"
                 >签到</button>
-                <button class="is-cancel" type="button" :disabled="Boolean(item.sessionId)" @click="cancelReservation(item)">取消</button>
+                <button
+                  v-if="operatorRoleLabel !== '主播'"
+                  class="is-checkin"
+                  type="button"
+                  :disabled="Boolean(item.controlCheckedInAt) || !canCheckInControlReservation(item)"
+                  :title="controlCheckInButtonTitle(item)"
+                  @click="checkInControlReservation(item)"
+                >中控签到</button>
+                <button v-if="operatorRoleLabel !== '中控'" class="is-cancel" type="button" :disabled="Boolean(item.sessionId)" @click="cancelReservation(item)">取消</button>
               </span>
             </div>
           </div>
@@ -814,6 +842,7 @@ const selectedDate = ref(today)
 const selectedSlots = ref([])
 const selectionAnchors = reactive({})
 const talents = ref([])
+const controls = ref([])
 const counters = ref([])
 const reservations = ref([])
 const entryReservations = ref([])
@@ -841,7 +870,7 @@ const analysisReservations = ref([])
 const isLoadingAnalysisReservations = ref(false)
 const currentTimestamp = ref(Date.now())
 let clockTimer = null
-const reservationForm = reactive({ talentUserId: '', notes: '' })
+const reservationForm = reactive({ talentUserId: '', controlUserId: '', notes: '' })
 const accountEditForm = reactive({
   username: '',
   displayName: '',
@@ -897,7 +926,7 @@ const todayReservations = computed(() => reservations.value
   .filter((item) => String(item.status) !== 'cancelled')
   .sort((a, b) => shortTime(a.startTime).localeCompare(shortTime(b.startTime)) || Number(a.id) - Number(b.id)))
 const counterStatusCards = computed(() => activeCounters.value.map((counter) => {
-  const counterReservations = visibleReservations.value
+  const counterReservations = todayReservations.value
     .filter((item) => Number(item.counterId) === Number(counter.id))
     .filter((item) => ['scheduled', 'live'].includes(String(item.status)))
     .sort((a, b) => reservationStartTimestamp(a) - reservationStartTimestamp(b))
@@ -1196,6 +1225,11 @@ const availableTalents = computed(() => {
 const visibleReservations = computed(() => {
   const activeReservations = reservations.value
     .filter((item) => String(item.status) !== 'cancelled')
+    .filter((item) => {
+      if (!currentLiveUserId.value || operatorRoleLabel.value === '管理员') return true
+      if (operatorRoleLabel.value === '主播') return String(item.talentUserId) === currentLiveUserId.value
+      return String(item.controlUserId) === currentLiveUserId.value
+    })
     .sort((a, b) => {
       return Number(a.counterId) - Number(b.counterId)
         || String(a.talentUserId).localeCompare(String(b.talentUserId))
@@ -1209,6 +1243,8 @@ const visibleReservations = computed(() => {
     const canMerge = last
       && Number(last.counterId) === Number(item.counterId)
       && String(last.talentUserId) === String(item.talentUserId)
+      && String(last.controlUserId) === String(item.controlUserId)
+      && Boolean(last.controlCheckedInAt) === Boolean(item.controlCheckedInAt)
       && String(last.status) === String(item.status)
       && String(last.liveDate) === String(item.liveDate)
       && shortTime(last.endTime) === shortTime(item.startTime)
@@ -1420,6 +1456,7 @@ function mergeMonthlyReservations(items) {
       && String(last.liveDate) === String(item.liveDate)
       && Number(last.counterId) === Number(item.counterId)
       && String(last.talentUserId) === String(item.talentUserId)
+      && String(last.controlUserId) === String(item.controlUserId)
       && String(last.status) === String(item.status)
       && shortTime(last.endTime) === shortTime(item.startTime)
     if (canMerge) {
@@ -1550,8 +1587,22 @@ function isMissedCheckIn(item) {
   return item?.status === 'scheduled' && currentTimestamp.value > checkInClosesAt(item)
 }
 
+function isControlMissedCheckIn(item) {
+  return Boolean(item?.controlUserId)
+    && item?.status !== 'cancelled'
+    && !item?.controlCheckedInAt
+    && currentTimestamp.value > checkInClosesAt(item)
+}
+
 function canCheckInReservation(item) {
   return item?.status === 'scheduled'
+    && currentTimestamp.value >= checkInOpensAt(item)
+    && currentTimestamp.value <= checkInClosesAt(item)
+}
+
+function canCheckInControlReservation(item) {
+  return Boolean(item?.controlUserId)
+    && item?.status !== 'cancelled'
     && currentTimestamp.value >= checkInOpensAt(item)
     && currentTimestamp.value <= checkInClosesAt(item)
 }
@@ -1560,6 +1611,17 @@ function checkInButtonTitle(item) {
   if (item?.status !== 'scheduled') return statusLabel(item?.status)
   if (isMissedCheckIn(item)) return '已超过签到时间，无法签到'
   if (canCheckInReservation(item)) return '可以签到'
+  const opensAt = new Date(checkInOpensAt(item))
+  const date = `${opensAt.getFullYear()}-${String(opensAt.getMonth() + 1).padStart(2, '0')}-${String(opensAt.getDate()).padStart(2, '0')}`
+  const time = `${String(opensAt.getHours()).padStart(2, '0')}:${String(opensAt.getMinutes()).padStart(2, '0')}`
+  return `${date} ${time} 开放签到`
+}
+
+function controlCheckInButtonTitle(item) {
+  if (!item?.controlUserId) return '该预约未分配中控'
+  if (item?.controlCheckedInAt) return '中控已签到'
+  if (isControlMissedCheckIn(item)) return '已超过签到时间，无法签到'
+  if (canCheckInControlReservation(item)) return '可以签到'
   const opensAt = new Date(checkInOpensAt(item))
   const date = `${opensAt.getFullYear()}-${String(opensAt.getMonth() + 1).padStart(2, '0')}-${String(opensAt.getDate()).padStart(2, '0')}`
   const time = `${String(opensAt.getHours()).padStart(2, '0')}:${String(opensAt.getMinutes()).padStart(2, '0')}`
@@ -1582,6 +1644,12 @@ function talentOptionLabel(item) {
   return `${nickname || username || '主播'} / ${username || id}`
 }
 
+function controlOptionLabel(item) {
+  const nickname = String(item?.nickname || '').trim()
+  const username = String(item?.username || '').trim()
+  return username && username !== nickname ? `${nickname} / ${username}` : nickname || username || item?.userId || '中控'
+}
+
 function emptyLiveProduct(seed = {}) {
   return {
     key: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -1595,7 +1663,7 @@ function emptyLiveProduct(seed = {}) {
 }
 
 function entryReservationLabel(item) {
-  return `${item.liveDate} ${shortTime(item.startTime)}-${shortTime(item.endTime)} · ${item.talentName || '主播'} · ${reservationCounterLabel(item)}`
+  return `${item.liveDate} ${shortTime(item.startTime)}-${shortTime(item.endTime)} · ${item.talentName || '主播'} · 中控 ${item.controlName || '未分配'} · ${reservationCounterLabel(item)}`
 }
 
 function addLiveProduct(seed = {}) {
@@ -1751,6 +1819,10 @@ async function loadWorkspace() {
   try {
     const payload = await api(`/bootstrap?dateValue=${encodeURIComponent(selectedDate.value)}`)
     talents.value = Array.isArray(payload.talents) ? payload.talents : []
+    controls.value = Array.isArray(payload.controls) ? payload.controls : []
+    if (!controls.value.some((item) => String(item.userId) === String(reservationForm.controlUserId))) {
+      reservationForm.controlUserId = ''
+    }
     if (operatorRoleLabel.value === '主播' && currentLiveUserId.value) {
       reservationForm.talentUserId = currentLiveUserId.value
     } else if (!reservationForm.talentUserId && availableTalents.value.length) {
@@ -1918,6 +1990,7 @@ async function submitReservation() {
         method: 'POST',
         body: JSON.stringify({
           talentUserId: reservationForm.talentUserId,
+          controlUserId: reservationForm.controlUserId,
           counterId: group.counter.id,
           liveDate: selectedDate.value,
           startTime: group.startTime,
@@ -1954,6 +2027,18 @@ async function updateReservationGroupStatus(item, status, successMessage) {
 
 function checkInReservation(item) {
   updateReservationGroupStatus(item, 'live', '签到成功')
+}
+
+async function checkInControlReservation(item) {
+  try {
+    for (const reservationId of item.ids || [item.id]) {
+      await api(`/reservations/${reservationId}/control-check-in`, { method: 'POST' })
+    }
+    await loadWorkspace()
+    showNotice('中控签到成功')
+  } catch (error) {
+    showNotice(error instanceof Error ? error.message : '中控签到失败', 'error')
+  }
 }
 
 function cancelReservation(item) {
