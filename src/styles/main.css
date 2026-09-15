@@ -11832,7 +11832,8 @@ p {
   font-weight: 800;
 }
 
-.product-oss-card-field input {
+.product-oss-card-field input,
+.product-oss-card-field select {
   width: 100%;
   min-width: 0;
   height: 44px;
@@ -11845,9 +11846,30 @@ p {
   font-weight: 500;
 }
 
-.product-oss-card-field input:focus {
+.product-oss-card-field input:focus,
+.product-oss-card-field select:focus {
   outline: 3px solid rgba(43, 102, 232, 0.12);
   border-color: #2b66e8;
+}
+
+.product-oss-directory-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 14px;
+  color: #617084;
+  font-size: 12px;
+}
+
+.product-oss-directory-actions button {
+  min-height: 34px;
+  padding: 0 14px;
+  color: #12304e;
+  background: #fff;
+  border: 1px solid #b9cadb;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .product-oss-file-picker {
@@ -11916,6 +11938,14 @@ p {
   margin-top: auto;
   background: #2864df;
   border-color: #2864df;
+}
+
+.product-tool-primary.product-oss-upload-button:disabled {
+  cursor: default;
+}
+
+.product-tool-primary.product-oss-upload-button.is-uploading:disabled {
+  cursor: wait;
 }
 
 .product-oss-result-table td:nth-child(3),

@@ -152,6 +152,13 @@
           </div>
           <div class="product-image-process-upload-actions">
             <button
+              type="button"
+              :disabled="isGeneratingWhiteImage"
+              @click="chooseWhiteOutputDirectory"
+            >
+              {{ whiteOutputDirectoryName ? `保存到：${whiteOutputDirectoryName}` : '选择本地保存总文件夹' }}
+            </button>
+            <button
               class="product-tool-primary"
               type="button"
               :disabled="isGeneratingWhiteImage || whiteBatches.length >= 8"
@@ -178,7 +185,6 @@
               <span v-if="batch.status">{{ whiteBatchStatusLabel(batch) }} · {{ batch.progress || 0 }}%</span>
               <button type="button" :disabled="isGeneratingWhiteImage" @click="removeWhiteBatch(batchIndex)">删除款号</button>
             </div>
-            <code v-if="batch.outputDirectory" class="product-image-process-batch-path">{{ batch.outputDirectory }}</code>
             <small v-if="batch.error" class="product-image-process-batch-error">{{ batch.error }}</small>
             <div class="product-image-process-selection">
               <article v-for="(item, index) in batch.files" :key="item.id">
@@ -203,7 +209,7 @@
           <button class="product-tool-primary" type="button" :disabled="isGeneratingWhiteImage" @click="generateWhiteBackgroundImage">
             {{ isGeneratingWhiteImage ? '正在批量生成...' : `一键生成 ${whiteBatches.length} 个款号` }}
           </button>
-          <span>{{ whiteBatches.length }} 个款号 · {{ whiteTotalImageCount }} 张参考图 · 每个款号单独保存到以款号命名的文件夹</span>
+          <span>{{ whiteBatches.length }} 个款号 · {{ whiteTotalImageCount }} 张参考图 · 自动按款号保存到本地文件夹</span>
         </div>
 
         <div v-if="whiteTaskStatus" class="product-image-process-progress" :class="{ error: whiteTaskStatus === 'failed' }">
@@ -214,12 +220,12 @@
 
         <section v-if="whiteResults.length" class="product-image-process-results">
           <div class="product-import-section-head">
-            <div><strong>生成结果</strong><small>保存到 D:\DERING\white-background-images\款号，文件夹名称就是款号</small></div>
+            <div><strong>生成结果</strong><small>已自动保存到 {{ whiteOutputDirectoryName }} 下的款号文件夹，不会上传到阿里云 OSS</small></div>
           </div>
           <div class="product-image-process-result-grid">
             <article v-for="item in whiteResults" :key="`${item.styleNo}-${item.filename}`">
               <img :src="item.previewUrl" :alt="item.filename" />
-              <div><strong>{{ item.styleNo }} · {{ item.label || item.filename }}</strong><small>{{ item.width }} × {{ item.height }} · {{ item.savedPath }}</small></div>
+              <div><strong>{{ item.styleNo }} · {{ item.label || item.filename }}</strong><small>{{ item.width }} × {{ item.height }}</small></div>
               <button class="product-tool-primary" type="button" @click="downloadWhiteResult(item)">下载图片</button>
             </article>
           </div>
@@ -299,8 +305,8 @@
         <div class="product-oss-upload-grid">
           <article class="product-oss-upload-card is-single">
             <div class="product-oss-card-title"><span>1</span><strong>单张图片</strong></div>
-            <p>填写 OSS 目录，图片使用原文件名保存。</p>
-            <label class="product-oss-card-field"><span>OSS 目录</span><input v-model.trim="ossSinglePrefix" maxlength="200" placeholder="product1" :disabled="isUploadingOss" /></label>
+            <p>选择 OSS 现有目录，图片使用原文件名保存。</p>
+            <label class="product-oss-card-field"><span>OSS 目录</span><select v-model="ossSinglePrefix" :disabled="isUploadingOss || isLoadingOssDirectories"><option value="">请选择 OSS 目录</option><option v-for="directory in ossDirectories" :key="directory" :value="directory">{{ directory }}</option></select></label>
             <input ref="ossSingleInput" class="product-import-file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" :disabled="isUploadingOss" @change="handleOssSingleSelection" />
             <div class="product-oss-card-field">
               <span>图片文件</span>
@@ -308,13 +314,13 @@
                 <span><strong>选择一张图片</strong><small>{{ ossSingleFile?.file.name || '未选择文件' }}</small></span><em>浏览</em>
               </button>
             </div>
-            <button class="product-tool-primary product-oss-upload-button" type="button" :disabled="isUploadingOss || !ossSingleFile || !ossSinglePrefix" @click="uploadImagesToOss('single')">{{ isUploadingOss && ossUploadingMode === 'single' ? '正在上传...' : '上传单张图片' }}</button>
+            <button class="product-tool-primary product-oss-upload-button" :class="{ 'is-uploading': isUploadingOss && ossUploadingMode === 'single' }" type="button" :disabled="isUploadingOss || !ossSingleFile || !ossSinglePrefix" @click="uploadImagesToOss('single')">{{ isUploadingOss && ossUploadingMode === 'single' ? '正在上传...' : '上传单张图片' }}</button>
           </article>
 
           <article class="product-oss-upload-card is-multiple">
             <div class="product-oss-card-title"><span>2</span><strong>多张图片</strong></div>
-            <p>一次选择多张图片，统一上传到填写的 OSS 目录。</p>
-            <label class="product-oss-card-field"><span>OSS 目录</span><input v-model.trim="ossMultiplePrefix" maxlength="200" placeholder="product1" :disabled="isUploadingOss" /></label>
+            <p>一次选择多张图片，统一上传到选择的 OSS 目录。</p>
+            <label class="product-oss-card-field"><span>OSS 目录</span><select v-model="ossMultiplePrefix" :disabled="isUploadingOss || isLoadingOssDirectories"><option value="">请选择 OSS 目录</option><option v-for="directory in ossDirectories" :key="directory" :value="directory">{{ directory }}</option></select></label>
             <input ref="ossMultipleInput" class="product-import-file-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple :disabled="isUploadingOss" @change="handleOssMultipleSelection" />
             <div class="product-oss-card-field">
               <span>图片文件</span>
@@ -322,7 +328,7 @@
                 <span><strong>选择多张图片</strong><small>{{ ossMultipleFiles.length ? `已选择 ${ossMultipleFiles.length} 张` : '未选择文件' }}</small></span><em>浏览</em>
               </button>
             </div>
-            <button class="product-tool-primary product-oss-upload-button" type="button" :disabled="isUploadingOss || !ossMultipleFiles.length || !ossMultiplePrefix" @click="uploadImagesToOss('multiple')">{{ isUploadingOss && ossUploadingMode === 'multiple' ? '正在上传...' : `上传多张图片${ossMultipleFiles.length ? `（${ossMultipleFiles.length}）` : ''}` }}</button>
+            <button class="product-tool-primary product-oss-upload-button" :class="{ 'is-uploading': isUploadingOss && ossUploadingMode === 'multiple' }" type="button" :disabled="isUploadingOss || !ossMultipleFiles.length || !ossMultiplePrefix" @click="uploadImagesToOss('multiple')">{{ isUploadingOss && ossUploadingMode === 'multiple' ? '正在上传...' : `上传多张图片${ossMultipleFiles.length ? `（${ossMultipleFiles.length}）` : ''}` }}</button>
           </article>
 
           <article class="product-oss-upload-card is-folder">
@@ -335,8 +341,12 @@
                 <span><strong>选择本地文件夹</strong><small>{{ ossFolderName ? `${ossFolderName}（${ossFolderFiles.length} 张）` : '未选择文件夹' }}</small></span><em>浏览</em>
               </button>
             </div>
-            <button class="product-tool-primary product-oss-upload-button" type="button" :disabled="isUploadingOss || !ossFolderFiles.length" @click="uploadImagesToOss('folder')">{{ isUploadingOss && ossUploadingMode === 'folder' ? '正在上传...' : '上传文件夹' }}</button>
+            <button class="product-tool-primary product-oss-upload-button" :class="{ 'is-uploading': isUploadingOss && ossUploadingMode === 'folder' }" type="button" :disabled="isUploadingOss || !ossFolderFiles.length" @click="uploadImagesToOss('folder')">{{ isUploadingOss && ossUploadingMode === 'folder' ? '正在上传...' : '上传文件夹' }}</button>
           </article>
+        </div>
+        <div class="product-oss-directory-actions">
+          <span>{{ isLoadingOssDirectories ? '正在读取 OSS 目录...' : `已读取 ${ossDirectories.length} 个 OSS 目录` }}</span>
+          <button type="button" :disabled="isLoadingOssDirectories || isUploadingOss" @click="loadOssDirectories">刷新目录</button>
         </div>
         <div v-if="ossUploadSummary" class="product-image-process-progress" :class="{ error: ossUploadSummary.failed }">
           <div><strong>上传完成：成功 {{ ossUploadSummary.uploaded }} 张，失败 {{ ossUploadSummary.failed }} 张</strong><span>{{ ossUploadSummary.total }} 张</span></div>
@@ -571,6 +581,8 @@ const whiteProgress = ref(0)
 const whiteTaskError = ref('')
 const whiteResults = ref([])
 const isGeneratingWhiteImage = ref(false)
+const whiteOutputDirectoryName = ref('')
+let whiteOutputDirectoryHandle = null
 const cutoutImageInput = ref(null)
 const cutoutFiles = ref([])
 const cutoutTaskStatus = ref('')
@@ -586,8 +598,10 @@ const ossSingleFile = ref(null)
 const ossMultipleFiles = ref([])
 const ossFolderFiles = ref([])
 const ossFolderName = ref('')
-const ossSinglePrefix = ref('product1')
-const ossMultiplePrefix = ref('product1')
+const ossSinglePrefix = ref('')
+const ossMultiplePrefix = ref('')
+const ossDirectories = ref([])
+const isLoadingOssDirectories = ref(false)
 const ossUploadResults = ref([])
 const ossUploadSummary = ref(null)
 const isUploadingOss = ref(false)
@@ -795,6 +809,34 @@ function clearWhiteResults() {
   whiteResults.value = []
 }
 
+async function chooseWhiteOutputDirectory() {
+  if (typeof window.showDirectoryPicker !== 'function') {
+    showNotice('当前浏览器不支持自动保存文件夹，请使用最新版 Edge 或 Chrome', 'error')
+    return false
+  }
+  try {
+    whiteOutputDirectoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' })
+    whiteOutputDirectoryName.value = whiteOutputDirectoryHandle.name
+    showNotice(`生成图将自动保存到 ${whiteOutputDirectoryHandle.name} 下的款号文件夹`)
+    return true
+  } catch (error) {
+    if (error?.name !== 'AbortError') showNotice('无法使用所选本地文件夹，请重新选择', 'error')
+    return false
+  }
+}
+
+async function saveWhiteResultToLocalFolder(blob, styleFolder, filename) {
+  if (!whiteOutputDirectoryHandle) throw new Error('请先选择本地保存总文件夹')
+  const styleDirectory = await whiteOutputDirectoryHandle.getDirectoryHandle(styleFolder, { create: true })
+  const fileHandle = await styleDirectory.getFileHandle(filename, { create: true })
+  const writable = await fileHandle.createWritable()
+  try {
+    await writable.write(blob)
+  } finally {
+    await writable.close()
+  }
+}
+
 function handleWhiteImageSelection(event) {
   const files = Array.from(event.target.files || [])
   event.target.value = ''
@@ -844,7 +886,7 @@ function handleWhiteImageSelection(event) {
   for (const [styleNo, additions] of additionsByStyle.entries()) {
     let batch = whiteBatches.value.find((item) => item.styleNo === styleNo)
     if (!batch) {
-      batch = { styleNo, files: [], taskId: '', statusUrl: '', styleFolder: '', status: '', progress: 0, error: '', outputDirectory: '' }
+      batch = { styleNo, files: [], taskId: '', statusUrl: '', styleFolder: '', status: '', progress: 0, error: '' }
       whiteBatches.value.push(batch)
     }
     batch.files.push(...additions.map((file) => ({
@@ -999,6 +1041,21 @@ function resetOssUploadResult() {
   ossUploadSummary.value = null
 }
 
+async function loadOssDirectories() {
+  if (isLoadingOssDirectories.value) return
+  isLoadingOssDirectories.value = true
+  try {
+    const payload = await api('/api/admin/image-processing/aliyun-oss/directories')
+    ossDirectories.value = Array.isArray(payload.directories) ? payload.directories : []
+    if (!ossDirectories.value.includes(ossSinglePrefix.value)) ossSinglePrefix.value = ''
+    if (!ossDirectories.value.includes(ossMultiplePrefix.value)) ossMultiplePrefix.value = ''
+  } catch (error) {
+    showNotice(error instanceof Error ? error.message : 'OSS 目录读取失败', 'error')
+  } finally {
+    isLoadingOssDirectories.value = false
+  }
+}
+
 function isSupportedOssImage(file) {
   return ['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(file.type)
     || /\.(png|jpe?g|webp|gif)$/i.test(file.name)
@@ -1093,7 +1150,7 @@ function resetWhiteImageTask() {
   whiteProgress.value = 0
   whiteTaskError.value = ''
   whiteBatches.value.forEach((batch) => Object.assign(batch, {
-    taskId: '', statusUrl: '', styleFolder: '', status: '', progress: 0, error: '', outputDirectory: '',
+    taskId: '', statusUrl: '', styleFolder: '', status: '', progress: 0, error: '',
   }))
 }
 
@@ -1130,6 +1187,7 @@ function setWhiteMainImage(batchIndex, index) {
 
 async function generateWhiteBackgroundImage() {
   if (!whiteBatches.value.length || isGeneratingWhiteImage.value) return
+  if (!whiteOutputDirectoryHandle && !(await chooseWhiteOutputDirectory())) return
   clearWhiteResults()
   whiteTaskStatus.value = 'queued'
   whiteProgress.value = 0
@@ -1177,12 +1235,13 @@ async function applyWhiteTaskPayload(payload, styleNo = '') {
     status: payload.status || 'running',
     progress: Number.isFinite(Number(payload.progress)) ? Number(payload.progress) : 0,
     error: payload.error || '',
-    outputDirectory: payload.outputDirectory || batch.outputDirectory,
   })
   const images = Array.isArray(payload.images) ? payload.images : []
   const currentFiles = whiteResults.value.filter((item) => item.styleNo === styleNo).map((item) => item.filename).join('|')
   const nextFiles = images.map((item) => item.filename).join('|')
-  if (currentFiles !== nextFiles) await loadWhiteResults(images, styleNo)
+  if (payload.status === 'succeeded' && currentFiles !== nextFiles) {
+    await loadWhiteResults(images, styleNo, payload.styleFolder || batch?.styleFolder || styleNo)
+  }
   updateWhiteBatchSummary()
 }
 
@@ -1232,9 +1291,10 @@ async function fetchProtectedImage(url) {
   return response.blob()
 }
 
-async function loadWhiteResults(images, styleNo = '') {
+async function loadWhiteResults(images, styleNo = '', styleFolder = '') {
   const results = await Promise.all(images.map(async (item) => {
     const blob = await fetchProtectedImage(item.url)
+    await saveWhiteResultToLocalFolder(blob, styleFolder || styleNo, item.filename)
     return { ...item, styleNo, previewUrl: URL.createObjectURL(blob) }
   }))
   whiteResults.value = [...whiteResults.value.filter((item) => item.styleNo !== styleNo), ...results]
@@ -1506,6 +1566,7 @@ async function saveHomepageSeries() {
 onMounted(() => {
   loadSeries()
   loadHomepageSeries()
+  loadOssDirectories()
 })
 
 onBeforeUnmount(() => {
