@@ -8339,7 +8339,15 @@ p {
   font-size: 12px;
 }
 
-.live-booking-calendar-head input {
+.live-booking-calendar-filters {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.live-booking-calendar-head input,
+.live-booking-calendar-head select {
   min-height: 38px;
   padding: 0 10px;
   color: #142f2a;
@@ -10955,6 +10963,11 @@ p {
 
   .live-booking-calendar-head,
   .live-booking-calendar-summary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .live-booking-calendar-filters {
     align-items: stretch;
     flex-direction: column;
   }
