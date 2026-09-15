@@ -12216,6 +12216,11 @@ p {
   font-size: 12px;
 }
 
+.product-oss-directory-actions .is-error {
+  color: #b42318;
+  font-weight: 800;
+}
+
 .product-oss-directory-actions button {
   min-height: 34px;
   padding: 0 14px;

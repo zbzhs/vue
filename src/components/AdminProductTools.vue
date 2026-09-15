@@ -345,7 +345,7 @@
           </article>
         </div>
         <div class="product-oss-directory-actions">
-          <span>{{ isLoadingOssDirectories ? '正在读取 OSS 目录...' : `已读取 ${ossDirectories.length} 个 OSS 目录` }}</span>
+          <span :class="{ 'is-error': ossDirectoriesError }">{{ isLoadingOssDirectories ? '正在读取 OSS 目录...' : (ossDirectoriesError || `已读取 ${ossDirectories.length} 个 OSS 目录`) }}</span>
           <button type="button" :disabled="isLoadingOssDirectories || isUploadingOss" @click="loadOssDirectories">刷新目录</button>
         </div>
         <div v-if="ossUploadSummary" class="product-image-process-progress" :class="{ error: ossUploadSummary.failed }">
@@ -602,6 +602,7 @@ const ossSinglePrefix = ref('')
 const ossMultiplePrefix = ref('')
 const ossDirectories = ref([])
 const isLoadingOssDirectories = ref(false)
+const ossDirectoriesError = ref('')
 const ossUploadResults = ref([])
 const ossUploadSummary = ref(null)
 const isUploadingOss = ref(false)
@@ -1044,13 +1045,15 @@ function resetOssUploadResult() {
 async function loadOssDirectories() {
   if (isLoadingOssDirectories.value) return
   isLoadingOssDirectories.value = true
+  ossDirectoriesError.value = ''
   try {
     const payload = await api('/api/admin/image-processing/aliyun-oss/directories')
     ossDirectories.value = Array.isArray(payload.directories) ? payload.directories : []
     if (!ossDirectories.value.includes(ossSinglePrefix.value)) ossSinglePrefix.value = ''
     if (!ossDirectories.value.includes(ossMultiplePrefix.value)) ossMultiplePrefix.value = ''
   } catch (error) {
-    showNotice(error instanceof Error ? error.message : 'OSS 目录读取失败', 'error')
+    ossDirectoriesError.value = error instanceof Error ? error.message : 'OSS 目录读取失败'
+    showNotice(ossDirectoriesError.value, 'error')
   } finally {
     isLoadingOssDirectories.value = false
   }
