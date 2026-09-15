@@ -117,16 +117,16 @@ const weekdays = ['一', '二', '三', '四', '五', '六', '日']
 
 const personOptions = computed(() => {
   const source = personType.value === 'control' ? controls.value : talents.value
-  const fallbackKey = personType.value === 'control' ? 'control' : 'talent'
   const options = new Map()
   source.forEach((item) => {
     const userId = String(item.userId || '').trim()
-    if (userId) options.set(userId, { userId, name: item.nickname || item.username || `未命名${fallbackKey === 'control' ? '中控' : '主播'}` })
+    if (userId) options.set(userId, { userId, name: item.nickname || item.username || userId })
   })
   reservations.value.forEach((item) => {
-    const userId = String(personType.value === 'control' ? item.controlUserId : item.talentUserId || '').trim()
+    const rawUserId = personType.value === 'control' ? item.controlUserId : item.talentUserId
+    const userId = String(rawUserId || '').trim()
     const name = personType.value === 'control' ? item.controlName : item.talentName
-    if (userId && !options.has(userId)) options.set(userId, { userId, name: name || `未命名${fallbackKey === 'control' ? '中控' : '主播'}` })
+    if (userId && !options.has(userId)) options.set(userId, { userId, name: name || userId })
   })
   return [...options.values()].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
 })
