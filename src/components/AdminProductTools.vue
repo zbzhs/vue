@@ -1227,7 +1227,7 @@ async function fetchProtectedImage(url) {
   const response = await fetch(url, { headers: { Authorization: `Bearer ${props.token}` } })
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}))
-    throw new Error(payload.detail || '白底图加载失败')
+    throw new Error(payload.detail || `白底图加载失败（HTTP ${response.status}）`)
   }
   return response.blob()
 }
