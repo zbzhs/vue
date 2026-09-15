@@ -569,41 +569,22 @@
           </section>
         </div>
 
-        <section class="live-analysis-panel live-booking-calendar-panel">
+        <section v-if="operatorRoleLabel === '主播'" class="live-analysis-panel live-booking-calendar-panel">
           <div class="live-booking-calendar-head">
             <div>
-              <h3>{{ activeAnalysisBookingName }}月度{{ analysisBookingMode === 'control' ? '跟播' : '预约' }}</h3>
+              <h3>{{ activeAnalysisTalentName }}月度预约</h3>
               <span>{{ analysisMonthLabel }}</span>
             </div>
-            <div class="live-booking-calendar-filters">
-              <label>
-                <span>统计对象</span>
-                <select v-model="analysisBookingMode" @change="changeAnalysisBookingMode">
-                  <option value="talent">主播</option>
-                  <option v-if="operatorRoleLabel !== '主播'" value="control">中控</option>
-                </select>
-              </label>
-              <label v-if="analysisBookingMode === 'control'">
-                <span>中控</span>
-                <select v-model="selectedAnalysisControlId" @change="selectDefaultAnalysisDate">
-                  <option v-for="item in analysisControlOptions" :key="item.userId" :value="item.userId">
-                    {{ item.name }}
-                  </option>
-                </select>
-              </label>
-              <label>
-                <span>月份</span>
-                <input v-model="selectedAnalysisMonth" type="month" @change="loadAnalysisReservations" />
-              </label>
-            </div>
+            <label>
+              <span>月份</span>
+              <input v-model="selectedAnalysisMonth" type="month" @change="loadAnalysisReservations" />
+            </label>
           </div>
 
           <div class="live-booking-calendar-summary">
-            <span><small>{{ analysisBookingMode === 'control' ? '跟播天数' : '预约天数' }}</small><strong>{{ analysisBookingStats.days }}</strong><em>天</em></span>
-            <span><small>{{ analysisBookingMode === 'control' ? '跟播场次' : '预约场次' }}</small><strong>{{ analysisBookingStats.sessions }}</strong><em>场</em></span>
-            <span v-if="analysisBookingMode === 'control'"><small>已签到</small><strong>{{ analysisBookingStats.checkedIn }}</strong><em>场</em></span>
-            <span v-if="analysisBookingMode === 'control'"><small>超时未签到</small><strong>{{ analysisBookingStats.missed }}</strong><em>场</em></span>
-            <p><i class="is-booked"></i> {{ analysisBookingMode === 'control' ? '有跟播' : '已预约' }} <i class="is-empty"></i> {{ analysisBookingMode === 'control' ? '无跟播' : '未预约' }}</p>
+            <span><small>预约天数</small><strong>{{ analysisBookingStats.days }}</strong><em>天</em></span>
+            <span><small>预约场次</small><strong>{{ analysisBookingStats.sessions }}</strong><em>场</em></span>
+            <p><i class="is-booked"></i> 已预约 <i class="is-empty"></i> 未预约</p>
           </div>
 
           <div v-if="isLoadingAnalysisReservations" class="live-booking-calendar-loading">正在加载月度预约...</div>
@@ -626,7 +607,7 @@
                 @click="selectedAnalysisDate = day.date"
               >
                 <strong>{{ day.day }}</strong>
-                <small>{{ day.hasReservation ? `${day.sessionCount}场` : (analysisBookingMode === 'control' ? '无跟播' : '未预约') }}</small>
+                <small>{{ day.hasReservation ? `${day.sessionCount}场` : '未预约' }}</small>
               </button>
             </div>
 
@@ -636,14 +617,14 @@
                   <small>所选日期</small>
                   <h4>{{ selectedAnalysisDate || '请选择日期' }}</h4>
                 </div>
-                <strong>{{ selectedAnalysisDayReservations.length }} 场{{ analysisBookingMode === 'control' ? '跟播' : '预约' }}</strong>
+                <strong>{{ selectedAnalysisDayReservations.length }} 场预约</strong>
               </header>
-              <p v-if="!selectedAnalysisDayReservations.length">当天没有{{ analysisBookingMode === 'control' ? '跟播' : '预约' }}</p>
+              <p v-if="!selectedAnalysisDayReservations.length">当天没有预约</p>
               <div v-else class="live-booking-day-list">
                 <article v-for="item in selectedAnalysisDayReservations" :key="item.rowKey">
                   <time>{{ shortTime(item.startTime) }}-{{ shortTime(item.endTime) }}</time>
-                  <strong>{{ analysisBookingMode === 'control' ? `${item.talentName || '未命名主播'} · ${reservationCounterLabel(item)}` : reservationCounterLabel(item) }}</strong>
-                  <span>{{ analysisBookingMode === 'control' ? controlCheckInStatusLabel(item) : statusLabel(item.status) }}</span>
+                  <strong>{{ reservationCounterLabel(item) }}</strong>
+                  <span>{{ statusLabel(item.status) }}</span>
                 </article>
               </div>
             </div>
@@ -884,8 +865,6 @@ const notice = ref('')
 const noticeType = ref('success')
 const expandedSessionId = ref(null)
 const selectedAnalysisTalentId = ref('')
-const analysisBookingMode = ref('talent')
-const selectedAnalysisControlId = ref('')
 const selectedAnalysisMonth = ref(today.slice(0, 7))
 const selectedAnalysisDate = ref(today)
 const analysisReservations = ref([])
@@ -1060,37 +1039,6 @@ const activeAnalysisTalentId = computed(() => {
 const activeAnalysisTalentName = computed(() => {
   return analysisTalentOptions.value.find((item) => item.userId === activeAnalysisTalentId.value)?.name || '主播'
 })
-const analysisControlOptions = computed(() => {
-  const options = new Map()
-  controls.value.forEach((item) => {
-    const userId = String(item.userId || '').trim()
-    if (userId) options.set(userId, { userId, name: item.nickname || item.username || '未命名中控' })
-  })
-  analysisReservations.value.forEach((item) => {
-    const userId = String(item.controlUserId || '').trim()
-    if (userId && !options.has(userId)) {
-      options.set(userId, { userId, name: item.controlName || '未命名中控' })
-    }
-  })
-  const items = [...options.values()].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
-  if (operatorRoleLabel.value === '中控' && currentLiveUserId.value) {
-    return items.filter((item) => item.userId === currentLiveUserId.value)
-  }
-  return items
-})
-const activeAnalysisControlId = computed(() => {
-  if (operatorRoleLabel.value === '中控' && currentLiveUserId.value) return currentLiveUserId.value
-  if (analysisControlOptions.value.some((item) => item.userId === selectedAnalysisControlId.value)) {
-    return selectedAnalysisControlId.value
-  }
-  return analysisControlOptions.value[0]?.userId || ''
-})
-const activeAnalysisBookingName = computed(() => {
-  if (analysisBookingMode.value === 'control') {
-    return analysisControlOptions.value.find((item) => item.userId === activeAnalysisControlId.value)?.name || accountName.value || '中控'
-  }
-  return activeAnalysisTalentName.value
-})
 const analysisSessions = computed(() => {
   if (!activeAnalysisTalentId.value) return []
   return visibleSessions.value.filter((item) => String(item.talentUserId || '').trim() === activeAnalysisTalentId.value)
@@ -1099,9 +1047,7 @@ const calendarWeekdays = ['一', '二', '三', '四', '五', '六', '日']
 const analysisMonthlyReservations = computed(() => mergeMonthlyReservations(
   analysisReservations.value
     .filter((item) => String(item.status) !== 'cancelled')
-    .filter((item) => analysisBookingMode.value === 'control'
-      ? String(item.controlUserId) === activeAnalysisControlId.value
-      : String(item.talentUserId) === activeAnalysisTalentId.value)
+    .filter((item) => String(item.talentUserId) === activeAnalysisTalentId.value)
     .filter((item) => String(item.liveDate).slice(0, 7) === selectedAnalysisMonth.value),
 ))
 const analysisReservationsByDate = computed(() => {
@@ -1137,8 +1083,6 @@ const analysisCalendarDays = computed(() => {
 const analysisBookingStats = computed(() => ({
   days: analysisReservationsByDate.value.size,
   sessions: analysisMonthlyReservations.value.length,
-  checkedIn: analysisMonthlyReservations.value.filter((item) => Boolean(item.controlCheckedInAt)).length,
-  missed: analysisMonthlyReservations.value.filter((item) => isControlMissedCheckIn(item)).length,
 }))
 const selectedAnalysisDayReservations = computed(() => (
   analysisReservationsByDate.value.get(selectedAnalysisDate.value) || []
@@ -1540,13 +1484,6 @@ function selectAnalysisTalent(event) {
   selectDefaultAnalysisDate()
 }
 
-function changeAnalysisBookingMode() {
-  if (analysisBookingMode.value === 'control' && !selectedAnalysisControlId.value) {
-    selectedAnalysisControlId.value = activeAnalysisControlId.value
-  }
-  selectDefaultAnalysisDate()
-}
-
 async function loadAnalysisReservations() {
   const [year, month] = selectedAnalysisMonth.value.split('-').map(Number)
   if (!year || !month) return
@@ -1691,13 +1628,6 @@ function controlCheckInButtonTitle(item) {
   const date = `${opensAt.getFullYear()}-${String(opensAt.getMonth() + 1).padStart(2, '0')}-${String(opensAt.getDate()).padStart(2, '0')}`
   const time = `${String(opensAt.getHours()).padStart(2, '0')}:${String(opensAt.getMinutes()).padStart(2, '0')}`
   return `${date} ${time} 开放签到`
-}
-
-function controlCheckInStatusLabel(item) {
-  if (!item?.controlUserId) return '未分配'
-  if (item?.controlCheckedInAt) return '已签到'
-  if (isControlMissedCheckIn(item)) return '未签到（已超时）'
-  return '待签到'
 }
 
 function reservationCode(item) {
@@ -1892,10 +1822,6 @@ async function loadWorkspace() {
     const payload = await api(`/bootstrap?dateValue=${encodeURIComponent(selectedDate.value)}`)
     talents.value = Array.isArray(payload.talents) ? payload.talents : []
     controls.value = Array.isArray(payload.controls) ? payload.controls : []
-    if (operatorRoleLabel.value === '中控' && currentLiveUserId.value) {
-      analysisBookingMode.value = 'control'
-      selectedAnalysisControlId.value = currentLiveUserId.value
-    }
     if (!controls.value.some((item) => String(item.userId) === String(reservationForm.controlUserId))) {
       reservationForm.controlUserId = ''
     }

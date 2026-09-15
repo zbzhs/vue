@@ -374,6 +374,8 @@
 
           <AdminLiveFollow v-else-if="activeAdminSection === 'liveFollow'" :token="getToken()" :account="currentUser" />
 
+          <AdminMonthlyAttendance v-else-if="activeAdminSection === 'monthlyData'" :token="getToken()" />
+
           <AdminProductTools v-else-if="activeAdminSection === 'productTools'" :token="getToken()" />
 
           <section v-else-if="activeAdminSection === 'tools'" class="admin-jewelry-tools">
@@ -647,6 +649,7 @@
 import { computed, reactive, onMounted, ref } from 'vue'
 
 import AdminLiveFollow from '../components/AdminLiveFollow.vue'
+import AdminMonthlyAttendance from '../components/AdminMonthlyAttendance.vue'
 import AdminProductTools from '../components/AdminProductTools.vue'
 import { useAuth } from '../composables/useAuth'
 import { useLocale } from '../composables/useLocale'
@@ -840,6 +843,11 @@ const adminNavItems = computed(() => [
     key: 'liveFollow',
     label: locale.value === 'en' ? 'Live Follow-up' : '直播跟进',
     shortLabel: locale.value === 'en' ? 'Live' : '直播',
+  },
+  {
+    key: 'monthlyData',
+    label: locale.value === 'en' ? 'Monthly Data' : '月度数据',
+    shortLabel: locale.value === 'en' ? 'Month' : '月度',
   },
   ...(canManageAdmins.value
     ? [{
