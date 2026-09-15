@@ -178,8 +178,9 @@
               </label>
               <label>
                 <span>跟播中控</span>
-                <select v-model="reservationForm.controlUserId">
-                  <option value="">无</option>
+                <select v-model="reservationForm.controlUserId" required>
+                  <option value="" disabled>请选择跟播中控</option>
+                  <option value="__none__">无</option>
                   <option v-for="item in controls" :key="item.userId" :value="item.userId">
                     {{ controlOptionLabel(item) }}
                   </option>
@@ -189,7 +190,7 @@
                 <span>备注</span>
                 <input v-model.trim="reservationForm.notes" placeholder="可填写直播主题或备注" />
               </label>
-              <button type="submit" :disabled="isSaving || !availableTalents.length">
+              <button type="submit" :disabled="isSaving || !availableTalents.length || !reservationForm.controlUserId">
                 {{ isSaving ? '保存中...' : `创建预约（${selectedSlotGroups.length}段）` }}
               </button>
               <button class="live-cancel-selection" type="button" @click="clearSelectedSlots">取消全部</button>
@@ -1990,7 +1991,7 @@ async function submitReservation() {
         method: 'POST',
         body: JSON.stringify({
           talentUserId: reservationForm.talentUserId,
-          controlUserId: reservationForm.controlUserId,
+          controlUserId: reservationForm.controlUserId === '__none__' ? '' : reservationForm.controlUserId,
           counterId: group.counter.id,
           liveDate: selectedDate.value,
           startTime: group.startTime,
