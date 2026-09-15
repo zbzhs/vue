@@ -632,6 +632,8 @@
         </section>
       </section>
 
+      <AdminMonthlyAttendance v-else-if="activeTab === 'monthlyData'" :token="token" />
+
       <section v-else-if="activeTab === 'sessions'" class="live-session-data-page">
         <div class="live-session-data-hero">
           <div class="live-dashboard-title">
@@ -805,6 +807,8 @@
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 
+import AdminMonthlyAttendance from './AdminMonthlyAttendance.vue'
+
 const props = defineProps({
   token: { type: String, required: true },
   account: { type: Object, default: () => ({}) },
@@ -817,6 +821,7 @@ const tabs = [
   { key: 'entry', label: '直播数据录入', kicker: 'LIVE DATA' },
   { key: 'sessions', label: '场次数据', kicker: 'SESSION DATA' },
   { key: 'analysis', label: '分析看板', kicker: 'ANALYTICS' },
+  { key: 'monthlyData', label: '月度数据', kicker: 'MONTHLY DATA' },
   { key: 'accounts', label: '账号设置', kicker: 'ACCOUNT SETTINGS' },
 ]
 
@@ -1006,7 +1011,7 @@ const operatorRoleLabel = computed(() => {
 const navigationTabs = computed(() => {
   return operatorRoleLabel.value === '管理员'
     ? tabs
-    : tabs.filter((item) => item.key !== 'accounts')
+    : tabs.filter((item) => !['monthlyData', 'accounts'].includes(item.key))
 })
 const visibleSessions = computed(() => {
   if (operatorRoleLabel.value !== '主播' || !currentLiveUserId.value) {
@@ -1851,7 +1856,7 @@ async function loadWorkspace() {
 }
 
 function openTab(tab) {
-  if (tab === 'accounts' && operatorRoleLabel.value !== '管理员') {
+  if (['monthlyData', 'accounts'].includes(tab) && operatorRoleLabel.value !== '管理员') {
     activeTab.value = 'home'
     return
   }
